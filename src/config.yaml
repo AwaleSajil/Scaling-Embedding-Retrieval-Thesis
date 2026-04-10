@@ -1,0 +1,42 @@
+input_data:
+  nrows: null
+  n_data_src: null
+  max_datapoints_per_src_for_eval: 20
+
+input_model:
+  name: "BAAI/bge-base-en-v1.5"
+  max_len: 512
+
+outputs:
+  output_base: "../models"
+  cache_dir: "../data/cache_v1"
+
+resume_config:
+  resume_checkpoint_path: null
+  resume_run_id: null
+
+trainer_config:
+  num_train_epochs: 1
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  warmup_ratio: 0.1
+  eval_strategy: "steps"
+  eval_and_save_steps: 500
+  save_strategy: "steps"
+  save_total_limit: 3
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "linear"
+  gradient_accumulation_steps: 8
+  weight_decay: 0.1
+  report_to: "wandb"
+  ignore_data_skip: true
+
+
+logging:
+  wb_mode: "online"
+  wb_project: "scale_emb_retrieval"
+  resume_run_id: null
+
+mrl_config:
+  matryoshka_dims: [32, 64, 128, 256, 512]

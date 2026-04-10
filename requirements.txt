@@ -1,0 +1,11 @@
+torch
+sentence-transformers
+datasets
+huggingface-hub
+transformers
+wandb
+python-dotenv
+pyyaml
+numpy
+joblib
+tqdm
