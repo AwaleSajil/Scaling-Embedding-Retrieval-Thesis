@@ -143,13 +143,14 @@ parser.add_argument(
     "--expirement_number", 
     type=str, 
     default="e1",
-    choices=["e1", "e2", "e3"]
+    choices=["e1", "e2", "e3", "e4"]
     )
 
 expirement_map = {
     "e1": "Baseline - Fine-tune on mixed dataset",
     "e2": "Add binarization layer",
-    "e3": "MRL Training"
+    "e3": "MRL Training",
+    "e4": "MRL Training + Binarization Layer",
 }
 
 args = parser.parse_args()
@@ -350,7 +351,7 @@ def initilize_model(local_rank):
             tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
             model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
         )
-    elif config["experiment"]["number"] == "e2":
+    elif config["experiment"]["number"] in ["e2", "e4"]:
         word_embedding_model = models.Transformer(config["input_model"]["name"])
         pooling_model = models.Pooling(
             word_embedding_model.get_word_embedding_dimension(),
@@ -437,7 +438,7 @@ def main(local_rank, rank):
     loss_funs = {
         n: cfg["loss"](model, similarity_fct=loss_sim_fun) for n, cfg in ds_config.items()
     }
-    if config["experiment"]["number"] == "e3":
+    if config["experiment"]["number"] in ["e3", "e4"]:
         loss_funs = {
             n: MatryoshkaLoss(model=model, loss=base_loss, matryoshka_dims=config.get("mrl_config").get("matryoshka_dims") + [model.get_sentence_embedding_dimension()]) 
             for n, base_loss in loss_funs.items()
