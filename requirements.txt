@@ -9,3 +9,4 @@ pyyaml
 numpy
 joblib
 tqdm
+turboquant==0.2.0

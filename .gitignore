@@ -40,7 +40,7 @@ models/
 
 # Experiment results
 experiments/results_*/
-eval/
+eval/results_*/
 
 # Logs
 *.log
