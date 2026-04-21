@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Eval Explorer v2</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+         background: #f0f2f8; color: #1e1e2e; display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── Header ── */
+  #header { background: linear-gradient(135deg, #1e1e2e 0%, #2d2d4e 100%);
+            color: #fff; padding: 12px 24px; display: flex;
+            align-items: center; gap: 16px; flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  #header h1 { font-size: 17px; font-weight: 700; letter-spacing: .4px; }
+  #header .subtitle { opacity: .5; font-size: 12px; margin-left: 4px; }
+
+  /* ── Layout ── */
+  #body { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  #sidebar { width: 210px; flex-shrink: 0; background: #fff;
+             border-right: 1px solid #e2e4ed;
+             overflow-y: auto; padding: 14px 12px;
+             display: flex; flex-direction: column; gap: 18px; }
+  .sidebar-section h3 { font-size: 10px; font-weight: 700; text-transform: uppercase;
+                letter-spacing: 1px; color: #9a9ab8; margin-bottom: 8px; }
+  #sidebar select { width: 100%; padding: 6px 8px; border: 1px solid #e0e2ed;
+                    border-radius: 7px; background: #fafbff; font-size: 13px;
+                    color: #1e1e2e; outline: none; }
+  #sidebar select:focus { border-color: #4361ee; box-shadow: 0 0 0 2px rgba(67,97,238,.12); }
+
+  .group-list { display: flex; flex-direction: column; gap: 6px; }
+  .group-check { display: flex; align-items: center; gap: 8px; cursor: pointer;
+                 font-size: 13px; padding: 4px 6px; border-radius: 6px;
+                 transition: background .1s; }
+  .group-check:hover { background: #f0f2ff; }
+  .group-check input { cursor: pointer; accent-color: #4361ee; width: 14px; height: 14px; }
+
+  /* ── Main ── */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Tabs ── */
+  #tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e4ed;
+          padding: 0 20px; flex-shrink: 0; gap: 2px; }
+  .tab-btn { padding: 11px 16px; cursor: pointer; border: none; background: none;
+             font-size: 13px; font-weight: 500; color: #777; border-bottom: 3px solid transparent;
+             margin-bottom: -2px; transition: color .15s, border-color .15s; letter-spacing: .2px; }
+  .tab-btn:hover { color: #1e1e2e; }
+  .tab-btn.active { color: #4361ee; border-bottom-color: #4361ee; font-weight: 700; }
+
+  /* ── Tab panels ── */
+  .tab-panel { display: none; flex: 1; overflow: auto; padding: 18px; }
+  .tab-panel.active { display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── Plot cards ── */
+  .plot-card { background: #fff; border-radius: 12px; border: 1px solid #e2e4ed;
+               padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  .plot-card h2 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 12px; }
+
+  /* ── Query browser ── */
+  #query-panel { display: grid; grid-template-columns: 300px 1fr; gap: 14px; height: 100%; overflow: hidden; }
+  #query-list-wrap { background: #fff; border-radius: 12px; border: 1px solid #e2e4ed;
+                     display: flex; flex-direction: column; overflow: hidden;
+                     box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  #query-list-header { padding: 12px 14px; border-bottom: 1px solid #eee;
+                       background: #fafbff; }
+  #query-list-header .ql-title { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; }
+  #query-list-header select { width: 100%; padding: 6px 8px; border: 1px solid #e0e2ed;
+                               border-radius: 7px; font-size: 13px; background: #fff;
+                               outline: none; }
+  #query-search { width: 100%; margin-top: 8px; padding: 6px 8px;
+                  border: 1px solid #e0e2ed; border-radius: 7px; font-size: 13px;
+                  background: #fff; outline: none; }
+  #query-search:focus { border-color: #4361ee; box-shadow: 0 0 0 2px rgba(67,97,238,.12); }
+  #query-count { font-size: 11px; color: #aaa; margin-top: 5px; }
+  #query-list { overflow-y: auto; flex: 1; }
+  .query-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f5f5f5;
+                font-size: 13px; line-height: 1.45; transition: background .1s; }
+  .query-item:hover { background: #f0f4ff; }
+  .query-item.active { background: #eaedff; border-left: 3px solid #4361ee; padding-left: 11px; }
+  .query-item .qid { font-size: 10px; color: #b0b0c8; margin-bottom: 2px; font-family: monospace; }
+  .query-item .q-preview { color: #444; }
+
+  #query-detail { background: #fff; border-radius: 12px; border: 1px solid #e2e4ed;
+                  overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+
+  .query-header-card { background: #f7f8ff; border: 1px solid #e2e4ed; border-radius: 10px;
+                       padding: 14px 16px; }
+  .query-header-card h3 { font-size: 13px; font-weight: 700; color: #4361ee; margin-bottom: 6px;
+                           text-transform: uppercase; letter-spacing: .5px; font-size: 11px; }
+  .query-header-card .query-text { font-size: 14px; line-height: 1.6; color: #1e1e2e; }
+  .query-header-card .relevant-ids { font-size: 11px; color: #888; margin-top: 8px;
+                                      padding-top: 8px; border-top: 1px solid #e8e8f0; }
+  .relevant-ids strong { color: #555; }
+
+  .rankings-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .model-ranking { border: 1px solid #e8eaf0; border-radius: 10px; overflow: hidden; }
+  .model-ranking-header { padding: 10px 14px; font-size: 13px; font-weight: 600;
+                           display: flex; align-items: center; gap: 10px;
+                           background: linear-gradient(135deg, #fafbff 0%, #f5f6ff 100%);
+                           border-bottom: 1px solid #e8eaf0; }
+  .model-badge { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+  .model-scores { margin-left: auto; font-size: 11px; color: #777; font-weight: normal;
+                  background: #fff; padding: 3px 8px; border-radius: 20px;
+                  border: 1px solid #e0e2ed; }
+
+  .ranking-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ranking-table th { background: #f8f9fc; padding: 5px 10px; text-align: left;
+                      font-weight: 600; border-bottom: 1px solid #eee; color: #666;
+                      font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  .ranking-table td { padding: 6px 10px; border-bottom: 1px solid #f5f5f5; }
+  .ranking-table tr:last-child td { border-bottom: none; }
+  .ranking-table tr.relevant td { background: #f0faf2; }
+  .ranking-table tr.relevant .rank-num::before { content: "✓"; color: #2e7d32; font-weight: 700;
+                                                   margin-right: 4px; }
+  .rank-num { color: #aaa; width: 36px; font-family: monospace; }
+  .doc-id-cell { font-family: monospace; font-size: 11px; color: #555; max-width: 280px;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .score-cell { color: #4361ee; font-family: monospace; font-size: 12px; }
+
+  /* ── Metrics table ── */
+  .metrics-table-head { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+                        margin-bottom: 12px; }
+  .metrics-table-head .title { font-size: 13px; font-weight: 700; color: #3b3f67; text-transform: uppercase;
+                               letter-spacing: .4px; }
+  .metrics-table-head .summary { font-size: 12px; color: #7b7f9c; }
+  .metrics-table-wrap { overflow: auto; border: 1px solid #e3e5f0; border-radius: 10px; }
+  .metrics-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 760px; }
+  .metrics-table th { position: sticky; top: 0; background: #f7f8fd; z-index: 1;
+                      padding: 8px 10px; text-align: left; border-bottom: 1px solid #dfe2f0;
+                      color: #666a86; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  .metrics-table th.sortable { cursor: pointer; user-select: none; }
+  .metrics-table th.sortable:hover { background: #eef1fb; }
+  .metrics-table td { padding: 8px 10px; border-bottom: 1px solid #f0f1f7; white-space: nowrap; }
+  .metrics-table tr:hover td { background: #f9faff; }
+  .metrics-table td.model { font-weight: 600; color: #2c2f4e; }
+  .metrics-table td.group { color: #6f7394; }
+  .metrics-table td.metric { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-align: right; }
+  .metrics-table td.best { font-weight: 700; color: #2f6b3f; background: #edf8ef; }
+  .table-controls { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; padding: 10px 12px;
+                    border: 1px solid #e3e5f0; border-radius: 10px; background: #fafbff; }
+  .table-control { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
+  .table-control .label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #7d82a0; font-weight: 700; }
+  .table-checks { display: flex; flex-wrap: wrap; gap: 8px 10px; max-width: 520px; }
+  .table-checks label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #41486d; }
+  .table-checks input { accent-color: #4361ee; }
+  .table-toggle-row { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  .table-toggle-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #41486d; }
+  .table-toggle-row input { accent-color: #4361ee; }
+
+  /* ── Significance ── */
+  .sig-controls { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .sig-controls label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .sig-controls select { padding: 6px 8px; border: 1px solid #e0e2ed; border-radius: 7px;
+                          font-size: 13px; outline: none; }
+  .sig-hint { font-size: 11px; color: #999; background: #f5f5f8; padding: 4px 10px;
+              border-radius: 20px; }
+  .sig-explainer { margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+                   background: #f7f8fd; border: 1px solid #e3e6f3; color: #4c5379; font-size: 12px; line-height: 1.5; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d0d0e0; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #b0b0c8; }
+
+  /* ── Metric@K line ── */
+  .line-controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .line-controls label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .line-controls select { padding: 6px 8px; border: 1px solid #e0e2ed; border-radius: 7px;
+                           font-size: 13px; outline: none; }
+
+  /* ── Empty state ── */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                 flex: 1; color: #bbb; font-size: 13px; gap: 8px; padding: 40px; text-align: center; }
+  .empty-state .icon { font-size: 32px; opacity: .5; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div id="header">
+  <h1>Eval Explorer</h1>
+  <span class="subtitle">NanoBEIR</span>
+</div>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<div id="body">
+
+  <!-- ── Sidebar ── -->
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <h3>Subset</h3>
+      <select id="ctrl-subset" onchange="refreshAll()"></select>
+    </div>
+    <div class="sidebar-section">
+      <h3>Metric</h3>
+      <select id="ctrl-metric" onchange="refreshAll()">
+        <option value="ndcg">NDCG</option>
+        <option value="mrr">MRR</option>
+        <option value="accuracy">Accuracy</option>
+        <option value="recall">Recall</option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <h3>K</h3>
+      <select id="ctrl-k" onchange="refreshAll()">
+        <option>1</option><option>3</option><option selected>10</option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <h3>Model Groups</h3>
+      <div class="group-list" id="group-list"></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Display</h3>
+      <label class="group-check">
+        <input type="checkbox" id="ctrl-show-std" checked onchange="refreshAll()">
+        Std bars
+      </label>
+      <label class="group-check">
+        <input type="checkbox" id="ctrl-show-group-lines" checked onchange="refreshAll()">
+        Group lines
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div id="main">
+    <!-- Tabs -->
+    <div id="tabs">
+      <button class="tab-btn active" onclick="showTab('bar')">Model Comparison</button>
+      <button class="tab-btn" onclick="showTab('scatter')">Size vs Perf</button>
+      <button class="tab-btn" onclick="showTab('table')">All Metrics Table</button>
+      <button class="tab-btn" onclick="showTab('query')">Query Browser</button>
+      <button class="tab-btn" onclick="showTab('significance')">Significance</button>
+      <button class="tab-btn" onclick="showTab('line')">Metric@K Trend</button>
+    </div>
+
+    <!-- ── Bar chart ── -->
+    <div id="tab-bar" class="tab-panel active">
+      <div class="plot-card" style="flex:1">
+        <div id="bar-chart" style="height:calc(100% - 8px); min-height:460px"></div>
+      </div>
+    </div>
+
+    <!-- ── Scatter ── -->
+    <div id="tab-scatter" class="tab-panel">
+      <div class="plot-card" style="flex:1">
+        <div id="scatter-chart" style="height:calc(100vh - 190px); min-height:700px"></div>
+      </div>
+    </div>
+
+    <!-- ── All metrics table ── -->
+    <div id="tab-table" class="tab-panel">
+      <div class="plot-card" style="flex:1">
+        <div class="table-controls">
+          <div class="table-control">
+            <div class="label">Metrics</div>
+            <div class="table-checks" id="table-metric-checks"></div>
+          </div>
+          <div class="table-control">
+            <div class="label">K values</div>
+            <div class="table-checks" id="table-k-checks"></div>
+          </div>
+          <div class="table-toggle-row">
+            <label><input type="checkbox" id="table-show-size" checked onchange="renderMetricsTable()"> Embedding size (MB)</label>
+            <label><input type="checkbox" id="table-show-std" checked onchange="renderMetricsTable()"> Standard deviation</label>
+          </div>
+        </div>
+        <div class="metrics-table-head">
+          <div class="title">Aggregate metrics by model</div>
+          <div class="summary" id="metrics-table-summary"></div>
+        </div>
+        <div class="metrics-table-wrap" id="metrics-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── Query browser ── -->
+    <div id="tab-query" class="tab-panel" style="padding:14px; overflow:hidden;">
+      <div id="query-panel">
+        <!-- Left: query list -->
+        <div id="query-list-wrap">
+          <div id="query-list-header">
+            <div class="ql-title">Queries</div>
+            <select id="query-subset-sel" onchange="loadQueryList()"></select>
+            <input id="query-search" type="text" placeholder="Search queries…" oninput="filterQueries()" />
+            <div id="query-count"></div>
+          </div>
+          <div id="query-list"></div>
+        </div>
+        <!-- Right: detail -->
+        <div id="query-detail">
+          <div class="empty-state">
+            <div class="icon">←</div>
+            <div>Select a query to view per-model rankings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Significance ── -->
+    <div id="tab-significance" class="tab-panel">
+      <div class="plot-card" style="flex:none; padding:14px 16px;">
+        <div class="sig-controls">
+          <label>Subset <select id="sig-subset" onchange="renderSignificance()"></select></label>
+          <label>Metric <select id="sig-metric" onchange="renderSignificance()"></select></label>
+          <span class="sig-hint">p &lt; 0.05 = significant</span>
+        </div>
+        <div class="sig-explainer">
+          Paired two-sided Wilcoxon signed-rank test is run on per-query scores (same queries across models).
+          <strong>d</strong> is Cohen's d on per-query score differences (A - B): around 0.2 small, 0.5 medium, 0.8 large.
+        </div>
+      </div>
+      <div class="plot-card" style="flex:1">
+        <div id="sig-chart" style="height:calc(100% - 8px); min-height:460px"></div>
+      </div>
+    </div>
+
+    <!-- ── Metric@K line ── -->
+    <div id="tab-line" class="tab-panel">
+      <div class="plot-card" style="flex:none; padding:14px 16px;">
+        <div class="line-controls">
+          <label>Metric <select id="line-metric" onchange="renderLine()">
+            <option value="ndcg">NDCG</option>
+            <option value="mrr">MRR</option>
+            <option value="accuracy">Accuracy</option>
+          </select></label>
+          <label>Subset <select id="line-subset" onchange="renderLine()"></select></label>
+        </div>
+      </div>
+      <div class="plot-card" style="flex:1">
+        <div id="line-chart" style="height:calc(100vh - 240px); min-height:700px"></div>
+      </div>
+    </div>
+
+  </div><!-- #main -->
+</div><!-- #body -->
+
+<script id="data-json" type="application/json">__DATA_JSON__</script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA (injected by builder.py)
+// ═══════════════════════════════════════════════════════════════════
+const DATA = (() => {
+  const raw = document.getElementById('data-json')?.textContent || '{}';
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Failed to parse embedded dashboard data:', err);
+    return {};
+  }
+})();
+const PLOTLY_READY = typeof Plotly !== 'undefined' && !window.__PLOTLY_MISSING__;
+
+// ═══════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════
+let activeTab = 'bar';
+let _allQueryItems = [];  // [{qid, text, el}] for search filtering
+let _metricStatsCache = new Map();
+let _tableSelectedMetrics = new Set();
+let _tableSelectedKs = new Set();
+let _tableSortKey = null;
+let _tableSortDir = 0; // 0 none, 1 asc, -1 desc
+
+// ═══════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════
+function ctrl(id) { return document.getElementById(id).value; }
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function setSelectOptions(id, values) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  values.forEach(v => {
+    const option = document.createElement('option');
+    option.value = String(v);
+    option.textContent = String(v);
+    el.appendChild(option);
+  });
+}
+
+function renderPlotlyUnavailable(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.innerHTML = '<div style="padding:24px; color:#a33; font-size:13px;">Plotly.js unavailable. Re-run with network access or place html/plotly.min.js locally.</div>';
+}
+
+function renderChartMessage(targetId, message) {
+  if (PLOTLY_READY) { try { Plotly.purge(targetId); } catch(_) {} }
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.innerHTML = `<div style="padding:24px; color:#666; font-size:13px;">${escapeHtml(message)}</div>`;
+}
+
+function colorWithAlpha(hex, alpha) {
+  const c = hex.replace('#', '');
+  const len = c.length === 3 ? 1 : 2;
+  const r = parseInt(c.slice(0, len).padEnd(2, c[0]), 16);
+  const g = parseInt(c.slice(len, 2 * len).padEnd(2, c[len]), 16);
+  const b = parseInt(c.slice(2 * len, 3 * len).padEnd(2, c[2 * len]), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function activeGroups() {
+  return Array.from(document.querySelectorAll('#group-list input:checked')).map(el => el.value);
+}
+
+function visibleModels() {
+  const groups = activeGroups();
+  return DATA.model_keys.filter(k => groups.includes(DATA.models_meta[k]?.group));
+}
+
+function metricKey(metricBase, k) {
+  return `${metricBase}@${k}`;
+}
+
+function getAggValue(modelKey, subset, metric, k) {
+  return DATA.aggregate?.[modelKey]?.[subset]?.[metricKey(metric, k)] ?? null;
+}
+
+function embBits(modelKey, subset) {
+  const info = DATA.emb_info?.[modelKey]?.[subset];
+  if (!info) return null;
+  const c = info.corpus || {};
+  return (c.n || 0) * (c.dimension || 0) * (c.element_size_bit || 32);
+}
+
+function embMB(modelKey, subset) {
+  const bits = embBits(modelKey, subset);
+  if (bits === null) return null;
+  return bits / 8 / 1024 / 1024;
+}
+
+function metricLabel(metric) {
+  const labels = { ndcg: 'NDCG', mrr: 'MRR', accuracy: 'Accuracy', recall: 'Recall' };
+  return labels[metric] || String(metric).toUpperCase();
+}
+
+function parseMetricKey(fullKey) {
+  const [base, k] = String(fullKey).split('@');
+  return { base, k };
+}
+
+function metricSamples(modelKey, subset, metric, k) {
+  const key = metricKey(metric, k);
+  const modelData = DATA.per_query?.[modelKey] || {};
+  const samples = [];
+  if (subset && subset !== 'mean') {
+    const queries = modelData[subset] || {};
+    Object.values(queries).forEach(q => {
+      const v = q?.[key];
+      if (Number.isFinite(v)) samples.push(v);
+    });
+    return samples;
+  }
+
+  // For "mean", use all real subset per-query values (no synthetic mean row).
+  Object.entries(modelData).forEach(([sub, queries]) => {
+    if (sub === 'mean') return;
+    Object.values(queries || {}).forEach(q => {
+      const v = q?.[key];
+      if (Number.isFinite(v)) samples.push(v);
+    });
+  });
+  return samples;
+}
+
+function metricStats(modelKey, subset, metric, k) {
+  const cacheKey = `${modelKey}|||${subset}|||${metric}|||${k}`;
+  if (_metricStatsCache.has(cacheKey)) return _metricStatsCache.get(cacheKey);
+
+  const samples = metricSamples(modelKey, subset, metric, k);
+  if (!samples.length) {
+    _metricStatsCache.set(cacheKey, null);
+    return null;
+  }
+  const mean = samples.reduce((acc, v) => acc + v, 0) / samples.length;
+  const variance = samples.reduce((acc, v) => acc + (v - mean) * (v - mean), 0) / samples.length;
+  const std = Math.sqrt(Math.max(variance, 0));
+  const out = { mean, std, n: samples.length };
+  _metricStatsCache.set(cacheKey, out);
+  return out;
+}
+
+function embMBForSubset(modelKey, subset) {
+  if (subset !== 'mean') return embMB(modelKey, subset);
+  const modelInfo = DATA.emb_info?.[modelKey] || {};
+  const vals = Object.keys(modelInfo)
+    .filter(s => s !== 'mean')
+    .map(s => embMB(modelKey, s))
+    .filter(v => Number.isFinite(v));
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function collectMetricBasesAndKs() {
+  const bases = new Set();
+  const ks = new Set();
+  Object.values(DATA.aggregate || {}).forEach(modelData => {
+    Object.values(modelData || {}).forEach(subsetData => {
+      Object.keys(subsetData || {}).forEach(full => {
+        const { base, k } = parseMetricKey(full);
+        if (!base || !k) return;
+        bases.add(base);
+        ks.add(k);
+      });
+    });
+  });
+  const sortedBases = sortedMetricColumns([...bases].map(b => `${b}@1`)).map(x => x.split('@')[0]);
+  const sortedKs = [...ks].sort((a, b) => Number(a) - Number(b));
+  return { bases: [...new Set(sortedBases)], ks: sortedKs };
+}
+
+function initTableControls() {
+  const metricWrap = document.getElementById('table-metric-checks');
+  const kWrap = document.getElementById('table-k-checks');
+  const { bases, ks } = collectMetricBasesAndKs();
+
+  if (!_tableSelectedMetrics.size) bases.forEach(m => _tableSelectedMetrics.add(m));
+  if (!_tableSelectedKs.size) ks.forEach(k => _tableSelectedKs.add(k));
+
+  metricWrap.innerHTML = '';
+  bases.forEach(m => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = _tableSelectedMetrics.has(m);
+    input.addEventListener('change', () => {
+      if (input.checked) _tableSelectedMetrics.add(m); else _tableSelectedMetrics.delete(m);
+      _tableSortKey = null; _tableSortDir = 0;
+      renderMetricsTable();
+    });
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(metricLabel(m)));
+    metricWrap.appendChild(label);
+  });
+
+  kWrap.innerHTML = '';
+  ks.forEach(k => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = _tableSelectedKs.has(k);
+    input.addEventListener('change', () => {
+      if (input.checked) _tableSelectedKs.add(k); else _tableSelectedKs.delete(k);
+      _tableSortKey = null; _tableSortDir = 0;
+      renderMetricsTable();
+    });
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(`@${k}`));
+    kWrap.appendChild(label);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════════
+function init() {
+  const subsets = DATA.subsets || [];
+  ['ctrl-subset','line-subset','query-subset-sel'].forEach(id => setSelectOptions(id, subsets));
+
+  // sig-subset: derive from actual significance keys so "mean" appears when computed
+  const sigSubsets = [...new Set(
+    Object.keys(DATA.significance || {}).map(k => k.split('|||')[2])
+  )].sort((a, b) => {
+    if (a === 'mean') return 1;
+    if (b === 'mean') return -1;
+    return a.localeCompare(b);
+  });
+  setSelectOptions('sig-subset', sigSubsets.length ? sigSubsets : subsets.filter(s => s !== 'mean'));
+
+  const firstRealSubset = subsets.find(s => s !== 'mean') || subsets[0];
+  if (firstRealSubset && subsets.includes('mean')) {
+    document.getElementById('ctrl-subset').value = 'mean';
+    document.getElementById('sig-subset').value = sigSubsets.includes('mean') ? 'mean' : (firstRealSubset || sigSubsets[0]);
+    document.getElementById('line-subset').value = firstRealSubset;
+  } else if (firstRealSubset) {
+    ['ctrl-subset', 'line-subset', 'query-subset-sel'].forEach(id => {
+      document.getElementById(id).value = firstRealSubset;
+    });
+    if (document.getElementById('sig-subset'))
+      document.getElementById('sig-subset').value = sigSubsets[0] || firstRealSubset;
+  }
+
+  // Significance metric dropdown
+  const sigMetrics = [...new Set(
+    Object.keys(DATA.significance || {}).map(k => k.split('|||')[3])
+  )].sort((a, b) => {
+    const order = ['ndcg', 'mrr', 'accuracy', 'recall'];
+    const [baseA, kA] = a.split('@'); const [baseB, kB] = b.split('@');
+    const oi = order.indexOf(baseA) - order.indexOf(baseB);
+    return oi !== 0 ? oi : (+kA) - (+kB);
+  });
+  const sigSel = document.getElementById('sig-metric');
+  setSelectOptions('sig-metric', sigMetrics.length ? sigMetrics : ['ndcg@10']);
+  Array.from(sigSel.options).forEach(opt => { opt.textContent = opt.value.toUpperCase(); });
+  if (sigMetrics.includes('ndcg@10')) sigSel.value = 'ndcg@10';
+
+  // Group checkboxes
+  const groups = [...new Set(DATA.model_keys.map(k => DATA.models_meta[k]?.group).filter(Boolean))];
+  const gl = document.getElementById('group-list');
+  gl.innerHTML = '';
+  groups.forEach(g => {
+    const label = document.createElement('label');
+    label.className = 'group-check';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = g;
+    input.checked = true;
+    input.addEventListener('change', refreshAll);
+    const text = document.createTextNode(g);
+    label.appendChild(input);
+    label.appendChild(text);
+    gl.appendChild(label);
+  });
+
+  if (!subsets.length) {
+    document.getElementById('query-detail').innerHTML =
+      '<div class="empty-state"><div>No subset data found. Run evaluation first, then rebuild HTML.</div></div>';
+  }
+
+  initTableControls();
+  refreshAll();
+  loadQueryList();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Tab switching
+// ═══════════════════════════════════════════════════════════════════
+function showTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    const tabs = ['bar','scatter','table','query','significance','line'];
+    btn.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  requestAnimationFrame(refreshActive);
+}
+
+function refreshAll() {
+  renderBar();
+  if (activeTab === 'scatter') renderScatter();
+  renderMetricsTable();
+  if (activeTab === 'line') renderLine();
+  if (activeTab === 'significance') renderSignificance();
+}
+
+function refreshActive() {
+  if (activeTab === 'bar') renderBar();
+  else if (activeTab === 'scatter') renderScatter();
+  else if (activeTab === 'table') renderMetricsTable();
+  else if (activeTab === 'line') renderLine();
+  else if (activeTab === 'significance') renderSignificance();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BAR CHART
+// ═══════════════════════════════════════════════════════════════════
+function renderBar() {
+  if (!PLOTLY_READY) { renderPlotlyUnavailable('bar-chart'); return; }
+  const subset = ctrl('ctrl-subset');
+  if (!subset) { Plotly.purge('bar-chart'); return; }
+  const metric = ctrl('ctrl-metric');
+  const k = ctrl('ctrl-k');
+  const models = visibleModels();
+
+  const showStd = document.getElementById('ctrl-show-std')?.checked ?? true;
+
+  const rows = models.map(mKey => {
+    const meta = DATA.models_meta[mKey] || {};
+    const val = getAggValue(mKey, subset, metric, k);
+    if (val === null) return null;
+    const stats = metricStats(mKey, subset, metric, k);
+    return {
+      key: mKey,
+      name: meta.display_name || mKey,
+      group: meta.group || 'Other',
+      color: meta.color || '#888',
+      pattern: meta.plotly_pattern || '',
+      value: +val.toFixed(4),
+      std: stats?.std ?? null,
+      n: stats?.n ?? 0,
+    };
+  }).filter(Boolean);
+
+  if (!rows.length) {
+    renderChartMessage('bar-chart', `No ${metricLabel(metric)}@${k} values available for "${subset}".`);
+    return;
+  }
+
+  rows.sort((a, b) => a.name.localeCompare(b.name));
+  const xs    = rows.map(r => r.name);
+  const ys    = rows.map(r => r.value);
+  const err   = rows.map(r => Number.isFinite(r.std) ? r.std : 0);
+  const maxY  = Math.max(...ys);
+  const maxUpper = Math.max(...ys.map((y, i) => y + (showStd ? (err[i] || 0) : 0)));
+
+  // Single bar trace: array colors + hatch. This is the only way Plotly
+  // renders model colors correctly with patterns (per-bar traces always go grey).
+  // White bar border gives a clean gap between bars and makes hatch lines pop.
+  const barTrace = {
+    type: 'bar',
+    x: xs,
+    y: ys,
+    marker: {
+      color: rows.map(r => r.color),
+      pattern: {
+        shape: rows.map(r => r.pattern || ''),
+        fgcolor: 'rgba(255,255,255,0.9)',   // white hatch lines over colored fill
+        size: 6,
+      },
+      line: { color: 'white', width: 1.5 }, // white bar border
+    },
+    text: ys.map(v => v.toFixed(3)),
+    textposition: 'outside',
+    cliponaxis: false,
+    hovertemplate: rows.map(r =>
+      `<b>${escapeHtml(r.name)}</b><br>Group: ${escapeHtml(r.group)}<br>${metricLabel(metric)}@${k}: ${r.value.toFixed(4)}<br>std: ${Number.isFinite(r.std) ? r.std.toFixed(4) : '—'}<br>n: ${r.n || '—'}<extra></extra>`
+    ),
+    showlegend: false,
+  };
+
+  // Invisible scatter traces — one per model — solely to draw model-colored error bars.
+  const errTraces = rows.map(r => ({
+    type: 'scatter',
+    x: [r.name],
+    y: [r.value],
+    mode: 'markers',
+    marker: { size: 0, color: r.color, opacity: 0 },
+    error_y: {
+      type: 'data',
+      array: [Number.isFinite(r.std) ? r.std : 0],
+      visible: true,
+      color: colorWithAlpha(r.color, 0.35),
+      thickness: 1.5,
+      width: 4,
+    },
+    showlegend: false,
+    hoverinfo: 'skip',
+  }));
+
+  const layout = {
+    title: { text: `${metricLabel(metric)} @ ${k}  ·  ${subset}`, font: { size: 14 } },
+    showlegend: false,
+    xaxis: { tickangle: -40, automargin: true, categoryorder: 'array', categoryarray: xs },
+    yaxis: { title: `${metricLabel(metric)} @ ${k}`, range: [0, Math.min(1, Math.max(maxY, maxUpper) * 1.18)] },
+    margin: { t: 50, l: 60, r: 20, b: 130 },
+    plot_bgcolor: 'white',
+    paper_bgcolor: 'white',
+  };
+
+  Plotly.react('bar-chart', showStd ? [barTrace, ...errTraces] : [barTrace], layout, { responsive: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SCATTER: Performance vs Embedding Size
+// ═══════════════════════════════════════════════════════════════════
+function renderScatter() {
+  if (!PLOTLY_READY) { renderPlotlyUnavailable('scatter-chart'); return; }
+  const subset = ctrl('ctrl-subset');
+  if (!subset) { Plotly.purge('scatter-chart'); return; }
+  const metric = ctrl('ctrl-metric');
+  const k = ctrl('ctrl-k');
+  const models = visibleModels();
+
+  const showStd = document.getElementById('ctrl-show-std')?.checked ?? true;
+  const showGroupLines = document.getElementById('ctrl-show-group-lines')?.checked ?? true;
+
+  const rows = [];
+  models.forEach(mKey => {
+    const meta = DATA.models_meta[mKey] || {};
+    const perf = getAggValue(mKey, subset, metric, k);
+    const sizeMB = embMB(mKey, subset);
+    if (perf === null || sizeMB === null) return;
+    const stats = metricStats(mKey, subset, metric, k);
+    rows.push({
+      name: meta.display_name || mKey,
+      group: meta.group || 'Other',
+      color: meta.color || '#888',
+      marker: meta.marker || 'circle',
+      x: sizeMB,
+      y: +perf.toFixed(4),
+      std: stats?.std ?? 0,
+      n: stats?.n ?? 0,
+    });
+  });
+  if (!rows.length) {
+    renderChartMessage('scatter-chart', `No points available for ${metricLabel(metric)}@${k} in "${subset}".`);
+    return;
+  }
+
+  // Line traces — one per group, sorted by x, drawn under the markers
+  const groupMap = {};
+  rows.forEach(r => {
+    if (!groupMap[r.group]) groupMap[r.group] = [];
+    groupMap[r.group].push(r);
+  });
+  const lineTraces = showGroupLines ? Object.entries(groupMap)
+    .filter(([, pts]) => pts.length >= 2)
+    .map(([group, pts]) => {
+      pts.sort((a, b) => a.x - b.x);
+      return {
+        type: 'scatter',
+        mode: 'lines',
+        name: group,
+        legendgroup: group,
+        showlegend: false,
+        x: pts.map(p => p.x),
+        y: pts.map(p => p.y),
+        line: { color: colorWithAlpha(pts[Math.floor(pts.length / 2)].color, 0.8), width: 1.5, dash: 'dash' },
+        hoverinfo: 'skip',
+      };
+    }) : [];
+
+  const traces = [...lineTraces, ...rows.map(r => ({
+    type: 'scatter',
+    mode: 'markers',
+    name: r.name,
+    legendgroup: r.group,
+    x: [r.x],
+    y: [r.y],
+    text: [r.name],
+    marker: {
+      size: 11,
+      color: r.color,
+      symbol: r.marker,
+      line: { width: 1, color: 'rgba(0,0,0,0.25)' },
+    },
+    error_y: {
+      type: 'data',
+      array: [Number.isFinite(r.std) ? r.std : 0],
+      visible: showStd,
+      color: colorWithAlpha(r.color, 0.35),
+      thickness: 1,
+      width: 2,
+    },
+    hovertemplate: `<b>${escapeHtml(r.name)}</b><br>Group: ${escapeHtml(r.group)}<br>Size: ${r.x.toFixed(3)} MB<br>${metricLabel(metric)}@${k}: ${r.y.toFixed(4)}<br>std: ${Number.isFinite(r.std) ? r.std.toFixed(4) : '—'}<br>n: ${r.n || '—'}<extra></extra>`,
+  }))];
+
+  const layout = {
+    title: { text: `${metricLabel(metric)}@${k}  vs  Embedding Size (MB)  ·  ${subset}`, font: { size: 14 } },
+    xaxis: { title: 'Total corpus embedding size (MB)' },
+    yaxis: { title: `${metricLabel(metric)} @ ${k}`, range: [0, 1] },
+    legend: { title: { text: 'Model' }, orientation: 'v', x: 1.01, y: 1, font: { size: 10 } },
+    hovermode: 'closest',
+    margin: { t: 50, b: 70, l: 70, r: 140 },
+    plot_bgcolor: '#fafbff',
+    paper_bgcolor: '#fff',
+    annotations: showStd ? [{
+      x: 1, y: 1.08, xref: 'paper', yref: 'paper',
+      text: 'Vertical error bars show ±1σ across per-query scores',
+      showarrow: false, font: { size: 11, color: '#6b6f8a' }, xanchor: 'right'
+    }] : [],
+  };
+
+  Plotly.react('scatter-chart', traces, layout, { responsive: true, displayModeBar: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// METRICS TABLE (aggregate)
+// ═══════════════════════════════════════════════════════════════════
+function sortedMetricColumns(metricKeys) {
+  const order = ['ndcg', 'mrr', 'accuracy', 'recall'];
+  return [...metricKeys].sort((a, b) => {
+    const [baseA, kA] = a.split('@');
+    const [baseB, kB] = b.split('@');
+    const ai = order.includes(baseA) ? order.indexOf(baseA) : order.length;
+    const bi = order.includes(baseB) ? order.indexOf(baseB) : order.length;
+    if (ai !== bi) return ai - bi;
+    const ka = Number(kA);
+    const kb = Number(kB);
+    if (Number.isFinite(ka) && Number.isFinite(kb) && ka !== kb) return ka - kb;
+    return a.localeCompare(b);
+  });
+}
+
+function renderMetricsTable() {
+  const wrap = document.getElementById('metrics-table-wrap');
+  const summary = document.getElementById('metrics-table-summary');
+  const subset = ctrl('ctrl-subset');
+  const models = visibleModels();
+  const showSize = document.getElementById('table-show-size')?.checked ?? true;
+  const showStd = document.getElementById('table-show-std')?.checked ?? true;
+
+  if (!subset) {
+    wrap.innerHTML = '<div class="empty-state"><div>No subset selected.</div></div>';
+    summary.textContent = '';
+    return;
+  }
+
+  const rows = [];
+  const metricSet = new Set();
+  models.forEach(mKey => {
+    const meta = DATA.models_meta[mKey] || {};
+    const metrics = DATA.aggregate?.[mKey]?.[subset];
+    if (!metrics) return;
+    Object.keys(metrics).forEach(full => {
+      const { base, k } = parseMetricKey(full);
+      if (_tableSelectedMetrics.has(base) && _tableSelectedKs.has(k)) metricSet.add(full);
+    });
+    const sizeMB = embMBForSubset(mKey, subset);
+    rows.push({
+      key: mKey,
+      model: meta.display_name || mKey,
+      group: meta.group || 'Other',
+      metrics,
+      sizeMB,
+    });
+  });
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="empty-state"><div>No aggregate metrics found for the selected subset and group filter.</div></div>';
+    summary.textContent = '';
+    return;
+  }
+
+  const metricCols = sortedMetricColumns(metricSet);
+  if (!metricCols.length) {
+    wrap.innerHTML = '<div class="empty-state"><div>Select at least one metric and one K value.</div></div>';
+    summary.textContent = '';
+    return;
+  }
+
+  const bestByMetric = {};
+  metricCols.forEach(col => {
+    const values = rows.map(r => r.metrics[col]).filter(v => Number.isFinite(v));
+    bestByMetric[col] = values.length ? Math.max(...values) : null;
+  });
+
+  const columns = [
+    { key: 'model', label: 'Model', kind: 'text' },
+    { key: 'group', label: 'Group', kind: 'text' },
+  ];
+  if (showSize) columns.push({ key: 'size_mb', label: 'Embedding MB', kind: 'number' });
+  metricCols.forEach(col => {
+    columns.push({ key: `metric:${col}`, label: col.toUpperCase(), kind: 'number' });
+    if (showStd) columns.push({ key: `std:${col}`, label: `STD(${col.toUpperCase()})`, kind: 'number' });
+  });
+
+  const getValue = (row, col) => {
+    if (col.key === 'model') return row.model;
+    if (col.key === 'group') return row.group;
+    if (col.key === 'size_mb') return row.sizeMB;
+    if (col.key.startsWith('metric:')) return row.metrics[col.key.slice(7)];
+    if (col.key.startsWith('std:')) {
+      const full = col.key.slice(4);
+      const { base, k } = parseMetricKey(full);
+      return metricStats(row.key, subset, base, k)?.std ?? null;
+    }
+    return null;
+  };
+
+  if (_tableSortKey && columns.some(c => c.key === _tableSortKey) && _tableSortDir !== 0) {
+    rows.sort((a, b) => {
+      const col = columns.find(c => c.key === _tableSortKey);
+      const av = getValue(a, col);
+      const bv = getValue(b, col);
+      if (col.kind === 'text') {
+        return _tableSortDir * String(av ?? '').localeCompare(String(bv ?? ''));
+      }
+      const aNum = Number.isFinite(av) ? av : -Infinity;
+      const bNum = Number.isFinite(bv) ? bv : -Infinity;
+      if (aNum === bNum) return a.model.localeCompare(b.model);
+      return _tableSortDir * (aNum - bNum);
+    });
+  } else {
+    rows.sort((a, b) => a.model.localeCompare(b.model));
+  }
+
+  summary.textContent = `${rows.length} models · ${metricCols.length} metrics · subset: ${subset} · sort: ${
+    _tableSortKey ? `${columns.find(c => c.key === _tableSortKey)?.label || _tableSortKey} (${_tableSortDir === 1 ? 'asc' : _tableSortDir === -1 ? 'desc' : 'default'})` : 'default'
+  }`;
+
+  const sortMark = (key) => (_tableSortKey !== key || _tableSortDir === 0) ? '' : (_tableSortDir === 1 ? ' ▲' : ' ▼');
+  const head = `
+    <thead>
+      <tr>
+        ${columns.map(c => `<th class="sortable" data-sort-key="${escapeHtml(c.key)}">${escapeHtml(c.label)}${sortMark(c.key)}</th>`).join('')}
+      </tr>
+    </thead>
+  `;
+  const body = `
+    <tbody>
+      ${rows.map(r => `
+        <tr>
+          ${columns.map(c => {
+            const val = getValue(r, c);
+            if (c.key === 'model') return `<td class="model">${escapeHtml(String(val ?? ''))}</td>`;
+            if (c.key === 'group') return `<td class="group">${escapeHtml(String(val ?? ''))}</td>`;
+            if (!Number.isFinite(val)) return '<td class="metric">—</td>';
+            const isBestMetric = c.key.startsWith('metric:') && bestByMetric[c.key.slice(7)] !== null && Math.abs(val - bestByMetric[c.key.slice(7)]) < 1e-12;
+            return `<td class="metric${isBestMetric ? ' best' : ''}">${val.toFixed(4)}</td>`;
+          }).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  wrap.innerHTML = `<table class="metrics-table">${head}${body}</table>`;
+  wrap.querySelectorAll('th[data-sort-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-sort-key');
+      if (_tableSortKey !== key) {
+        _tableSortKey = key;
+        _tableSortDir = 1;
+      } else if (_tableSortDir === 1) {
+        _tableSortDir = -1;
+      } else if (_tableSortDir === -1) {
+        _tableSortDir = 0;
+        _tableSortKey = null;
+      } else {
+        _tableSortDir = 1;
+      }
+      renderMetricsTable();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// QUERY BROWSER
+// ═══════════════════════════════════════════════════════════════════
+function loadQueryList() {
+  const subset = document.getElementById('query-subset-sel').value;
+  const ql = document.getElementById('query-list');
+  const countEl = document.getElementById('query-count');
+  document.getElementById('query-search').value = '';
+  _allQueryItems = [];
+
+  if (!subset) {
+    ql.innerHTML = '<div class="query-item">No subset selected.</div>';
+    countEl.textContent = '';
+    return;
+  }
+  const queryTexts = DATA.query_texts?.[subset] || {};
+  const qids = Object.keys(queryTexts);
+  if (!qids.length) {
+    ql.innerHTML = '<div class="query-item">No queries cached for this subset.</div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  ql.innerHTML = '';
+  qids.forEach((qid, i) => {
+    const text = queryTexts[qid] || '';
+    const item = document.createElement('div');
+    item.className = 'query-item';
+    item.id = `qi-${i}`;
+    item.addEventListener('click', () => selectQuery(subset, qid, i));
+
+    const qidDiv = document.createElement('div');
+    qidDiv.className = 'qid';
+    qidDiv.textContent = qid;
+
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'q-preview';
+    previewDiv.textContent = text.length > 90 ? text.slice(0, 90) + '…' : text;
+
+    item.appendChild(qidDiv);
+    item.appendChild(previewDiv);
+    ql.appendChild(item);
+    _allQueryItems.push({ qid, text: text.toLowerCase(), el: item });
+  });
+
+  countEl.textContent = `${qids.length} queries`;
+}
+
+function filterQueries() {
+  const q = document.getElementById('query-search').value.toLowerCase().trim();
+  let visible = 0;
+  _allQueryItems.forEach(({ qid, text, el }) => {
+    const match = !q || qid.toLowerCase().includes(q) || text.includes(q);
+    el.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  const countEl = document.getElementById('query-count');
+  countEl.textContent = q ? `${visible} / ${_allQueryItems.length} queries` : `${_allQueryItems.length} queries`;
+}
+
+function selectQuery(subset, qid, idx) {
+  document.querySelectorAll('.query-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`qi-${idx}`)?.classList.add('active');
+
+  const detail = document.getElementById('query-detail');
+  const queryText = DATA.query_texts?.[subset]?.[qid] || qid;
+
+  let relevantIds = new Set();
+  for (const mKey of DATA.model_keys) {
+    const rel = DATA.per_query?.[mKey]?.[subset]?.[qid]?.relevant_ids || [];
+    rel.forEach(r => relevantIds.add(r));
+  }
+
+  const models = visibleModels().filter(mKey => DATA.per_query?.[mKey]?.[subset]?.[qid]);
+  const cards = models.map(mKey => {
+    const meta = DATA.models_meta[mKey] || {};
+    const qdata = DATA.per_query[mKey][subset][qid];
+    const ranked = qdata.ranked_ids || [];
+    const scores = qdata.ranked_scores || [];
+    const ndcg = qdata['ndcg@10'] != null ? qdata['ndcg@10'].toFixed(4) : '—';
+    const mrr = qdata['mrr@10'] != null ? qdata['mrr@10'].toFixed(4) : '—';
+
+    const rows = ranked.slice(0, 10).map((docId, i) => {
+      const isRel = relevantIds.has(docId);
+      const sc = scores[i] != null ? scores[i].toFixed(4) : '—';
+      return `<tr class="${isRel ? 'relevant' : ''}">
+        <td class="rank-num">${i+1}</td>
+        <td class="doc-id-cell" title="${escapeHtml(docId)}">${escapeHtml(docId)}</td>
+        <td class="score-cell">${sc}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="model-ranking">
+      <div class="model-ranking-header">
+        <span class="model-badge" style="background:${meta.color||'#888'}"></span>
+        <span>${escapeHtml(meta.display_name || mKey)}</span>
+        <span class="model-scores">NDCG@10: ${ndcg} &nbsp;|&nbsp; MRR@10: ${mrr}</span>
+      </div>
+      <table class="ranking-table">
+        <thead><tr><th>#</th><th>Doc ID</th><th>Score</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const relList = [...relevantIds].join(', ') || 'none';
+  detail.innerHTML = `
+    <div class="query-header-card">
+      <h3>Query</h3>
+      <div class="query-text">${escapeHtml(queryText)}</div>
+      <div class="relevant-ids"><strong>Relevant docs:</strong> ${escapeHtml(relList)}</div>
+    </div>
+    <div class="rankings-grid">
+      ${cards || '<p style="color:#aaa; font-size:13px;">No model results available for this query.</p>'}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SIGNIFICANCE HEATMAP
+// ═══════════════════════════════════════════════════════════════════
+function renderSignificance() {
+  if (!PLOTLY_READY) { renderPlotlyUnavailable('sig-chart'); return; }
+  const subset = document.getElementById('sig-subset').value;
+  if (!subset) { Plotly.purge('sig-chart'); return; }
+  const metric = document.getElementById('sig-metric').value;
+
+  const sig = DATA.significance || {};
+  const models = visibleModels();
+  const n = models.length;
+
+  const z = Array.from({length: n}, () => Array(n).fill(null));
+  const text = Array.from({length: n}, () => Array(n).fill(''));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) { z[i][j] = 1; text[i][j] = '—'; continue; }
+      const key1 = `${models[i]}|||${models[j]}|||${subset}|||${metric}`;
+      const key2 = `${models[j]}|||${models[i]}|||${subset}|||${metric}`;
+      const entry = sig[key1] || sig[key2];
+      if (entry) {
+        z[i][j] = entry.p;
+        text[i][j] = `p=${entry.p.toFixed(3)}<br>d=${entry.effect.toFixed(2)}<br>n=${entry.n}<br>${entry.wins}W/${entry.ties}T/${entry.losses}L`;
+      }
+    }
+  }
+
+  const labels = models.map(k => DATA.models_meta[k]?.display_name || k);
+
+  const trace = {
+    type: 'heatmap',
+    z: z,
+    x: labels,
+    y: labels,
+    text: text,
+    hovertemplate: '<b>%{y} vs %{x}</b><br>%{text}<extra></extra>',
+    colorscale: [
+      [0, '#d32f2f'],
+      [0.05, '#f57c00'],
+      [0.1, '#fbc02d'],
+      [1, '#e8f5e9'],
+    ],
+    reversescale: false,
+    zmin: 0, zmax: 1,
+    colorbar: { title: 'p-value', thickness: 14 },
+    showscale: true,
+  };
+
+  const layout = {
+    title: { text: `Significance: ${metric} — ${subset}`, font: { size: 14 } },
+    xaxis: { tickangle: -45, tickfont: { size: 10 } },
+    yaxis: { tickfont: { size: 10 }, autorange: 'reversed' },
+    margin: { t: 60, b: 160, l: 180, r: 80 },
+    annotations: [{
+      x: 0.5, y: -0.25, xref: 'paper', yref: 'paper',
+      text: 'Wilcoxon signed-rank p-values (two-sided). d = Cohen effect size of (row - column); d>0 favors row model.',
+      showarrow: false, font: { size: 11, color: '#666' }
+    }],
+    paper_bgcolor: '#fff',
+  };
+
+  Plotly.react('sig-chart', [trace], layout, { responsive: true, displayModeBar: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// METRIC@K LINE CHART
+// ═══════════════════════════════════════════════════════════════════
+function renderLine() {
+  if (!PLOTLY_READY) { renderPlotlyUnavailable('line-chart'); return; }
+  const subset = document.getElementById('line-subset').value;
+  if (!subset) { Plotly.purge('line-chart'); return; }
+  const metric = document.getElementById('line-metric').value;
+  const models = visibleModels();
+
+  const ks = [1, 3, 5, 10].filter(k =>
+    models.some(mKey => getAggValue(mKey, subset, metric, k) !== null)
+  );
+
+  const traces = models.map(mKey => {
+    const meta = DATA.models_meta[mKey] || {};
+    const ys = ks.map(k => getAggValue(mKey, subset, metric, k));
+    if (ys.every(y => y === null)) return null;
+    return {
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: meta.display_name || mKey,
+      x: ks,
+      y: ys,
+      line: { color: meta.color || '#888', width: 2 },
+      marker: { symbol: meta.marker || 'circle', size: 8, color: meta.color || '#888' },
+      hovertemplate: `<b>${meta.display_name || mKey}</b><br>K=%{x}<br>${metric}: %{y:.4f}<extra></extra>`,
+    };
+  }).filter(Boolean);
+
+  const layout = {
+    title: { text: `${metric.toUpperCase()}@K — ${subset}`, font: { size: 14 } },
+    xaxis: { title: 'K', tickvals: ks, ticktext: ks.map(String) },
+    yaxis: { title: metric.toUpperCase(), range: [0, 1] },
+    legend: { orientation: 'v', x: 1.01, y: 1, font: { size: 11 } },
+    margin: { t: 50, b: 60, l: 70, r: 200 },
+    plot_bgcolor: '#fafbff',
+    paper_bgcolor: '#fff',
+  };
+
+  Plotly.react('line-chart', traces, layout, { responsive: true, displayModeBar: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Boot
+// ═══════════════════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
