@@ -164,6 +164,61 @@
   .sig-explainer { margin-top: 10px; padding: 10px 12px; border-radius: 8px;
                    background: #f7f8fd; border: 1px solid #e3e6f3; color: #4c5379; font-size: 12px; line-height: 1.5; }
 
+  /* ── Test toggle ── */
+  .test-toggle { display: flex; border: 1px solid #d0d3e8; border-radius: 8px; overflow: hidden; }
+  .test-btn { padding: 6px 14px; border: none; background: #fafbff; cursor: pointer;
+              font-size: 12px; color: #666; font-weight: 500; transition: all .15s; }
+  .test-btn:not(:last-child) { border-right: 1px solid #d0d3e8; }
+  .test-btn.active { background: #4361ee; color: #fff; font-weight: 700; }
+  .test-btn:hover:not(.active) { background: #eef1fb; color: #4361ee; }
+
+  /* ── Normality check card ── */
+  .normality-header { display: flex; align-items: flex-start; gap: 16px; padding: 12px 14px;
+                      background: linear-gradient(135deg, #f7f8fd 0%, #f0f2ff 100%);
+                      border: 1px solid #e3e6f3; border-radius: 10px; margin-bottom: 14px; }
+  .normality-label { font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+                     color: #9a9ab8; font-weight: 700; margin-bottom: 3px; }
+  .normality-title { font-size: 15px; font-weight: 700; color: #1e1e2e; }
+  .normality-stats { font-size: 12px; color: #5a5f80; margin-top: 6px; line-height: 1.7; }
+  .sw-badge { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 20px;
+              font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+              border: 1.5px solid #d0d3e8; background: #f5f6fa; color: #888; }
+  .sw-badge.normal { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+  .sw-badge.borderline { background: #fff8e1; color: #f57f17; border-color: #ffe082; }
+  .sw-badge.not-normal { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+  .norm-close-btn { margin-left: auto; background: none; border: none; cursor: pointer;
+                    font-size: 18px; color: #bbb; line-height: 1; padding: 4px 8px;
+                    border-radius: 6px; flex-shrink: 0; }
+  .norm-close-btn:hover { color: #555; background: #f0f0f5; }
+  .normality-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .norm-plot-label { font-size: 11px; font-weight: 700; color: #666; margin-bottom: 4px;
+                     text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── Hypothesis reference ── */
+  .hyp-row { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .hyp-tag { padding: 5px 10px; border-radius: 6px; font-size: 11px; line-height: 1.5; flex: 1; min-width: 180px; }
+  .hyp-tag.h0 { background: #f0f1f7; border: 1px solid #dfe1ed; color: #3b3f67; }
+  .hyp-tag.h1 { background: #f0f1f7; border: 1px solid #dfe1ed; color: #3b3f67; }
+  .hyp-tag.reject { background: #fff3f3; border: 1px solid #f0c0c0; color: #a33; }
+  .hyp-tag.accept { background: #f0faf2; border: 1px solid #b8dfc0; color: #2e6b3f; }
+  .hyp-tag.warn { background: #fff8e1; border: 1px solid #ffe082; color: #7a5800; }
+  .hyp-tag b { font-size: 11px; }
+  .hyp-formula { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                 color: #4361ee; font-weight: 600; }
+
+  /* ── Conclusion banner ── */
+  .conclusion-box { margin-top: 14px; padding: 14px 16px; border-radius: 10px;
+                    font-size: 12px; line-height: 1.7; }
+  .conclusion-box.sig { background: linear-gradient(135deg, #fff3f3 0%, #ffe8e8 100%);
+                        border: 1px solid #f0c0c0; color: #6b1a1a; }
+  .conclusion-box.nosig { background: linear-gradient(135deg, #f0faf2 0%, #e4f5e8 100%);
+                          border: 1px solid #b8dfc0; color: #1b5e20; }
+  .conclusion-box .cl-title { font-weight: 700; font-size: 11px; text-transform: uppercase;
+                               letter-spacing: .6px; margin-bottom: 6px; opacity: .7; }
+  .conclusion-box ol { margin: 0; padding-left: 18px; }
+  .conclusion-box li { margin-bottom: 2px; }
+  .conclusion-box strong { font-weight: 700; }
+
   /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -203,7 +258,7 @@
       <h3>Metric</h3>
       <select id="ctrl-metric" onchange="refreshAll()">
         <option value="ndcg">NDCG</option>
-        <option value="mrr">MRR</option>
+        <option value="mrr" selected>MRR</option>
         <option value="accuracy">Accuracy</option>
         <option value="recall">Recall</option>
       </select>
@@ -311,15 +366,42 @@
         <div class="sig-controls">
           <label>Subset <select id="sig-subset" onchange="renderSignificance()"></select></label>
           <label>Metric <select id="sig-metric" onchange="renderSignificance()"></select></label>
+          <div class="test-toggle">
+            <button class="test-btn active" id="btn-wilcoxon" onclick="selectTest('wilcoxon')">Wilcoxon</button>
+            <button class="test-btn" id="btn-ttest" onclick="selectTest('ttest')">Paired t-test</button>
+          </div>
           <span class="sig-hint">p &lt; 0.05 = significant</span>
+          <span class="sig-hint" style="background:#eef1fb; color:#4361ee; cursor:default;">↓ Click a cell for normality check</span>
         </div>
-        <div class="sig-explainer">
-          Paired two-sided Wilcoxon signed-rank test is run on per-query scores (same queries across models).
-          <strong>d</strong> is Cohen's d on per-query score differences (A - B): around 0.2 small, 0.5 medium, 0.8 large.
-        </div>
+        <div class="sig-explainer" id="sig-explainer"></div>
+        <div id="sig-hypotheses"></div>
       </div>
-      <div class="plot-card" style="flex:1">
+      <div class="plot-card" style="flex:1; min-height:460px">
         <div id="sig-chart" style="height:calc(100% - 8px); min-height:460px"></div>
+      </div>
+      <!-- Normality check card (shown on cell click) -->
+      <div class="plot-card" id="normality-card" style="display:none; flex:none;">
+        <div class="normality-header">
+          <div style="flex:1; min-width:0">
+            <div class="normality-label">Normality Check · Differences (A − B)</div>
+            <div class="normality-title" id="norm-title">—</div>
+            <div class="normality-stats" id="norm-stats"></div>
+          </div>
+          <span class="sw-badge" id="sw-badge">—</span>
+          <button class="norm-close-btn" onclick="closeNormalityCheck()" title="Close">✕</button>
+        </div>
+        <div id="norm-hypotheses"></div>
+        <div class="normality-plots">
+          <div>
+            <div class="norm-plot-label">Q-Q Plot (vs Normal)</div>
+            <div id="qq-plot" style="height:320px"></div>
+          </div>
+          <div>
+            <div class="norm-plot-label">Distribution of Differences</div>
+            <div id="hist-plot" style="height:320px"></div>
+          </div>
+        </div>
+        <div id="norm-conclusion"></div>
       </div>
     </div>
 
@@ -329,7 +411,7 @@
         <div class="line-controls">
           <label>Metric <select id="line-metric" onchange="renderLine()">
             <option value="ndcg">NDCG</option>
-            <option value="mrr">MRR</option>
+            <option value="mrr" selected>MRR</option>
             <option value="accuracy">Accuracy</option>
           </select></label>
           <label>Subset <select id="line-subset" onchange="renderLine()"></select></label>
@@ -369,6 +451,8 @@ let _tableSelectedMetrics = new Set();
 let _tableSelectedKs = new Set();
 let _tableSortKey = null;
 let _tableSortDir = 0; // 0 none, 1 asc, -1 desc
+let _selectedTest = 'wilcoxon';
+let _normPair = null; // {modelA, modelB, subset, metric}
 
 // ═══════════════════════════════════════════════════════════════════
 // Helpers
@@ -609,9 +693,10 @@ function init() {
     return oi !== 0 ? oi : (+kA) - (+kB);
   });
   const sigSel = document.getElementById('sig-metric');
-  setSelectOptions('sig-metric', sigMetrics.length ? sigMetrics : ['ndcg@10']);
+  setSelectOptions('sig-metric', sigMetrics.length ? sigMetrics : ['mrr@10']);
   Array.from(sigSel.options).forEach(opt => { opt.textContent = opt.value.toUpperCase(); });
-  if (sigMetrics.includes('ndcg@10')) sigSel.value = 'ndcg@10';
+  if (sigMetrics.includes('mrr@10')) sigSel.value = 'mrr@10';
+  else if (sigMetrics.includes('ndcg@10')) sigSel.value = 'ndcg@10';
 
   // Group checkboxes
   const groups = [...new Set(DATA.model_keys.map(k => DATA.models_meta[k]?.group).filter(Boolean))];
@@ -637,6 +722,7 @@ function init() {
   }
 
   initTableControls();
+  renderTestExplainer(_selectedTest);
   refreshAll();
   loadQueryList();
 }
@@ -1153,6 +1239,312 @@ function selectQuery(subset, qid, idx) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// TEST TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+function selectTest(test) {
+  _selectedTest = test;
+  document.getElementById('btn-wilcoxon').classList.toggle('active', test === 'wilcoxon');
+  document.getElementById('btn-ttest').classList.toggle('active', test === 'ttest');
+  renderTestExplainer(test);
+  renderSignificance();
+}
+
+function renderTestExplainer(test) {
+  const explainer = document.getElementById('sig-explainer');
+  const hypBox = document.getElementById('sig-hypotheses');
+
+  if (test === 'wilcoxon') {
+    explainer.innerHTML = `<strong>Wilcoxon signed-rank</strong> — paired, non-parametric (no normality assumption).
+      <strong>d</strong> = Cohen's d: ~0.2 small, ~0.5 medium, ~0.8 large. Click a cell for normality diagnostics.`;
+
+    hypBox.innerHTML = `
+      <div class="hyp-row">
+        <div class="hyp-tag h0"><b>H<sub>0</sub>:</b> Paired differences (A − B) are symmetric around 0 — models perform equally.</div>
+        <div class="hyp-tag h1"><b>H<sub>1</sub>:</b> Differences are not symmetric around 0 — one model is better.</div>
+      </div>
+      <div class="hyp-row">
+        <div class="hyp-tag reject"><b>p &lt; 0.05 → Reject H<sub>0</sub>:</b> Significant difference. d &gt; 0 favors row model.</div>
+        <div class="hyp-tag accept"><b>p ≥ 0.05 → Fail to reject H<sub>0</sub>:</b> No significant difference detected.</div>
+      </div>`;
+  } else {
+    explainer.innerHTML = `<strong>Paired t-test</strong> — assumes normally distributed differences (robust via CLT for n ≥ 30).
+      <strong>d</strong> = Cohen's d: ~0.2 small, ~0.5 medium, ~0.8 large. Click a cell for normality diagnostics.`;
+
+    hypBox.innerHTML = `
+      <div class="hyp-row">
+        <div class="hyp-tag h0"><b>H<sub>0</sub>:</b> Mean difference is zero: <span class="hyp-formula">μ<sub>A</sub> − μ<sub>B</sub> = 0</span></div>
+        <div class="hyp-tag h1"><b>H<sub>1</sub>:</b> Mean difference is non-zero: <span class="hyp-formula">μ<sub>A</sub> − μ<sub>B</sub> ≠ 0</span></div>
+      </div>
+      <div class="hyp-row">
+        <div class="hyp-tag reject"><b>p &lt; 0.05 → Reject H<sub>0</sub>:</b> Significant difference. d &gt; 0 favors row model.</div>
+        <div class="hyp-tag accept"><b>p ≥ 0.05 → Fail to reject H<sub>0</sub>:</b> No significant difference detected.</div>
+        <div class="hyp-tag warn"><b>Assumption:</b> Check normality via Shapiro-Wilk. If SW p &lt; 0.05, prefer Wilcoxon.</div>
+      </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NORMALITY CHECK HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+// Rational approximation of inverse normal CDF (Abramowitz & Stegun)
+function probit(p) {
+  if (p <= 0) return -8;
+  if (p >= 1) return 8;
+  const sign = p < 0.5 ? -1 : 1;
+  const q = Math.min(p, 1 - p);
+  const t = Math.sqrt(-2 * Math.log(q));
+  const c = [2.515517, 0.802853, 0.010328];
+  const d = [1.432788, 0.189269, 0.001308];
+  return sign * (t - (c[0] + c[1]*t + c[2]*t*t) / (1 + d[0]*t + d[1]*t*t + d[2]*t*t*t));
+}
+
+function getPairedDiffsForSubset(modelA, modelB, subset, metric) {
+  const dataA = DATA.per_query?.[modelA]?.[subset] || {};
+  const dataB = DATA.per_query?.[modelB]?.[subset] || {};
+  const diffs = [];
+  for (const qid of Object.keys(dataA)) {
+    if (!(qid in dataB)) continue;
+    const va = dataA[qid]?.[metric];
+    const vb = dataB[qid]?.[metric];
+    if (Number.isFinite(va) && Number.isFinite(vb)) diffs.push(va - vb);
+  }
+  return diffs;
+}
+
+function getPairedDiffs(modelA, modelB, subset, metric) {
+  if (subset !== 'mean') return getPairedDiffsForSubset(modelA, modelB, subset, metric);
+  const allDiffs = [];
+  (DATA.subsets || []).filter(s => s !== 'mean').forEach(s => {
+    allDiffs.push(...getPairedDiffsForSubset(modelA, modelB, s, metric));
+  });
+  return allDiffs;
+}
+
+function closeNormalityCheck() {
+  document.getElementById('normality-card').style.display = 'none';
+  document.getElementById('norm-conclusion').innerHTML = '';
+  _normPair = null;
+}
+
+function renderNormalityCheck() {
+  if (!_normPair || !PLOTLY_READY) return;
+  const { modelA, modelB, subset, metric } = _normPair;
+
+  const card = document.getElementById('normality-card');
+  card.style.display = '';
+
+  const nameA = DATA.models_meta[modelA]?.display_name || modelA;
+  const nameB = DATA.models_meta[modelB]?.display_name || modelB;
+  document.getElementById('norm-title').textContent = `${nameA}  −  ${nameB}`;
+
+  const diffs = getPairedDiffs(modelA, modelB, subset, metric);
+  if (diffs.length < 5) {
+    document.getElementById('norm-stats').textContent = 'Insufficient paired data for this subset/metric.';
+    document.getElementById('sw-badge').className = 'sw-badge';
+    document.getElementById('sw-badge').textContent = '—';
+    document.getElementById('qq-plot').innerHTML = '<div class="empty-state"><div>Not enough data</div></div>';
+    document.getElementById('hist-plot').innerHTML = '<div class="empty-state"><div>Not enough data</div></div>';
+    document.getElementById('norm-hypotheses').innerHTML = '';
+    document.getElementById('norm-conclusion').innerHTML = '';
+    return;
+  }
+
+  const n = diffs.length;
+  const diffMean = diffs.reduce((s, x) => s + x, 0) / n;
+  const variance = diffs.reduce((s, x) => s + (x - diffMean) ** 2, 0) / Math.max(n - 1, 1);
+  const diffStd = Math.sqrt(Math.max(variance, 0));
+
+  // Look up server-computed SW + t-test stats
+  const sigKey1 = `${modelA}|||${modelB}|||${subset}|||${metric}`;
+  const sigKey2 = `${modelB}|||${modelA}|||${subset}|||${metric}`;
+  const entry = DATA.significance?.[sigKey1] || DATA.significance?.[sigKey2];
+  const swP = entry?.sw_p;
+  const swStat = entry?.sw_stat;
+  const tP = entry?.t_p;
+  const tStat = entry?.t_stat;
+  const wilcoxP = entry?.p;
+
+  // Shapiro-Wilk badge
+  const badge = document.getElementById('sw-badge');
+  if (!Number.isFinite(swP)) {
+    badge.className = 'sw-badge';
+    badge.innerHTML = 'SW: N/A';
+  } else if (swP > 0.05) {
+    badge.className = 'sw-badge normal';
+    badge.innerHTML = `W=${swStat?.toFixed(4) ?? '—'} &nbsp;·&nbsp; p=${swP.toFixed(3)} &nbsp; ✓ Likely normal`;
+  } else if (swP > 0.01) {
+    badge.className = 'sw-badge borderline';
+    badge.innerHTML = `W=${swStat?.toFixed(4) ?? '—'} &nbsp;·&nbsp; p=${swP.toFixed(3)} &nbsp; ⚠ Borderline`;
+  } else {
+    badge.className = 'sw-badge not-normal';
+    badge.innerHTML = `W=${swStat?.toFixed(4) ?? '—'} &nbsp;·&nbsp; p=${swP.toFixed(3)} &nbsp; ✗ Not normal`;
+  }
+
+  let statsHtml = `n=${n} &nbsp;·&nbsp; mean diff=${diffMean.toFixed(4)} &nbsp;·&nbsp; σ=${diffStd.toFixed(4)}`;
+  if (Number.isFinite(tStat)) statsHtml += ` &nbsp;·&nbsp; t=${tStat.toFixed(3)}, p<sub>t</sub>=${tP.toFixed(4)}`;
+  if (Number.isFinite(wilcoxP)) statsHtml += ` &nbsp;·&nbsp; p<sub>W</sub>=${wilcoxP.toFixed(4)}`;
+  if (n >= 30) statsHtml += `<br><span style="color:#888;font-size:11px">CLT: t-test is robust at n=${n} even if differences aren't perfectly normal.</span>`;
+  document.getElementById('norm-stats').innerHTML = statsHtml;
+
+  const normHyp = document.getElementById('norm-hypotheses');
+  let swVerdict = '';
+  if (Number.isFinite(swP)) {
+    swVerdict = swP > 0.05
+      ? `<div class="hyp-tag accept"><b>p = ${swP.toFixed(3)} ≥ 0.05 → Fail to reject H<sub>0</sub>:</b> Normal — t-test is appropriate.</div>`
+      : `<div class="hyp-tag reject"><b>p = ${swP.toFixed(3)} &lt; 0.05 → Reject H<sub>0</sub>:</b> Non-normal — prefer Wilcoxon${n >= 30 ? ' (CLT still supports t-test at n=' + n + ')' : ''}.</div>`;
+  }
+  normHyp.innerHTML = `
+    <div class="hyp-row">
+      <div class="hyp-tag h0"><b>Shapiro-Wilk H<sub>0</sub>:</b> Differences (A − B) are normally distributed.</div>
+      <div class="hyp-tag h1"><b>Shapiro-Wilk H<sub>1</sub>:</b> Differences are not normally distributed.</div>
+      ${swVerdict}
+    </div>`;
+
+  renderConclusion(nameA, nameB, n, swP, wilcoxP, tP, diffMean, entry?.effect);
+
+  if (diffStd < 1e-10) {
+    document.getElementById('qq-plot').innerHTML = '<div class="empty-state"><div>All differences are zero — normality not applicable.</div></div>';
+    document.getElementById('hist-plot').innerHTML = '<div class="empty-state"><div>All differences are zero.</div></div>';
+    return;
+  }
+
+  renderQQPlot(diffs, diffMean, diffStd);
+  renderDiffHistogram(diffs, diffMean, diffStd);
+}
+
+function renderConclusion(nameA, nameB, n, swP, wilcoxP, tP, diffMean, d) {
+  const el = document.getElementById('norm-conclusion');
+
+  const isNormal = Number.isFinite(swP) && swP > 0.05;
+  const clt = n >= 30;
+  const bestTest = isNormal ? 'paired t-test' : 'Wilcoxon';
+  const bestP = isNormal ? tP : wilcoxP;
+  const isSig = Number.isFinite(bestP) && bestP < 0.05;
+  const better = diffMean > 0 ? nameA : nameB;
+
+  const normalLine = !Number.isFinite(swP) ? 'Shapiro-Wilk: N/A'
+    : isNormal ? `Differences are <strong>normal</strong> (SW p = ${swP.toFixed(3)}) — t-test assumptions are met.`
+    : `Differences are <strong>not normal</strong> (SW p = ${swP.toFixed(3)}) — use non-parametric test.${clt ? ' <span style="opacity:.65">(CLT may support t-test at n=' + n + ', but Wilcoxon is safer.)</span>' : ''}`;
+
+  const testLine = `Recommended test: <strong>${bestTest}</strong> (p = ${Number.isFinite(bestP) ? bestP.toFixed(4) : '—'})`;
+
+  let verdictLine;
+  if (!Number.isFinite(bestP)) {
+    verdictLine = 'Insufficient data to draw a conclusion.';
+  } else if (isSig) {
+    const dStr = Number.isFinite(d) ? `, d = ${d.toFixed(2)}` : '';
+    verdictLine = `<strong>${better}</strong> is significantly better (p = ${bestP.toFixed(4)}${dStr}).`;
+  } else {
+    verdictLine = `No significant difference between the two models (p = ${bestP.toFixed(4)}).`;
+  }
+
+  el.innerHTML = `
+    <div class="conclusion-box ${isSig ? 'sig' : 'nosig'}">
+      <div class="cl-title">Conclusion</div>
+      <ol>
+        <li>${normalLine}</li>
+        <li>${testLine}</li>
+        <li>${verdictLine}</li>
+      </ol>
+    </div>`;
+}
+
+function renderQQPlot(diffs, diffMean, diffStd) {
+  const sorted = [...diffs].sort((a, b) => a - b);
+  const n = sorted.length;
+  const theoretical = Array.from({length: n}, (_, i) => probit((i + 0.5) / n));
+
+  const xMin = theoretical[0], xMax = theoretical[n - 1];
+  const refMin = diffMean + diffStd * xMin;
+  const refMax = diffMean + diffStd * xMax;
+
+  const pointsTrace = {
+    type: 'scatter',
+    mode: 'markers',
+    name: 'Sample quantiles',
+    x: theoretical,
+    y: sorted,
+    marker: { size: 5, color: '#4361ee', opacity: 0.65,
+              line: { width: 0.5, color: 'rgba(67,97,238,0.25)' } },
+    hovertemplate: 'Theoretical: %{x:.3f}<br>Sample: %{y:.4f}<extra></extra>',
+  };
+
+  const refTrace = {
+    type: 'scatter',
+    mode: 'lines',
+    name: 'Normal reference',
+    x: [xMin, xMax],
+    y: [refMin, refMax],
+    line: { color: '#e63946', width: 2, dash: 'dash' },
+    hoverinfo: 'skip',
+  };
+
+  Plotly.react('qq-plot', [pointsTrace, refTrace], {
+    showlegend: true,
+    legend: { x: 0.02, y: 0.98, font: { size: 11 }, bgcolor: 'rgba(255,255,255,0.8)' },
+    xaxis: { title: { text: 'Theoretical quantiles (Normal)', font: { size: 12 } },
+             zeroline: true, zerolinecolor: '#ddd', gridcolor: '#f0f0f5' },
+    yaxis: { title: { text: 'Sample quantiles (A − B)', font: { size: 12 } },
+             zeroline: true, zerolinecolor: '#ddd', gridcolor: '#f0f0f5' },
+    margin: { t: 20, b: 55, l: 65, r: 20 },
+    plot_bgcolor: '#fafbff',
+    paper_bgcolor: '#fff',
+  }, { responsive: true });
+}
+
+function renderDiffHistogram(diffs, diffMean, diffStd) {
+  const n = diffs.length;
+  const xMin = diffMean - 4.5 * diffStd;
+  const xMax = diffMean + 4.5 * diffStd;
+  const nCurve = 200;
+  const xs = Array.from({length: nCurve}, (_, i) => xMin + (xMax - xMin) * i / (nCurve - 1));
+  const ys = xs.map(x =>
+    Math.exp(-0.5 * ((x - diffMean) / diffStd) ** 2) / (diffStd * Math.sqrt(2 * Math.PI))
+  );
+
+  const histTrace = {
+    type: 'histogram',
+    x: diffs,
+    histnorm: 'probability density',
+    name: 'Differences',
+    marker: { color: '#4361ee', opacity: 0.65, line: { color: '#3451d1', width: 0.5 } },
+    hovertemplate: 'range: [%{x}]<br>density: %{y:.4f}<extra></extra>',
+  };
+
+  const normalTrace = {
+    type: 'scatter',
+    mode: 'lines',
+    name: `N(${diffMean.toFixed(3)}, ${diffStd.toFixed(3)})`,
+    x: xs,
+    y: ys,
+    line: { color: '#e63946', width: 2.5 },
+    hovertemplate: 'x=%{x:.4f}<br>N(μ,σ)=%{y:.5f}<extra></extra>',
+  };
+
+  Plotly.react('hist-plot', [histTrace, normalTrace], {
+    showlegend: true,
+    legend: { x: 0.98, y: 0.98, xanchor: 'right', font: { size: 11 }, bgcolor: 'rgba(255,255,255,0.8)' },
+    xaxis: { title: { text: 'Score difference (A − B)', font: { size: 12 } },
+             zeroline: true, zerolinecolor: '#aaa', zerolinewidth: 1.5, gridcolor: '#f0f0f5' },
+    yaxis: { title: { text: 'Probability density', font: { size: 12 } }, gridcolor: '#f0f0f5' },
+    margin: { t: 20, b: 55, l: 65, r: 20 },
+    barmode: 'overlay',
+    plot_bgcolor: '#fafbff',
+    paper_bgcolor: '#fff',
+    shapes: [{
+      type: 'line', x0: diffMean, x1: diffMean, y0: 0, y1: 1, yref: 'paper',
+      line: { color: '#555', width: 1.5, dash: 'dot' },
+    }],
+    annotations: [{
+      x: diffMean, y: 1.02, xref: 'x', yref: 'paper',
+      text: `μ=${diffMean.toFixed(4)}`, showarrow: false,
+      font: { size: 11, color: '#444' }, xanchor: 'center',
+    }],
+  }, { responsive: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // SIGNIFICANCE HEATMAP
 // ═══════════════════════════════════════════════════════════════════
 function renderSignificance() {
@@ -1175,13 +1567,18 @@ function renderSignificance() {
       const key2 = `${models[j]}|||${models[i]}|||${subset}|||${metric}`;
       const entry = sig[key1] || sig[key2];
       if (entry) {
-        z[i][j] = entry.p;
-        text[i][j] = `p=${entry.p.toFixed(3)}<br>d=${entry.effect.toFixed(2)}<br>n=${entry.n}<br>${entry.wins}W/${entry.ties}T/${entry.losses}L`;
+        const pVal = _selectedTest === 'ttest' ? entry.t_p : entry.p;
+        z[i][j] = Number.isFinite(pVal) ? pVal : null;
+        const wLine = `W p=${Number.isFinite(entry.p) ? entry.p.toFixed(3) : '—'}`;
+        const tLine = `t p=${Number.isFinite(entry.t_p) ? entry.t_p.toFixed(3) : '—'}`;
+        const swLine = `SW p=${Number.isFinite(entry.sw_p) ? entry.sw_p.toFixed(3) : '—'}`;
+        text[i][j] = `${wLine}<br>${tLine}<br>d=${entry.effect.toFixed(2)}<br>n=${entry.n}<br>${swLine}<br>${entry.wins}W/${entry.ties}T/${entry.losses}L`;
       }
     }
   }
 
   const labels = models.map(k => DATA.models_meta[k]?.display_name || k);
+  const testLabel = _selectedTest === 'ttest' ? 'Paired t-test' : 'Wilcoxon';
 
   const trace = {
     type: 'heatmap',
@@ -1203,19 +1600,43 @@ function renderSignificance() {
   };
 
   const layout = {
-    title: { text: `Significance: ${metric} — ${subset}`, font: { size: 14 } },
+    title: { text: `${testLabel} Significance: ${metric} — ${subset}`, font: { size: 14 } },
     xaxis: { tickangle: -45, tickfont: { size: 10 } },
     yaxis: { tickfont: { size: 10 }, autorange: 'reversed' },
     margin: { t: 60, b: 160, l: 180, r: 80 },
     annotations: [{
       x: 0.5, y: -0.25, xref: 'paper', yref: 'paper',
-      text: 'Wilcoxon signed-rank p-values (two-sided). d = Cohen effect size of (row - column); d>0 favors row model.',
+      text: `${testLabel} p-values (two-sided). d = Cohen's d (row − col); d>0 favors row. Hover for both tests. Click a cell for normality diagnostics.`,
       showarrow: false, font: { size: 11, color: '#666' }
     }],
     paper_bgcolor: '#fff',
   };
 
   Plotly.react('sig-chart', [trace], layout, { responsive: true, displayModeBar: true });
+
+  // Attach click handler to open normality check
+  const chartEl = document.getElementById('sig-chart');
+  if (typeof chartEl.removeAllListeners === 'function') chartEl.removeAllListeners('plotly_click');
+  chartEl.on('plotly_click', function(data) {
+    const pt = data.points?.[0];
+    if (!pt) return;
+    const rowLabel = pt.y;
+    const colLabel = pt.x;
+    if (rowLabel === colLabel) return;
+    const modelA = DATA.model_keys.find(k => (DATA.models_meta[k]?.display_name || k) === rowLabel);
+    const modelB = DATA.model_keys.find(k => (DATA.models_meta[k]?.display_name || k) === colLabel);
+    if (!modelA || !modelB) return;
+    _normPair = { modelA, modelB, subset, metric };
+    renderNormalityCheck();
+    document.getElementById('normality-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Refresh normality check if a pair is already selected (e.g. subset/metric changed)
+  if (_normPair) {
+    _normPair.subset = subset;
+    _normPair.metric = metric;
+    renderNormalityCheck();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════

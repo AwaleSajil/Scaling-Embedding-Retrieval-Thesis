@@ -6,11 +6,29 @@ JSON payload into the Plotly.js template, producing a fully self-contained
 HTML file (Plotly.js embedded inline — no internet required).
 """
 import json
+import math
 import os
 from pathlib import Path
 
 from eval_v2.config.models import MODELS, ModelSpec
 from eval_v2.results.store import ResultsStore
+
+
+def _round_floats(obj, ndigits: int = 4):
+    """Recursively round all floats to *ndigits* decimal places.
+
+    Keeps ints, strings, and bools unchanged.
+    Non-finite floats (NaN / ±inf) are replaced with None so they become
+    valid JSON ``null`` — JavaScript's ``JSON.parse`` rejects bare ``NaN``.
+    """
+    if isinstance(obj, float):
+        return round(obj, ndigits) if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _round_floats(v, ndigits) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_round_floats(v, ndigits) for v in obj]
+    return obj
+
 
 def _safe_json_for_script(payload: dict) -> str:
     """
@@ -29,6 +47,7 @@ _HATCH_TO_PLOTLY = {
     "--": "-",
     "||": "|",
     "++": "+",
+    "+-": "+",
     "oo": ".",
     "**": "x",
     "OO": ".",
@@ -92,10 +111,10 @@ def build_html(store: ResultsStore, output_path: str) -> None:
         "models_meta": _models_meta(MODELS),
         "model_keys": [k for k in MODELS if k in aggregate],
         "subsets": subsets,
-        "aggregate": aggregate,
-        "per_query": per_query_slim,
+        "aggregate": _round_floats(aggregate),
+        "per_query": _round_floats(per_query_slim),
         "emb_info": emb_info,
-        "significance": significance,
+        "significance": _round_floats(significance),
         "query_texts": query_texts,
     }
 

@@ -17,6 +17,7 @@ class ModelSpec:
     pq_nbits: int = 8
     tq_bits: Optional[int] = None
     pooling_mode: Optional[str] = None
+    atanh_gamma: Optional[float] = None
     model_kwargs: dict = field(default_factory=dict)
     # Future H-EQAT / Unified Framework fields (uncomment when needed):
     # quant_levels: Optional[list[int]] = None   # e.g. [32, 8, 4, 1] bits per level
@@ -349,6 +350,18 @@ MODELS: dict[str, ModelSpec] = {
         marker="cross",
         truncate_dim=32,
         similarity="hamming",
+    ),
+
+    # --- Annealed Tanh (olive/chartreuse, hatch: +-, marker: bowtie) ---
+    "finetuned-bge-base-en-v1.5-atanh-gamma0.1": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260420_23-33-12/bge-base-en-v1.5/final_model",
+        display_name="AnnTanh (γ=0.1)",
+        group="AnnealedTanh",
+        color="#5c7a29",
+        hatch="+-",
+        marker="bowtie",
+        similarity="hamming",
+        atanh_gamma=0.1,
     ),
 
     # --- TurboQuant post-hoc (gold/amber gradient, hatch: OO, marker: pentagon) ---

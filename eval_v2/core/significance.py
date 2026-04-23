@@ -46,7 +46,7 @@ def compute_significance(
         { "p": float, "effect": float, "wins": int, "ties": int, "losses": int, "n": int }
     """
     try:
-        from scipy.stats import wilcoxon
+        from scipy.stats import wilcoxon, ttest_rel, shapiro
     except ImportError:
         warnings.warn("scipy not installed — significance testing skipped.")
         return {}
@@ -89,9 +89,25 @@ def compute_significance(
                     except Exception:
                         p_val = float("nan")
 
+                try:
+                    t_stat_val, t_p_val = ttest_rel(scores_a, scores_b)
+                except Exception:
+                    t_stat_val, t_p_val = float("nan"), float("nan")
+
+                try:
+                    sw_stat_val, sw_p_val = (
+                        shapiro(diff) if len(diff) >= 3 else (float("nan"), float("nan"))
+                    )
+                except Exception:
+                    sw_stat_val, sw_p_val = float("nan"), float("nan")
+
                 key = f"{model_a}|||{model_b}|||{subset_label}|||{metric}"
                 results[key] = {
                     "p": float(p_val),
+                    "t_stat": float(t_stat_val),
+                    "t_p": float(t_p_val),
+                    "sw_stat": float(sw_stat_val),
+                    "sw_p": float(sw_p_val),
                     "effect": _cohens_d(scores_a, scores_b),
                     **dict(zip(("wins", "ties", "losses"), _win_tie_loss(scores_a, scores_b))),
                     "n": n,

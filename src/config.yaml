@@ -40,3 +40,11 @@ logging:
 
 mrl_config:
   matryoshka_dims: [32, 64, 128, 256, 512]
+
+# Annealed tanh binarization config (e5).
+# beta = sqrt(gamma * step + 1) increases each optimizer step, sharpening
+# tanh(beta * x) toward sign(x). At inference the layer uses sign(x) directly.
+# Rule of thumb: gamma = (target_beta^2 - 1) / total_steps
+# With gamma=0.1 and 8k steps -> beta_final ≈ 28, which is tight enough.
+annealed_tanh_config:
+  gamma: 0.1

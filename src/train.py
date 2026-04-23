@@ -5,6 +5,7 @@ import math
 import os
 import random
 import time
+from pathlib import Path
 from typing import Dict, Union
 import sys
 import torch
@@ -16,7 +17,6 @@ from datasets import get_dataset_config_names, load_dataset, load_from_disk
 from utils.distributed import init_ddp, print0
 from utils import distributed
 from dotenv import load_dotenv
-from huggingface_hub import login
 from utils.multidataset_sampler import WeightedBatchSampler
 from sentence_transformers import (
     SentenceTransformer,
@@ -43,8 +43,10 @@ from sentence_transformers.training_args import (
 from torch.nn.parallel import DistributedDataParallel
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import BatchSampler, ConcatDataset
+from transformers import TrainerCallback
 from transformers.optimization import get_scheduler  # For fallback in custom trainer
 from utils.utils import (
+    AnnealedTanhBinarizationLayer,
     BinarizationLayer,
     PreTokenizedCollator,
     build_dataset_configs,
@@ -54,7 +56,14 @@ from utils.utils import (
     prepare_evaluators,
 )
 
-load_dotenv()
+_THESIS_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_THESIS_ROOT / ".env", override=True)
+
+# Set HF_TOKEN from HUGGINGFACE_TOKEN so all HF libraries pick it up automatically.
+# We do NOT call login() here — it writes to a shared file and races under DDP.
+_hf_token = os.getenv("HUGGINGFACE_TOKEN")
+if _hf_token:
+    os.environ["HF_TOKEN"] = _hf_token
 # ──────────────── Constants ────────────────
 
 parser = argparse.ArgumentParser(description="Sentence Transformer Training Config")
@@ -140,17 +149,18 @@ parser.add_argument(
     default=2e-5
     )
 parser.add_argument(
-    "--expirement_number", 
-    type=str, 
+    "--expirement_number",
+    type=str,
     default="e1",
-    choices=["e1", "e2", "e3", "e4"]
+    choices=["e1", "e2", "e3", "e4", "e5"]
     )
 
 expirement_map = {
     "e1": "Baseline - Fine-tune on mixed dataset",
-    "e2": "Add binarization layer",
+    "e2": "Add binarization layer (STE)",
     "e3": "MRL Training",
-    "e4": "MRL Training + Binarization Layer",
+    "e4": "MRL Training + Binarization Layer (STE)",
+    "e5": "Add annealed tanh binarization layer",
 }
 
 args = parser.parse_args()
@@ -218,6 +228,9 @@ config = {
     "mrl_config": {
         "matryoshka_dims": config_default.get("mrl_config").get("matryoshka_dims"),
     },
+    "annealed_tanh_config": {
+        "gamma": config_default.get("annealed_tanh_config").get("gamma"),
+    },
     "experiment": {
         "number": args.expirement_number,
         "desc": expirement_map.get(args.expirement_number),
@@ -231,12 +244,7 @@ formatted_datetime = current_datetime.strftime("%Y%m%d_%H-%M-%S")
 os.makedirs(config["outputs"]["cache_dir"], exist_ok=True)
 # assert os.getenv("WANDB_LOG_MODEL") == "end"
 
-# login to hf
-# Log in programmatically
-if os.getenv("HUGGINGFACE_TOKEN"):
-    login(token=os.getenv("HUGGINGFACE_TOKEN"))
-else:
-    print("Hugging Face token not found. Please set HUGGINGFACE_TOKEN.")
+# HF auth is handled via HF_TOKEN env var set above — no login() call needed.
 
 
 # Set dataset config load up to 800gb into the memory for faster training speed
@@ -341,6 +349,18 @@ class CustomSentenceTransformerTrainer(SentenceTransformerTrainer):
             )
         
 
+class BetaAnnealCallback(TrainerCallback):
+    """Advances the annealed-tanh β after every optimizer step."""
+
+    def __init__(self, layer: AnnealedTanhBinarizationLayer):
+        self.layer = layer
+
+    def on_step_end(self, args, state, control, **kwargs):
+        self.layer.anneal_step()
+        if state.global_step % args.logging_steps == 0 and distributed.is_main_process():
+            wandb.log({"annealed_tanh/beta": self.layer.beta}, step=state.global_step)
+
+
 def initilize_model(local_rank):
     global config
 
@@ -361,6 +381,24 @@ def initilize_model(local_rank):
         binarization_model = BinarizationLayer()
 
         # Create the final model by sequencing the layers
+        model = SentenceTransformer(
+            modules=[
+                word_embedding_model,
+                pooling_model,
+                binarization_model,
+            ],
+            device=f"cuda:{local_rank}",
+            tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
+            model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
+        )
+    elif config["experiment"]["number"] == "e5":
+        word_embedding_model = models.Transformer(config["input_model"]["name"])
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(),
+        )
+        binarization_model = AnnealedTanhBinarizationLayer(
+            gamma=config["annealed_tanh_config"]["gamma"]
+        )
         model = SentenceTransformer(
             modules=[
                 word_embedding_model,
@@ -444,6 +482,11 @@ def main(local_rank, rank):
             for n, base_loss in loss_funs.items()
         }
 
+    anneal_layer = next(
+        (m for m in model.modules() if isinstance(m, AnnealedTanhBinarizationLayer)), None
+    )
+    callbacks = [BetaAnnealCallback(anneal_layer)] if anneal_layer is not None else []
+
     trainer = CustomSentenceTransformerTrainer(
         model=model,
         args=args,
@@ -453,6 +496,7 @@ def main(local_rank, rank):
         evaluator=val_evaluator,
         data_collator=collator,
         dataset_configs=ds_config,  # Pass dataset configs for WeightedBatchSampler
+        callbacks=callbacks,
     )
 
     if config["resume_config"]["resume_checkpoint_path"] is not None:

@@ -873,6 +873,55 @@ class BinarizationLayer(nn.Module):
         }
 
 
+class AnnealedTanhBinarizationLayer(nn.Module):
+    """
+    Annealed-tanh binarization (BPR / HashNet "continuation method").
+
+    Training forward:  tanh(β · x)  — differentiable; converges to sign(x) as β → ∞.
+    Inference forward: sign(x)       — hard binary codes.
+
+    β = sqrt(γ · step + 1).  Call .anneal_step() once per optimizer step.
+    Default γ=0.1 matches the BPR paper (Yamada et al., ACL 2021).
+    """
+
+    def __init__(self, gamma: float = 0.1):
+        super().__init__()
+        self.gamma = gamma
+        self._step = 0
+
+    @property
+    def beta(self) -> float:
+        return (self.gamma * self._step + 1) ** 0.5
+
+    def anneal_step(self):
+        self._step += 1
+
+    def forward(self, features):
+        x = features["sentence_embedding"]
+        if self.training:
+            features["sentence_embedding"] = torch.tanh(self.beta * x)
+        else:
+            features["sentence_embedding"] = torch.sign(x)
+        return features
+
+    def save(self, output_path):
+        os.makedirs(output_path, exist_ok=True)
+        cfg = {"type": "AnnealedTanhBinarizationLayer", "gamma": self.gamma, "step": self._step}
+        with open(os.path.join(output_path, "config.json"), "w") as f:
+            json.dump(cfg, f)
+
+    @staticmethod
+    def load(input_path):
+        with open(os.path.join(input_path, "config.json")) as f:
+            cfg = json.load(f)
+        layer = AnnealedTanhBinarizationLayer(gamma=cfg.get("gamma", 0.1))
+        layer._step = cfg.get("step", 0)
+        return layer
+
+    def get_config_dict(self):
+        return {"type": "AnnealedTanhBinarizationLayer", "gamma": self.gamma, "step": self._step}
+
+
 def hamming_sim(a: list | np.ndarray | Tensor, b: list | np.ndarray | Tensor) -> Tensor:
     """
     Computes the (normalized) Hamming similarity between two tensors.
