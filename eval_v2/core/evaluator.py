@@ -168,8 +168,16 @@ def run_ir_eval(
     from eval_v2.wrappers.transforms import apply_transforms
 
     # 1. Apply transforms
-    corpus_embs = apply_transforms(corpus_embs_raw, spec)
-    query_embs = apply_transforms(query_embs_raw, spec)
+    # For INT8/INT4: derive calibration from corpus so both sides use the same scale.
+    calibration = None
+    if spec.quant_bits in (8, 4):
+        calib_raw = np.asarray(corpus_embs_raw, dtype=np.float32)
+        if spec.truncate_dim is not None:
+            calib_raw = calib_raw[:, : spec.truncate_dim]
+        calibration = calib_raw[: min(1000, len(calib_raw))]
+
+    corpus_embs = apply_transforms(corpus_embs_raw, spec, calibration_embeddings=calibration)
+    query_embs = apply_transforms(query_embs_raw, spec, calibration_embeddings=calibration)
 
     # Record embedding info BEFORE PQ/TQ reshape corpus dims
     q_info = embedding_info(query_embs)
@@ -191,6 +199,12 @@ def run_ir_eval(
         corpus_embs, query_embs = _apply_tq(corpus_embs_t, query_embs_t, spec)
         c_info["element_size_bit"] = spec.tq_bits
         q_info["element_size_bit"] = spec.tq_bits
+
+    # 2c. Multi-bit ASigm — embeddings stay float32 at eval time but intended
+    #     storage width is asigmoid_bits per dimension.
+    elif spec.asigmoid_bits is not None:
+        c_info["element_size_bit"] = spec.asigmoid_bits
+        q_info["element_size_bit"] = spec.asigmoid_bits
 
     emb_info = {"queries": q_info, "corpus": c_info}
 

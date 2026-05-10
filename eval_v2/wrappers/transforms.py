@@ -17,11 +17,20 @@ from sentence_transformers.quantization import quantize_embeddings
 from eval_v2.config.models import ModelSpec
 
 
-def apply_transforms(raw: np.ndarray, spec: ModelSpec) -> np.ndarray | torch.Tensor:
+def apply_transforms(
+    raw: np.ndarray,
+    spec: ModelSpec,
+    calibration_embeddings: np.ndarray | None = None,
+) -> np.ndarray | torch.Tensor:
     """
     Apply model-specific transforms to raw float32 full-dim embeddings.
     PQ and TurboQuant are *not* applied here (they require corpus-level fitting
     or lazy init); the evaluator handles them after calling this function.
+
+    For INT8/INT4 quantization, *calibration_embeddings* should be a representative
+    sample (e.g. first 1000 corpus rows, already truncated if truncate_dim is set).
+    Using the same calibration for both corpus and queries ensures they are quantized
+    to the same per-dimension scale.
     """
     embs: np.ndarray = np.asarray(raw, dtype=np.float32)
 
@@ -34,11 +43,12 @@ def apply_transforms(raw: np.ndarray, spec: ModelSpec) -> np.ndarray | torch.Ten
         result = quantize_embeddings(embs, precision="ubinary")
         return torch.from_numpy(np.asarray(result)) if not isinstance(result, torch.Tensor) else result
 
-    # 3. INT8 / INT4 quantization (calibration = first 1000 rows of corpus itself)
+    # 3. INT8 / INT4 quantization
     if spec.quant_bits in (8, 4):
         precision = {8: "int8", 4: "int4"}[spec.quant_bits]
-        calib = embs[: min(1000, len(embs))]
-        result = quantize_embeddings(embs, precision=precision, calibration_embeddings=calib)
+        if calibration_embeddings is None:
+            calibration_embeddings = embs[: min(1000, len(embs))]
+        result = quantize_embeddings(embs, precision=precision, calibration_embeddings=calibration_embeddings)
         return torch.from_numpy(np.asarray(result)) if not isinstance(result, torch.Tensor) else result
 
     # 4-6. PQ / TurboQuant / plain float — return torch tensor, evaluator does the rest

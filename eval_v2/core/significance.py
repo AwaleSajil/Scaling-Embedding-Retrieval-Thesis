@@ -37,14 +37,18 @@ def _win_tie_loss(a: list[float], b: list[float]) -> tuple[int, int, int]:
 def compute_significance(
     store: "ResultsStore",
     min_queries: int = 5,
+    existing: dict | None = None,
 ) -> dict[str, dict]:
     """
     Compute pairwise significance for all
     (model_a, model_b) × subset × metric combinations.
 
-    Returns a dict keyed by "{model_a}|||{model_b}|||{subset}|||{metric}" with values:
-        { "p": float, "effect": float, "wins": int, "ties": int, "losses": int, "n": int }
+    Keys already present in `existing` are skipped. Pass an empty dict (or omit)
+    to compute everything from scratch.
+
+    Returns only the newly computed entries (caller merges with existing).
     """
+    existing = existing or {}
     try:
         from scipy.stats import wilcoxon, ttest_rel, shapiro
     except ImportError:
@@ -73,6 +77,9 @@ def compute_significance(
         """Compute and store pairwise significance for a pre-built set of score arrays."""
         for i, model_a in enumerate(model_keys):
             for model_b in model_keys[i + 1:]:
+                key = f"{model_a}|||{model_b}|||{subset_label}|||{metric}"
+                if key in existing:
+                    continue
                 scores_a = model_score_arrays.get(model_a, [])
                 scores_b = model_score_arrays.get(model_b, [])
                 if not scores_a or not scores_b:
@@ -101,7 +108,6 @@ def compute_significance(
                 except Exception:
                     sw_stat_val, sw_p_val = float("nan"), float("nan")
 
-                key = f"{model_a}|||{model_b}|||{subset_label}|||{metric}"
                 results[key] = {
                     "p": float(p_val),
                     "t_stat": float(t_stat_val),

@@ -235,6 +235,7 @@
   .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center;
                  flex: 1; color: #bbb; font-size: 13px; gap: 8px; padding: 40px; text-align: center; }
   .empty-state .icon { font-size: 32px; opacity: .5; }
+
 </style>
 </head>
 <body>
@@ -268,6 +269,10 @@
       <select id="ctrl-k" onchange="refreshAll()">
         <option>1</option><option>3</option><option selected>10</option>
       </select>
+    </div>
+    <div class="sidebar-section">
+      <h3>Base Model</h3>
+      <div class="group-list" id="base-model-list"></div>
     </div>
     <div class="sidebar-section">
       <h3>Model Groups</h3>
@@ -506,9 +511,18 @@ function activeGroups() {
   return Array.from(document.querySelectorAll('#group-list input:checked')).map(el => el.value);
 }
 
+function activeBaseModels() {
+  const sel = document.querySelector('#base-model-list input[name="base-model-radio"]:checked');
+  return sel ? [sel.value] : [];
+}
+
 function visibleModels() {
   const groups = activeGroups();
-  return DATA.model_keys.filter(k => groups.includes(DATA.models_meta[k]?.group));
+  const baseModels = activeBaseModels();
+  return DATA.model_keys.filter(k =>
+    groups.includes(DATA.models_meta[k]?.group) &&
+    baseModels.includes(DATA.models_meta[k]?.base_model)
+  );
 }
 
 function metricKey(metricBase, k) {
@@ -698,6 +712,25 @@ function init() {
   if (sigMetrics.includes('mrr@10')) sigSel.value = 'mrr@10';
   else if (sigMetrics.includes('ndcg@10')) sigSel.value = 'ndcg@10';
 
+  // Base model radio buttons (only one active at a time)
+  const baseModels = [...new Set(DATA.model_keys.map(k => DATA.models_meta[k]?.base_model).filter(Boolean))];
+  const bml = document.getElementById('base-model-list');
+  bml.innerHTML = '';
+  baseModels.forEach((bm, i) => {
+    const label = document.createElement('label');
+    label.className = 'group-check';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'base-model-radio';
+    input.value = bm;
+    input.checked = i === 0;
+    input.addEventListener('change', refreshAll);
+    const text = document.createTextNode(bm.split('/').pop());
+    label.appendChild(input);
+    label.appendChild(text);
+    bml.appendChild(label);
+  });
+
   // Group checkboxes
   const groups = [...new Set(DATA.model_keys.map(k => DATA.models_meta[k]?.group).filter(Boolean))];
   const gl = document.getElementById('group-list');
@@ -882,6 +915,7 @@ function renderScatter() {
       group: meta.group || 'Other',
       color: meta.color || '#888',
       marker: meta.marker || 'circle',
+      plotly_pattern: meta.plotly_pattern || '',
       x: sizeMB,
       y: +perf.toFixed(4),
       std: stats?.std ?? 0,
@@ -929,6 +963,7 @@ function renderScatter() {
       color: r.color,
       symbol: r.marker,
       line: { width: 1, color: 'rgba(0,0,0,0.25)' },
+      pattern: { shape: r.plotly_pattern, fgcolor: 'rgba(255,255,255,0.9)', size: 6 },
     },
     error_y: {
       type: 'data',
@@ -1427,7 +1462,10 @@ function renderConclusion(nameA, nameB, n, swP, wilcoxP, tP, diffMean, d) {
     : isNormal ? `Differences are <strong>normal</strong> (SW p = ${swP.toFixed(3)}) — t-test assumptions are met.`
     : `Differences are <strong>not normal</strong> (SW p = ${swP.toFixed(3)}) — use non-parametric test.${clt ? ' <span style="opacity:.65">(CLT may support t-test at n=' + n + ', but Wilcoxon is safer.)</span>' : ''}`;
 
-  const testLine = `Recommended test: <strong>${bestTest}</strong> (p = ${Number.isFinite(bestP) ? bestP.toFixed(4) : '—'})`;
+  const otherP = isNormal ? wilcoxP : tP;
+  const otherTest = isNormal ? 'Wilcoxon' : 't-test';
+  const otherStr = Number.isFinite(otherP) ? ` <span style="opacity:.6;font-size:11px">(${otherTest}: ${otherP.toFixed(4)})</span>` : '';
+  const testLine = `Recommended test: <strong>${bestTest}</strong> (p = ${Number.isFinite(bestP) ? bestP.toFixed(4) : '—'})${otherStr}`;
 
   let verdictLine;
   if (!Number.isFinite(bestP)) {
@@ -1565,14 +1603,20 @@ function renderSignificance() {
       if (i === j) { z[i][j] = 1; text[i][j] = '—'; continue; }
       const key1 = `${models[i]}|||${models[j]}|||${subset}|||${metric}`;
       const key2 = `${models[j]}|||${models[i]}|||${subset}|||${metric}`;
-      const entry = sig[key1] || sig[key2];
-      if (entry) {
-        const pVal = _selectedTest === 'ttest' ? entry.t_p : entry.p;
+      const entryRaw = sig[key1] || sig[key2];
+      if (entryRaw) {
+        // If found via reversed key, flip d sign and swap wins/losses so values
+        // are always from row's perspective (row − col).
+        const reversed = !sig[key1] && !!sig[key2];
+        const effect = reversed ? -entryRaw.effect : entryRaw.effect;
+        const wins   = reversed ? entryRaw.losses  : entryRaw.wins;
+        const losses = reversed ? entryRaw.wins    : entryRaw.losses;
+        const pVal = _selectedTest === 'ttest' ? entryRaw.t_p : entryRaw.p;
         z[i][j] = Number.isFinite(pVal) ? pVal : null;
-        const wLine = `W p=${Number.isFinite(entry.p) ? entry.p.toFixed(3) : '—'}`;
-        const tLine = `t p=${Number.isFinite(entry.t_p) ? entry.t_p.toFixed(3) : '—'}`;
-        const swLine = `SW p=${Number.isFinite(entry.sw_p) ? entry.sw_p.toFixed(3) : '—'}`;
-        text[i][j] = `${wLine}<br>${tLine}<br>d=${entry.effect.toFixed(2)}<br>n=${entry.n}<br>${swLine}<br>${entry.wins}W/${entry.ties}T/${entry.losses}L`;
+        const wLine = `W p=${Number.isFinite(entryRaw.p) ? entryRaw.p.toFixed(3) : '—'}`;
+        const tLine = `t p=${Number.isFinite(entryRaw.t_p) ? entryRaw.t_p.toFixed(3) : '—'}`;
+        const swLine = `SW p=${Number.isFinite(entryRaw.sw_p) ? entryRaw.sw_p.toFixed(3) : '—'}`;
+        text[i][j] = `${wLine}<br>${tLine}<br>d=${effect.toFixed(2)}<br>n=${entryRaw.n}<br>${swLine}<br>${wins}W/${entryRaw.ties}T/${losses}L`;
       }
     }
   }
@@ -1623,8 +1667,9 @@ function renderSignificance() {
     const rowLabel = pt.y;
     const colLabel = pt.x;
     if (rowLabel === colLabel) return;
-    const modelA = DATA.model_keys.find(k => (DATA.models_meta[k]?.display_name || k) === rowLabel);
-    const modelB = DATA.model_keys.find(k => (DATA.models_meta[k]?.display_name || k) === colLabel);
+    const vis = visibleModels();
+    const modelA = vis.find(k => (DATA.models_meta[k]?.display_name || k) === rowLabel);
+    const modelB = vis.find(k => (DATA.models_meta[k]?.display_name || k) === colLabel);
     if (!modelA || !modelB) return;
     _normPair = { modelA, modelB, subset, metric };
     renderNormalityCheck();

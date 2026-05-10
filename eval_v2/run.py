@@ -63,6 +63,8 @@ def parse_args():
                    help="Subset of dataset subsets. Defaults to all.")
     p.add_argument("--just_html", action="store_true",
                    help="Skip evaluation; only rebuild the HTML dashboard from existing results.")
+    p.add_argument("--run_significance", action="store_true",
+                   help="Force recomputation of all significance tests, ignoring cached results.")
     p.add_argument("--hf_token", default=None,
                    help="HuggingFace access token (or set HUGGINGFACE_TOKEN env var).")
     return p.parse_args()
@@ -245,10 +247,15 @@ def main():
             )
 
         # Significance testing
-        print("\n[Significance] Computing pairwise significance tests ...")
-        sig = compute_significance(store)
-        store.save_significance(sig)
-        print(f"  {len(sig)} pairs computed.")
+        existing_sig = {} if args.run_significance else store.load_significance()
+        if existing_sig:
+            print(f"\n[Significance] {len(existing_sig)} existing entries found; computing only new pairs ...")
+        else:
+            print("\n[Significance] Computing pairwise significance tests ...")
+        new_sig = compute_significance(store, existing=existing_sig)
+        merged_sig = {**existing_sig, **new_sig}
+        store.save_significance(merged_sig)
+        print(f"  {len(new_sig)} new pairs computed, {len(merged_sig)} total.")
 
     # Build HTML
     print(f"\n[HTML] Building dashboard → {args.html_path}")

@@ -51,6 +51,7 @@ _HATCH_TO_PLOTLY = {
     "oo": ".",
     "**": "x",
     "OO": ".",
+    "~~": "-",
 }
 
 
@@ -59,6 +60,7 @@ def _models_meta(models: dict[str, ModelSpec]) -> dict:
         key: {
             "display_name": spec.display_name,
             "group": spec.group,
+            "base_model": spec.base_model,
             "color": spec.color,
             "marker": spec.marker,
             "hatch": spec.hatch,
@@ -75,7 +77,6 @@ def build_html(store: ResultsStore, output_path: str) -> None:
     emb_info = store.load_emb_info()
     significance = store.load_significance()
 
-    # Collect subsets from aggregate results
     all_subsets: set[str] = set()
     for model_data in aggregate.values():
         all_subsets.update(model_data.keys())
@@ -83,8 +84,7 @@ def build_html(store: ResultsStore, output_path: str) -> None:
     if "mean" in all_subsets:
         subsets.append("mean")
 
-    # Collect query texts per subset (from any model that has them)
-    query_texts: dict[str, dict[str, str]] = {}  # subset → query_id → text
+    query_texts: dict[str, dict[str, str]] = {}
     for model_data in per_query.values():
         for subset, queries in model_data.items():
             if subset not in query_texts:
@@ -95,7 +95,6 @@ def build_html(store: ResultsStore, output_path: str) -> None:
         if all(subset in query_texts for subset in subsets):
             break
 
-    # Strip large fields from per_query before embedding — keep only metrics + ranked_ids + relevant_ids
     per_query_slim: dict = {}
     for model_key, model_data in per_query.items():
         per_query_slim[model_key] = {}
@@ -103,8 +102,7 @@ def build_html(store: ResultsStore, output_path: str) -> None:
             per_query_slim[model_key][subset] = {}
             for qid, qdata in queries.items():
                 per_query_slim[model_key][subset][qid] = {
-                    k: v for k, v in qdata.items()
-                    if k not in ("text",)   # text is in query_texts above
+                    k: v for k, v in qdata.items() if k not in ("text",)
                 }
 
     payload = {
@@ -112,10 +110,11 @@ def build_html(store: ResultsStore, output_path: str) -> None:
         "model_keys": [k for k in MODELS if k in aggregate],
         "subsets": subsets,
         "aggregate": _round_floats(aggregate),
-        "per_query": _round_floats(per_query_slim),
         "emb_info": emb_info,
-        "significance": _round_floats(significance),
         "query_texts": query_texts,
+        # significance and per_query are lazy-loaded from companion shard files
+        "significance": None,
+        "per_query": None,
     }
 
     template_path = Path(__file__).parent / "template.html"
@@ -129,5 +128,40 @@ def build_html(store: ResultsStore, output_path: str) -> None:
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
-
     print(f"[HTML] Dashboard written → {output_path}")
+
+    # Write per-(subset, metric) significance shards — fetched on demand by the UI
+    sig_dir = os.path.join(out_dir, "significance_shards")
+    os.makedirs(sig_dir, exist_ok=True)
+    sig_shards: dict[str, dict] = {}
+    for key, val in _round_floats(significance).items():
+        parts = key.split("|||")
+        if len(parts) != 4:
+            continue
+        _, _, subset_key, metric_key = parts
+        shard_key = f"{subset_key}|||{metric_key}"
+        if shard_key not in sig_shards:
+            sig_shards[shard_key] = {}
+        sig_shards[shard_key][key] = val
+    for shard_key, shard_data in sig_shards.items():
+        subset_key, metric_key = shard_key.split("|||")
+        fname = f"{subset_key}__{metric_key.replace('@', '-')}.json"
+        with open(os.path.join(sig_dir, fname), "w", encoding="utf-8") as f:
+            json.dump(shard_data, f, ensure_ascii=False)
+    print(f"[HTML] Significance shards → {sig_dir}/ ({len(sig_shards)} files)")
+
+    # Write per-subset per_query shards — fetched on demand by the UI
+    pq_dir = os.path.join(out_dir, "per_query_shards")
+    os.makedirs(pq_dir, exist_ok=True)
+    pq_rounded = _round_floats(per_query_slim)
+    pq_shards: dict[str, dict] = {}
+    for model_key, model_data in pq_rounded.items():
+        for subset_key, queries in model_data.items():
+            if subset_key not in pq_shards:
+                pq_shards[subset_key] = {}
+            pq_shards[subset_key][model_key] = queries
+    for subset_key, shard_data in pq_shards.items():
+        fname = f"{subset_key}.json"
+        with open(os.path.join(pq_dir, fname), "w", encoding="utf-8") as f:
+            json.dump(shard_data, f, ensure_ascii=False)
+    print(f"[HTML] Per-query shards   → {pq_dir}/ ({len(pq_shards)} files)")
