@@ -370,7 +370,7 @@ class MnrLossEvaluator(SentenceEvaluator):
             # 4) Move all feature dicts onto model.device
             device = model.device
             sentence_features = [
-                {k: tensor.to(device) for k, tensor in feat.items()}
+                {k: tensor.to(device) if hasattr(tensor, 'to') else tensor for k, tensor in feat.items()}
                 for feat in sentence_features
             ]
 
@@ -920,6 +920,111 @@ class AnnealedTanhBinarizationLayer(nn.Module):
 
     def get_config_dict(self):
         return {"type": "AnnealedTanhBinarizationLayer", "gamma": self.gamma, "step": self._step}
+
+
+class MultiBitAnnealedSigmoidLayer(nn.Module):
+    """
+    Multi-bit annealed-tanh quantization (experiment e6).
+
+    Training: differentiable staircase via sum of M-1 sigmoids with learnable thresholds.
+      q_soft(x) = Δ · Σ_{k=0}^{M-2} σ(β·(x − t_k)) − 1
+    Inference: nearest-level hard rounding to linspace(−1, +1, M).
+
+    Thresholds are parameterised as anchor + cumsum(softplus(log_gaps)) to guarantee
+    strict ordering throughout training. β is frozen at 1.0 for warmup_steps before
+    annealing begins, giving thresholds time to settle before the gradient window narrows.
+    """
+
+    def __init__(self, bits: int = 2, gamma: float = 0.1,
+                 init_scale: float = 0.036, warmup_steps: int = 500):
+        super().__init__()
+        self.bits = bits
+        self.gamma = gamma
+        self.warmup_steps = warmup_steps
+        self._step = 0
+        M = 2 ** bits
+        self.delta = 2.0 / (M - 1)
+
+        init_t = torch.linspace(-init_scale, init_scale, M - 1)
+        self.anchor = nn.Parameter(init_t[0].clone())
+        if M > 2:
+            raw_gaps = torch.diff(init_t)
+            # softplus_inverse: log(exp(x) - 1)
+            self.log_gaps = nn.Parameter(torch.log(torch.exp(raw_gaps) - 1))
+        else:
+            self.log_gaps = None  # 1-bit: single threshold, no gaps needed
+
+    @property
+    def thresholds(self) -> torch.Tensor:
+        if self.log_gaps is None:
+            return self.anchor.unsqueeze(0)
+        gaps = nn.functional.softplus(self.log_gaps)  # strictly positive
+        return self.anchor + torch.cat([
+            torch.zeros(1, device=self.anchor.device),
+            torch.cumsum(gaps, dim=0),
+        ])
+
+    @property
+    def beta(self) -> float:
+        anneal_steps = max(0, self._step - self.warmup_steps)
+        return (self.gamma * anneal_steps + 1) ** 0.5
+
+    def anneal_step(self):
+        self._step += 1
+
+    def forward(self, features):
+        x = features["sentence_embedding"]  # (batch, dim)
+        t = self.thresholds                 # (M-1,)
+        if self.training:
+            logits = self.beta * (x.unsqueeze(-1) - t)  # (batch, dim, M-1)
+            q = torch.sigmoid(logits).sum(dim=-1) * self.delta - 1.0
+            features["sentence_embedding"] = q
+        else:
+            M = 2 ** self.bits
+            levels = torch.linspace(-1.0, 1.0, M, device=x.device)
+            t = self.thresholds.to(x.device)           # (M-1,) learned thresholds in encoder space
+            idx = (x.unsqueeze(-1) > t).sum(dim=-1)    # (batch, dim) — mirrors large-β training limit
+            features["sentence_embedding"] = levels[idx]
+        return features
+
+    def save(self, output_path):
+        os.makedirs(output_path, exist_ok=True)
+        cfg = {
+            "type": "MultiBitAnnealedSigmoidLayer",
+            "bits": self.bits,
+            "gamma": self.gamma,
+            "warmup_steps": self.warmup_steps,
+            "step": self._step,
+            "anchor": self.anchor.item(),
+            "log_gaps": self.log_gaps.tolist() if self.log_gaps is not None else None,
+        }
+        with open(os.path.join(output_path, "config.json"), "w") as f:
+            json.dump(cfg, f)
+
+    @staticmethod
+    def load(input_path):
+        with open(os.path.join(input_path, "config.json")) as f:
+            cfg = json.load(f)
+        layer = MultiBitAnnealedSigmoidLayer(
+            bits=cfg["bits"],
+            gamma=cfg["gamma"],
+            warmup_steps=cfg.get("warmup_steps", 500),
+        )
+        layer._step = cfg.get("step", 0)
+        with torch.no_grad():
+            layer.anchor.copy_(torch.tensor(cfg["anchor"]))
+            if cfg.get("log_gaps") is not None:
+                layer.log_gaps.copy_(torch.tensor(cfg["log_gaps"]))
+        return layer
+
+    def get_config_dict(self):
+        return {
+            "type": "MultiBitAnnealedSigmoidLayer",
+            "bits": self.bits,
+            "gamma": self.gamma,
+            "warmup_steps": self.warmup_steps,
+            "step": self._step,
+        }
 
 
 def hamming_sim(a: list | np.ndarray | Tensor, b: list | np.ndarray | Tensor) -> Tensor:

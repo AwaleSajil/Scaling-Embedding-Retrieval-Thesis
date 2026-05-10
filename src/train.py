@@ -48,6 +48,7 @@ from transformers.optimization import get_scheduler  # For fallback in custom tr
 from utils.utils import (
     AnnealedTanhBinarizationLayer,
     BinarizationLayer,
+    MultiBitAnnealedSigmoidLayer,
     PreTokenizedCollator,
     build_dataset_configs,
     get_gpu_info,
@@ -152,7 +153,13 @@ parser.add_argument(
     "--expirement_number",
     type=str,
     default="e1",
-    choices=["e1", "e2", "e3", "e4", "e5"]
+    choices=["e1", "e2", "e3", "e4", "e5", "e6_1b", "e6_2b", "e6_3b", "e6_4b"]
+    )
+parser.add_argument(
+    "--annealed_tanh_gamma",
+    type=float,
+    default=None,
+    help="Override annealed_tanh_config.gamma from config.yaml (e5/e6 only)",
     )
 
 expirement_map = {
@@ -161,6 +168,10 @@ expirement_map = {
     "e3": "MRL Training",
     "e4": "MRL Training + Binarization Layer (STE)",
     "e5": "Add annealed tanh binarization layer",
+    "e6_1b": "Multi-bit annealed tanh quantization (1-bit)",
+    "e6_2b": "Multi-bit annealed tanh quantization (2-bit)",
+    "e6_3b": "Multi-bit annealed tanh quantization (3-bit)",
+    "e6_4b": "Multi-bit annealed tanh quantization (4-bit)",
 }
 
 args = parser.parse_args()
@@ -229,7 +240,12 @@ config = {
         "matryoshka_dims": config_default.get("mrl_config").get("matryoshka_dims"),
     },
     "annealed_tanh_config": {
-        "gamma": config_default.get("annealed_tanh_config").get("gamma"),
+        "gamma": args.annealed_tanh_gamma if args.annealed_tanh_gamma is not None else config_default.get("annealed_tanh_config").get("gamma"),
+    },
+    "multibit_asigmoid_config": {
+        "gamma":        config_default.get("multibit_asigmoid_config", {}).get("gamma", 0.1),
+        "init_scale":   config_default.get("multibit_asigmoid_config", {}).get("init_scale", 0.036),
+        "warmup_steps": config_default.get("multibit_asigmoid_config", {}).get("warmup_steps", 500),
     },
     "experiment": {
         "number": args.expirement_number,
@@ -352,13 +368,23 @@ class CustomSentenceTransformerTrainer(SentenceTransformerTrainer):
 class BetaAnnealCallback(TrainerCallback):
     """Advances the annealed-tanh β after every optimizer step."""
 
-    def __init__(self, layer: AnnealedTanhBinarizationLayer):
+    def __init__(self, layer):
         self.layer = layer
 
     def on_step_end(self, args, state, control, **kwargs):
         self.layer.anneal_step()
         if state.global_step % args.logging_steps == 0 and distributed.is_main_process():
-            wandb.log({"annealed_tanh/beta": self.layer.beta}, step=state.global_step)
+            log_data = {"annealed_tanh/beta": self.layer.beta}
+            if isinstance(self.layer, MultiBitAnnealedSigmoidLayer):
+                t = self.layer.thresholds.detach()
+                gaps = t[1:] - t[:-1]
+                log_data.update({
+                    "multibit_asigmoid/threshold_span": (t[-1] - t[0]).item(),
+                    "multibit_asigmoid/min_gap": gaps.min().item() if len(gaps) > 0 else 0.0,
+                    "multibit_asigmoid/anchor": t[0].item(),
+                    **{f"multibit_asigmoid/t{k}": t[k].item() for k in range(len(t))},
+                })
+            wandb.log(log_data, step=state.global_step)
 
 
 def initilize_model(local_rank):
@@ -409,7 +435,28 @@ def initilize_model(local_rank):
             tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
             model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
         )
-
+    elif config["experiment"]["number"].startswith("e6_"):
+        bits = int(config["experiment"]["number"].split("_")[1][:-1])  # e6_2b -> 2
+        word_embedding_model = models.Transformer(config["input_model"]["name"])
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(),
+        )
+        quant_layer = MultiBitAnnealedSigmoidLayer(
+            bits=bits,
+            gamma=config["multibit_asigmoid_config"]["gamma"],
+            init_scale=config["multibit_asigmoid_config"]["init_scale"],
+            warmup_steps=config["multibit_asigmoid_config"]["warmup_steps"],
+        )
+        model = SentenceTransformer(
+            modules=[
+                word_embedding_model,
+                pooling_model,
+                quant_layer,
+            ],
+            device=f"cuda:{local_rank}",
+            tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
+            model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
+        )
 
     return model
 
@@ -483,7 +530,8 @@ def main(local_rank, rank):
         }
 
     anneal_layer = next(
-        (m for m in model.modules() if isinstance(m, AnnealedTanhBinarizationLayer)), None
+        (m for m in model.modules()
+         if isinstance(m, (AnnealedTanhBinarizationLayer, MultiBitAnnealedSigmoidLayer))), None
     )
     callbacks = [BetaAnnealCallback(anneal_layer)] if anneal_layer is not None else []
 
