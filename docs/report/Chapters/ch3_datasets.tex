@@ -1,0 +1,121 @@
+
+\chapter{Chapter 3. Datasets}
+
+This chapter describes the two categories of data used in this thesis: the multi-source training corpora used to fine-tune the base embedding model, and the evaluation benchmark used to measure retrieval performance. These two categories are kept strictly separate; no training example appears in any evaluation set. Training data is drawn from publicly available question answering, paraphrase, and natural language inference corpora, while evaluation is performed exclusively on the NanoBEIR benchmark.
+
+\section{Training Data}
+
+The embedding model is fine-tuned on a mixture of seven publicly available text retrieval and semantic similarity datasets sourced from the Hugging Face Hub. Drawing from multiple domains and pair types reduces the risk of overfitting to a single retrieval pattern and improves the generalization of learned representations. Each dataset contributes (query, positive passage) pairs or (query, positive passage, negative passage) triplets that are consumed by the Multiple Negatives Ranking Loss during training.
+
+\subsection{Dataset Sources}
+
+The seven training datasets span five broad retrieval and semantic similarity tasks: passage retrieval, title-to-abstract prediction, duplicate question detection, natural language inference, and open-domain question answering. Table \ref{tab:training_data} summarizes each dataset, its pair type, raw size, assigned sampling weight, and the effective number of training examples drawn from it per training epoch under the weighted sampling scheme described in Section 3.1.2.
+
+\begin{table}[ht]
+
+\caption[Training dataset summary.]{Training dataset summary. Effective rows reflect the contribution of each dataset to the training mixture after weighted batch sampling. Total rows across all sources sum to 58.73M; effective rows sum to approximately 4.19M.}
+
+\begin{center}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|c | l | l | r | r | r|}
+ \hline
+ \textbf{S.No.} & \textbf{Dataset} & \textbf{Pair Type} & \textbf{Total Rows} & \textbf{Weight} & \textbf{Effective Rows} \\ [0.5ex]
+ \hline
+ 1 & msmacro\_triplet         & Query to Passage (triplet)           & 13.64M  & 0.15 & $\sim$1.94M   \\
+ \hline
+ 2 & s2orc\_title\_abstract   & Title to Abstract (pair)              & 41.77M  & 0.01 & $\sim$0.40M   \\
+ \hline
+ 3 & quora\_dup\_triplet      & Duplicate question (triplet)             & 2.79M   & 0.15 & $\sim$0.40M   \\
+ \hline
+ 4 & nli\_for\_simcse\_triplet & Entailment/Contradiction (triplet)      & 0.27M   & 2    & $\sim$0.52M   \\
+ \hline
+ 5 & natural\_questions       & Question to Answer (pair)             & 0.10M   & 4    & $\sim$0.38M   \\
+ \hline
+ 6 & trivia\_qa\_triplet      & Question to Answer (triplet)          & 0.06M   & 4    & $\sim$0.23M   \\
+ \hline
+ 7 & hotpotqa                 & Multi-hop Q to A (triplet)              & 0.08M   & 4    & $\sim$0.32M   \\
+ \hline
+ \multicolumn{3}{|l|}{\textbf{Total}} & \textbf{58.73M} & & \textbf{$\sim$4.19M} \\
+ \hline
+\end{tabular}
+}
+\end{center}
+\label{tab:training_data}
+\end{table}
+
+\textbf{MS MARCO Triplets} (\textit{msmacro\_triplet}) is derived from the Microsoft MAchine Reading COmprehension dataset \cite{bajaj2016ms}, the largest source in the mixture with 13.64 million (query, passage, negative passage) triplets. Queries are real user-issued Bing search queries and passages are extracted from web documents. A low sampling weight of 0.15 is applied to prevent this large corpus from dominating gradient updates relative to the smaller, higher-quality datasets.
+
+\textbf{Semantic Scholar Open Research Corpus} (\textit{s2orc\_title\_abstract}) provides 41.77 million (title, abstract) pairs drawn from scientific publications across a wide range of academic disciplines \cite{lo2020s2orc}. This source trains the model to associate document titles with their corresponding abstracts, which serves as a proxy for document-level retrieval. The very low weight of 0.01 reflects the structural regularity of title-abstract pairs (titles are informationally dense summaries rather than natural-language queries) and prevents this very large scientific-domain corpus from skewing the mixture.
+
+\textbf{Quora Duplicate Triplets} (\textit{quora\_dup\_triplet}) contains 2.79 million (question, duplicate question, non-duplicate question) triplets drawn from the Quora Question Pairs dataset. This source trains the model to embed semantically equivalent questions in close proximity in representation space, which benefits retrieval tasks where queries may appear in paraphrased form.
+
+\textbf{NLI for SimCSE Triplets} (\textit{nli\_for\_simcse\_triplet}) adapts natural language inference corpora following the SimCSE training recipe \cite{gao2021simcse}, yielding 0.27 million (premise, entailment hypothesis, contradiction hypothesis) triplets. Entailment pairs serve as high-quality positives and contradiction pairs serve as hard negatives. Despite its small size, this source receives the second-highest weight of 2, reflecting the quality of its hard negatives and the demonstrated effectiveness of NLI-derived pairs for contrastive representation learning.
+
+\textbf{Natural Questions} (\textit{natural\_questions}) contains 0.10 million (question, answer passage) pairs extracted from Google's Natural Questions dataset \cite{kwiatkowski2019natural}, in which questions are real user queries submitted to the Google search engine and answers are Wikipedia passages identified by human annotators. A high weight of 4 is assigned to compensate for the small size of this dataset relative to the mixture total, and because open-domain question-answering pairs closely match the target retrieval distribution of most benchmark tasks.
+
+\textbf{TriviaQA Triplets} (\textit{trivia\_qa\_triplet}) provides 0.06 million (trivia question, supporting passage, negative passage) triplets from the TriviaQA reading comprehension dataset \cite{joshi2017triviaqa}. Questions require broad factual knowledge and are paired with supporting evidence passages from Wikipedia and web documents. This source also receives a weight of 4 to counteract its small absolute size.
+
+\textbf{HotpotQA} (\textit{hotpotqa}) contributes 0.08 million multi-hop (question, supporting passage, negative passage) triplets \cite{yang2018hotpotqa}. HotpotQA questions require reasoning across multiple documents to answer, representing a more challenging retrieval scenario than single-hop question answering. A weight of 4 is applied, consistent with the other small question-answering sources.
+
+\subsection{Weighted Batch Sampling}
+
+Rather than concatenating all seven datasets and sampling uniformly, the training pipeline employs weighted batch sampling, where each dataset is assigned a scalar weight that controls the expected number of examples drawn from it per training step. Let $w_i$ denote the weight of dataset $i$ and $N_i$ its total number of examples. The effective contribution of dataset $i$ to the training mixture per epoch is proportional to $w_i \cdot N_i$, scaled so that the contributions across all datasets sum to approximately 4.19 million effective examples (see Table \ref{tab:training_data}).
+
+This scheme serves two purposes. First, it prevents the two largest but more structurally constrained sources (MS MARCO and S2ORC, which together account for 94 percent of raw examples) from overwhelming the gradient signal with a single retrieval pattern. Second, it allows smaller domain-specific question-answering datasets (Natural Questions, TriviaQA, and HotpotQA) to contribute meaningfully to training despite their limited raw size. The resulting effective training mixture of approximately 4.19 million examples per epoch is substantially smaller than the 58.73 million raw examples, which reduces wall-clock training time while preserving the diversity of the training signal across retrieval tasks and domains.
+
+\section{Evaluation Benchmark}
+
+All experiments in this thesis are evaluated on the NanoBEIR benchmark. The full BEIR benchmark, from which NanoBEIR is derived, was considered but not used due to the prohibitive cost of encoding corpora containing millions of passages for every compression variant under study.
+
+\subsection{NanoBEIR}
+
+NanoBEIR \cite{nanobeir2024} is a lightweight subset of the Benchmarking Information Retrieval (BEIR) benchmark \cite{thakur2021beir}, constructed by subsampling each BEIR dataset to 50 evaluation queries and a small accompanying corpus. It is distributed on the Hugging Face Hub as part of the \textit{sentence-transformers} ecosystem and is designed to enable rapid model comparisons without the computational cost of encoding the full BEIR corpora, making it well suited for iterative development and ablation studies.
+
+This thesis uses all 13 available NanoBEIR subsets, summarized in Table \ref{tab:nanobeir}. The subsets span a diverse set of retrieval tasks, including fact verification, question answering, entity retrieval, citation prediction, biomedical search, and argument retrieval, and cover domains ranging from general web content to financial documents to scientific literature. Each subset provides 50 queries (49 in the case of NanoTouche2020) and a corpus ranging from 2,260 to 6,100 documents, for a total of 649 queries and 57,390 corpus documents across all 13 subsets.
+
+\begin{table}[ht]
+
+\caption[NanoBEIR benchmark subsets.]{NanoBEIR benchmark subsets used for evaluation. All subsets contain 50 queries except NanoTouche2020, which contains 49. Corpus sizes range from 2,260 to 6,100 documents. The total across all subsets is 649 queries and 57,390 corpus documents.}
+
+\begin{center}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|c | l | r | r | l|}
+ \hline
+ \textbf{S.No.} & \textbf{Subset} & \textbf{Queries} & \textbf{Corpus} & \textbf{Task (Query Type to Document Type)} \\ [0.5ex]
+ \hline
+ 1  & NanoArguAna         & 50 & 3,690  & Counter-argument retrieval (Claim to Argument)             \\
+ \hline
+ 2  & NanoClimateFEVER    & 50 & 3,460  & Fact-checking (Claim to Document)                          \\
+ \hline
+ 3  & NanoDBPedia         & 50 & 6,100  & Entity retrieval (Query to Document)                       \\
+ \hline
+ 4  & NanoFEVER           & 50 & 5,050  & Fact-checking (Claim to Document)                          \\
+ \hline
+ 5  & NanoFiQA2018        & 50 & 4,650  & Financial question answering (Question to Document)        \\
+ \hline
+ 6  & NanoHotpotQA        & 50 & 5,140  & Multi-hop question answering (Question to Document)        \\
+ \hline
+ 7  & NanoMSMARCO         & 50 & 5,090  & Web search / general QA (Question to Passage)              \\
+ \hline
+ 8  & NanoNFCorpus        & 50 & 3,000  & Biomedical information retrieval (Query to Document)       \\
+ \hline
+ 9  & NanoNQ              & 50 & 5,090  & Open-domain question answering (Question to Document)      \\
+ \hline
+ 10 & NanoQuoraRetrieval  & 50 & 5,100  & Duplicate detection (Question to Question)                 \\
+ \hline
+ 11 & NanoSCIDOCS         & 50 & 2,260  & Citation prediction (Title to Document)                    \\
+ \hline
+ 12 & NanoSciFact         & 50 & 2,970  & Scientific fact-checking (Claim to Document)               \\
+ \hline
+ 13 & NanoTouche2020      & 49 & 5,790  & Conversational argument retrieval (Question to Argument)   \\
+ \hline
+ \multicolumn{2}{|l|}{\textbf{Total}} & \textbf{649} & \textbf{57,390} & \\
+ \hline
+\end{tabular}
+}
+\end{center}
+\label{tab:nanobeir}
+\end{table}
+
+The diversity of NanoBEIR tasks is particularly important for evaluating compression methods. A compression technique that degrades performance on some tasks while improving or maintaining it on others would produce a misleading average score if evaluated on a homogeneous benchmark. By spanning 13 qualitatively different retrieval scenarios, NanoBEIR provides a more robust signal for assessing whether a compression method is broadly applicable.
+

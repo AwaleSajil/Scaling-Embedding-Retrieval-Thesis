@@ -1,0 +1,49 @@
+% The top of your abstract will fill out automatically once you fill in the required fields on the main.tex file. In this file, you will provide your abstract body. Type your abstract body at the bottom of this page directly below the \doublespacing command.
+
+\chapter{Abstract}
+     \begin{center}
+        \large
+        \singlespacing
+        \textbf{\thesistitle}\\
+        \vspace{0.5cm}
+        \large
+        \textbf{\studentname}\\
+        \vspace{0.5cm}
+        \normalsize
+        \ifdefined\thesis
+        \textbf{A thesis submitted in partial fulfillment of the requirements \\for the degree of \degree}\\  
+        \else
+        \ifdefined\dissertation
+        \textbf{A dissertation submitted in partial fulfillment of the requirements \\for the degree of \degree}\\ 
+        \else
+        \textbf{Please identify this document as either a thesis or dissertation on the main.tex in the section at the top that must be filled out.}\\
+    \fi
+    \fi
+        \vspace{1cm}
+        \textbf{\department}
+        
+        \vspace{0.25cm}
+
+        \ifdefined\jointuni
+        \textbf{The University of Alabama in Huntsville and  \jointuni}
+        \else
+        \textbf{The University of Alabama in Huntsville}
+    \fi
+
+        
+        \vspace{0.1cm}
+        \textbf{\gradmonth\ \gradyear}
+        
+
+
+    \end{center}
+\vspace{0.1cm}
+
+%****************************************************
+%Enter the body of your abstract below. Remember there is a 150 word limit!
+%****************************************************
+\doublespacing
+Dense vector embeddings are central to modern retrieval-augmented generation (RAG) pipelines and large-scale search systems, but their memory footprint becomes a critical bottleneck at scale. This thesis presents a controlled empirical comparison of post-hoc and training-time embedding compression methods, evaluated under identical training data and benchmark conditions across three encoder architectures: BGE-base-en-v1.5, RoBERTa-base, and MPNet-base. Seven compression methods are studied: INT8 scalar quantization, binary quantization, Product Quantization, TurboQuant, Straight-Through Estimator (STE) binarization, Annealed Tanh binarization, and Matryoshka Representation Learning (MRL), including systematic stacked combinations that pair MRL dimensionality reduction with precision-reducing methods. \textbf{[TODO: 2--3 sentences of key results, e.g., main finding on training-time vs.\ post-hoc; which binarization strategy wins; MRL stacking outcome; cross-architecture consistency.]} Results are presented as Pareto curves on NanoBEIR, offering practitioners direct guidance on method selection under a given memory budget.
+
+\clearpage
+

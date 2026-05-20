@@ -1,0 +1,897 @@
+%----------------------------------------------------------------------------------------
+%	CHAPTER 5: EXPERIMENTS AND RESULTS
+%----------------------------------------------------------------------------------------
+
+\chapter{Experiments and Results}
+\label{ch:experiments}
+
+%----------------------------------------------------------------------------------------
+\section{Evaluation Setup}
+\label{sec:eval_setup}
+
+\paragraph{Benchmark.}
+All models are evaluated on NanoBEIR~\citep{nanobeir2024}, a
+downsampled variant of the Benchmarking Information Retrieval (BEIR)
+benchmark~\citep{thakur2021beir} in which each corpus is capped at a few
+thousand passages to enable rapid comparison of large numbers of model
+variants.  Thirteen task subsets are included, spanning open-domain
+question answering, fact verification, entity search, argument retrieval,
+and scientific information retrieval [Table~5.1].  Each subset provides
+50 test queries (49 for NanoTouche2020) and a corpus of 1,866--6,045
+passages, yielding 649 total queries and 56,352 total corpus passages
+across all subsets.
+
+\begin{table}[h]
+  \centering
+  \caption{NanoBEIR subsets used for evaluation.}
+  \label{tab:nanobeir_subsets}
+  [Table 5.1 placeholder: subset name | domain/task type | \# queries |
+  corpus size]
+\end{table}
+
+\paragraph{Encoder backbones.}
+Three 768-dimensional sentence encoders serve as backbones: (i)
+BAAI/bge-base-en-v1.5 (BGE), a retrieval-specialised model; (ii)
+roberta-base (RoBERTa), a general-purpose masked language model; and
+(iii) all-mpnet-base-v2 (MPNet), a general-purpose sentence encoder.
+Each backbone is evaluated in two regimes: the publicly released
+pre-trained checkpoint and a retrieval fine-tuned version trained with
+Multiple Negatives Ranking Loss (MNRL) over eight mixed retrieval
+datasets, as described in Chapter~\ref{ch:methodology}.  Because all
+three backbones produce 768-dimensional float32 embeddings in their
+default configuration, they share a common reference point for
+cross-method and cross-backbone comparison.
+
+\paragraph{Compression methods.}
+Compression configurations are drawn from three families, each
+introduced in Chapter~\ref{ch:methodology}:
+\emph{post-hoc precision reduction} (INT8, binary quantisation, Product
+Quantisation (PQ), and TurboQuant (TQ));
+\emph{training-time binarisation} (the Straight-Through Estimator
+binarisation layer (BAT) and annealed tanh binarisation (atanh) at three
+annealing rates $\gamma \in \{0.05, 0.10, 0.20\}$); and
+\emph{training-time dimensionality reduction} via Matryoshka
+Representation Learning (MRL), which produces truncated float32
+embeddings at five sub-dimensions (32, 64, 128, 256, 512).
+Selected MRL checkpoints are further combined with binary quantisation,
+TQ, and PQ to yield stacked compression.
+
+\paragraph{Compression ratio.}
+The compression ratio $r$ is defined relative to the float32 baseline:
+a 768-dimensional float32 embedding occupies $768 \times 4 = 3{,}072$
+bytes.  For scalar precision reduction to $b$ bits per component,
+$r = 32 / b$ (e.g.\ INT8: $4{\times}$; binary: $32{\times}$).  For MRL
+truncation to $d'$ dimensions, $r = 768 / d'$.  For PQ with $M$
+subspaces and $n$-bit codes per subspace,
+$r = (768 \times 32) / (M \times n)$.
+Combined methods multiply the per-axis ratios; for example, MRL-256
+followed by binary quantisation gives $(768/256) \times 32 = 96{\times}$.
+
+\paragraph{Evaluation metrics.}
+The primary metric is Mean Reciprocal Rank at depth 10 (MRR@10),
+macro-averaged equally over all 13 subsets.  MRR@10 reflects the rank
+of the first relevant document in the top-10 retrieved results and is
+well-suited to short-list retrieval settings.  Secondary metrics,
+Normalised Discounted Cumulative Gain at 10 (NDCG@10) and Recall at $k$
+for $k \in \{1,3,5,10\}$, are computed for all configurations but
+serve only as supplementary analysis.
+
+\paragraph{Similarity functions.}
+Float32 and INT8 embeddings are scored by cosine similarity.  Binary
+embeddings (one bit per original dimension, packed as uint8) are scored
+by Hamming distance, which is equivalent to inner-product similarity
+over $\{-1,+1\}$ codes and admits fast bitwise XOR-popcount computation.
+PQ and TQ retrieval use asymmetric distance estimation: the query
+embedding is decoded to float32 before scoring while corpus embeddings
+remain in their compressed form.
+
+\paragraph{Statistical significance.}
+Pairwise significance tests are conducted for every model pair on each
+NanoBEIR subset using a paired permutation test applied to per-query MRR
+scores at significance level $\alpha = 0.05$.  Aggregated pairwise
+significance patterns are visualised as a heat map in [Figure~5.X].
+
+%----------------------------------------------------------------------------------------
+\section{Float32 Baselines}
+\label{sec:float32_baselines}
+
+Table~\ref{tab:float32_baselines} reports mean MRR@10 macro-averaged
+across all 13 NanoBEIR subsets for each backbone in its pre-trained and
+fine-tuned float32 configuration.  These results serve as the upper-bound
+reference for all compression experiments in
+Sections~\ref{sec:posthoc_compression}--\ref{sec:pareto}.
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 (macro-averaged over 13 NanoBEIR subsets) for
+           pre-trained and fine-tuned float32 embeddings.
+           $\Delta$ is the absolute change due to fine-tuning.}
+  \label{tab:float32_baselines}
+  [Table 5.2 placeholder: Configuration | BGE | RoBERTa | MPNet |
+  $\Delta$ (BGE) | $\Delta$ (RoBERTa) | $\Delta$ (MPNet)]
+\end{table}
+
+\paragraph{Effect of fine-tuning.}
+The three backbones exhibit qualitatively different responses to
+retrieval fine-tuning.  RoBERTa-base and MPNet-base enter with
+near-chance MRR@10 scores of 0.097 and 0.156 respectively, consistent
+with their pre-training objectives (masked language modelling and
+general-purpose sentence similarity) providing no direct signal for
+asymmetric passage retrieval.  Fine-tuning with Multiple Negatives
+Ranking Loss (MNRL) over eight mixed retrieval datasets yields gains of
+43.4 and 42.6 percentage points, lifting both models to competitive
+retrieval performance (0.530 and 0.582).  This confirms that the
+contrastive fine-tuning procedure is effective at reshaping
+general-purpose representations into retrieval-oriented embedding spaces
+regardless of the pre-training objective.
+
+BGE-base-en-v1.5 (BGE) behaves differently: fine-tuning produces a
+small but consistent \emph{decrease} of 0.6 percentage points
+(0.691~$\to$~0.685).  BGE has already undergone large-scale retrieval
+pre-training; further adaptation on the comparatively small mixed-domain
+corpus used here offers no additional benefit and may introduce minor
+distribution mismatch.  This has a direct consequence for compression
+evaluation: for BGE, the fine-tuned float32 ceiling is slightly
+\emph{below} the pre-trained ceiling, so apparent recovery toward 0.691
+under compression should be interpreted with care.  Unless stated
+otherwise, all compression results in subsequent sections are reported
+relative to the fine-tuned float32 for each backbone.
+
+\paragraph{Cross-backbone gap.}
+Even after fine-tuning, a substantial absolute gap separates BGE from
+the two general-purpose backbones: BGE exceeds fine-tuned MPNet by 6.6
+percentage points and fine-tuned RoBERTa by 15.5 percentage points.
+This gap reflects differences in backbone capacity and the depth of
+upstream retrieval pre-training rather than the fine-tuning procedure
+itself.  The spread motivates the cross-backbone generalisability
+analysis in Section~\ref{sec:cross_backbone}: whether compression
+methods preserve rank ordering across backbones or interact differently
+with each embedding geometry is examined there.
+
+%----------------------------------------------------------------------------------------
+\section{Post-Hoc Compression}
+\label{sec:posthoc_compression}
+
+This section evaluates compression applied after training to the
+fine-tuned float32 checkpoints, with no modification to model weights.
+Four methods are examined in increasing order of compression depth:
+INT8 scalar quantisation (Section~\ref{subsec:int8}), post-hoc binary
+quantisation (Section~\ref{subsec:binary}), Product Quantisation
+(Section~\ref{subsec:pq}), and TurboQuant
+(Section~\ref{subsec:tq}).  Section~\ref{subsec:cross_method} places
+all four methods on a common axis at 32$\times$ compression.
+
+%-------------------------------------------
+\subsection{INT8 Scalar Quantisation}
+\label{subsec:int8}
+
+INT8 quantisation rounds each embedding component from float32 to a
+signed 8-bit integer, reducing per-vector storage from 3{,}072 bytes
+to 768 bytes (4$\times$ compression), with similarity still computed
+by cosine distance in float after dequantisation.
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 for INT8 quantisation (4$\times$) compared with
+           the fine-tuned float32 baseline.}
+  \label{tab:int8}
+  [Table 5.X placeholder: Configuration | BGE | RoBERTa | MPNet]
+\end{table}
+
+Across all three backbones, INT8 quantisation is essentially lossless
+(Table~\ref{tab:int8}).  BGE incurs a loss of 0.7 percentage points
+(0.685~$\to$~0.678) and MPNet 1.5 percentage points
+(0.582~$\to$~0.567), while RoBERTa shows a marginal \emph{gain} of
+0.2 percentage points (0.530~$\to$~0.532).  The RoBERTa gain is
+within noise but consistent with INT8 rounding acting as a mild
+regulariser on embeddings that were not originally trained for
+retrieval.  These results confirm that 4$\times$ precision reduction
+via INT8 incurs negligible quality cost for all backbones, making it
+the recommended default for memory-constrained deployments where
+float32 precision is not required.
+
+%-------------------------------------------
+\subsection{Binary Quantisation}
+\label{subsec:binary}
+
+Post-hoc binary quantisation thresholds each component at zero,
+producing one-bit-per-dimension embeddings packed as uint8 vectors
+(96 bytes per vector; 32$\times$ compression).  Retrieval is
+performed via Hamming distance.
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 for post-hoc binary quantisation (32$\times$)
+           compared with the fine-tuned float32 baseline.}
+  \label{tab:binary}
+  [Table 5.X placeholder: Configuration | BGE | RoBERTa | MPNet]
+\end{table}
+
+At 32$\times$ compression, post-hoc binary quantisation inflicts
+meaningful quality degradation across all backbones
+(Table~\ref{tab:binary}): BGE drops 3.9 percentage points
+(0.685~$\to$~0.646), MPNet drops 4.8 percentage points
+(0.582~$\to$~0.534), and RoBERTa drops 2.9 percentage points
+(0.530~$\to$~0.501).  The degradation is expected: collapsing 32
+bits to a single sign bit with no adaptation of the embedding geometry
+discards the magnitude information that encodes fine-grained relevance
+distinctions.  Section~\ref{sec:training_compression} shows that
+training-time binarisation methods substantially recover this loss by
+learning representations whose sign more faithfully encodes retrieval
+signal.
+
+%-------------------------------------------
+\subsection{Product Quantisation}
+\label{subsec:pq}
+
+Product Quantisation (PQ) partitions the embedding space into $M$
+disjoint subspaces and independently quantises each with an $n$-bit
+codebook learned from the corpus.  Two configurations are evaluated,
+both at 32$\times$ compression: $M{=}96$ subspaces with 8-bit codes
+(PQ-$m$96-$n$8) and $M{=}192$ subspaces with 4-bit codes
+(PQ-$m$192-$n$4).  Retrieval uses asymmetric distance estimation,
+keeping only the query vector in float32 at query time.
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 for PQ configurations (32$\times$) compared with
+           the fine-tuned float32 baseline and post-hoc binary.}
+  \label{tab:pq}
+  [Table 5.X placeholder: Configuration | BGE | RoBERTa | MPNet]
+\end{table}
+
+PQ substantially outperforms post-hoc binary quantisation at the same
+32$\times$ ratio (Table~\ref{tab:pq}).  For BGE, PQ-$m$96-$n$8
+reaches 0.679, recovering over 80\,\% of the gap between post-hoc
+binary and the float32 baseline (3.3 percentage points recovered of
+3.9).  For MPNet the gain over post-hoc binary is 2.8 percentage
+points (0.534~$\to$~0.562).  RoBERTa benefits less: both
+configurations score within 0.001 of each other (0.514 and 0.519),
+suggesting the RoBERTa embedding geometry is less amenable to the
+Voronoi-cell structure assumed by PQ after fine-tuning.
+
+Between the two PQ configurations, PQ-$m$96-$n$8 is preferable for
+BGE and MPNet (0.679 vs 0.675 and 0.562 vs 0.549), while
+PQ-$m$192-$n$4 has a marginal edge for RoBERTa (0.519 vs 0.514).
+The 8-bit-per-subspace variant benefits from finer codebook resolution
+at the cost of a larger number of centroids per subspace.
+
+%-------------------------------------------
+\subsection{TurboQuant}
+\label{subsec:tq}
+
+TurboQuant (TQ) is a corpus-fitted quantiser that rotates embeddings
+into a whitened basis before applying uniform scalar quantisation at
+$b$ bits per component.  Three bit-widths are evaluated:
+1-bit (32$\times$), 2-bit (16$\times$), and 4-bit (8$\times$).
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: TQ quality--compression curve for all three
+  backbones, with float32 baseline marked as a horizontal dashed line.]
+  \caption{Mean MRR@10 vs compression ratio for TurboQuant across
+           bit-widths and backbones.}
+  \label{fig:tq_curve}
+\end{figure}
+
+At 4-bit precision (8$\times$ compression), TQ is virtually lossless
+for all backbones (Figure~\ref{fig:tq_curve}).  BGE scores 0.685,
+matching the fine-tuned float32 ceiling to within 0.03 percentage
+points; RoBERTa marginally exceeds its float32 baseline
+(0.532~$>$~0.530); and MPNet scores 0.579 against a float32
+ceiling of 0.582 ($-$0.3 percentage points).  This near-lossless
+behaviour at 8$\times$ makes TQ-4bit the best post-hoc method by
+quality-per-byte up to that compression level.
+
+At 2-bit precision (16$\times$), TQ achieves 0.678, 0.530, and 0.574
+for BGE, RoBERTa, and MPNet respectively.  For BGE, TQ-2bit
+(16$\times$, 192 bytes) is Pareto-dominated by PQ-$m$96-$n$8
+(32$\times$, 96 bytes): PQ achieves higher MRR@10 (0.679 vs 0.678)
+at half the memory cost.  This relationship does not hold for
+RoBERTa and MPNet, where TQ-2bit retains a quality advantage over
+PQ at any compression ratio (0.530 vs 0.514 and 0.574 vs 0.562).
+
+At 1-bit precision (32$\times$), TQ (0.666, 0.519, 0.547) outperforms
+post-hoc binary quantisation (0.646, 0.501, 0.534) by 2.1, 1.7, and
+1.4 percentage points for BGE, RoBERTa, and MPNet respectively.  The
+whitening rotation redistributes variance more uniformly across
+dimensions before thresholding, preserving more retrieval signal per
+bit than a raw sign quantisation.
+
+%-------------------------------------------
+\subsection{Cross-Method Comparison at 32$\times$}
+\label{subsec:cross_method}
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: grouped bar chart of MRR@10 at 32$\times$
+  for post-hoc binary, TQ-1bit, PQ-$m$192-$n$4, and PQ-$m$96-$n$8,
+  across all three backbones.]
+  \caption{Mean MRR@10 at 32$\times$ compression for all post-hoc
+           methods across backbones.  Float32 fine-tuned scores shown
+           as dashed reference lines.}
+  \label{fig:cross_method_32x}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 at 32$\times$ compression.  Float32 fine-tuned
+           scores are shown for reference ($r = 1{\times}$).}
+  \label{tab:cross_method_32x}
+  [Table 5.X placeholder: Method | $r$ | BGE | RoBERTa | MPNet]
+\end{table}
+
+Figure~\ref{fig:cross_method_32x} and Table~\ref{tab:cross_method_32x}
+place all post-hoc methods at a common compression budget.
+For BGE and MPNet, PQ-$m$96-$n$8 is the strongest post-hoc method
+at 32$\times$: it exceeds TQ-1bit by 1.2 and 1.4 percentage points,
+and post-hoc binary by 3.3 and 2.8 percentage points.  For RoBERTa,
+PQ-$m$192-$n$4 and TQ-1bit are essentially tied (0.519 vs 0.519),
+while PQ-$m$96-$n$8 slightly underperforms TQ-1bit (0.514 vs 0.519),
+indicating that the optimal PQ configuration is backbone-dependent.
+Post-hoc binary quantisation is the weakest method at this budget
+across all three backbones.
+
+Two broader observations emerge.  First, learned quantisation (PQ)
+consistently outperforms scalar thresholding (post-hoc binary) at
+the same compression ratio, confirming that fitting the codebook to
+the corpus distribution is worth the offline compute cost.  Second,
+TQ-1bit's advantage over post-hoc binary (up to 2.1 percentage points
+for BGE) is smaller than PQ's advantage over TQ-1bit (up to 1.4
+percentage points for MPNet), suggesting that the whitening rotation
+alone recovers less information than structured codebook learning.
+Training-time methods, examined in
+Section~\ref{sec:training_compression}, provide a complementary path
+to closing this remaining gap without relying on corpus-side fitting.
+
+%----------------------------------------------------------------------------------------
+\section{Training-Time Compression}
+\label{sec:training_compression}
+
+Unlike post-hoc methods, training-time compression modifies the
+fine-tuning procedure itself so that the model learns representations
+optimised for the compressed form.  Two families are evaluated:
+binarisation-aware training (Section~\ref{subsec:ste_atanh}), which
+targets the same 32$\times$ compression ratio as post-hoc binary
+quantisation, and Matryoshka Representation Learning
+(Section~\ref{subsec:mrl}), which targets dimensionality reduction.
+
+%-------------------------------------------
+\subsection{Binarisation-Aware Training: STE and Annealed Tanh}
+\label{subsec:ste_atanh}
+
+Two binarisation-aware training methods are evaluated.  The
+Straight-Through Estimator binarisation layer (BAT) inserts a
+$\mathrm{sign}(x)$ operation into the forward pass and passes
+gradients through unchanged; the embedding geometry is thus shaped
+by the retrieval loss throughout training.  The annealed tanh
+method (atanh) instead uses $\tanh(\beta \cdot x)$ during training,
+where $\beta$ grows from 1 to $\approx$28 over the course of
+fine-tuning, progressively tightening the approximation to
+$\mathrm{sign}(x)$; three annealing rates $\gamma \in
+\{0.05, 0.10, 0.20\}$ are evaluated, with higher $\gamma$ producing
+faster annealing.  Both methods produce 768-dimensional binary
+embeddings at inference (32$\times$ compression, 96 bytes per vector).
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 at 32$\times$ compression for binarisation-aware
+           training methods, post-hoc binary, and the float32 baseline.}
+  \label{tab:ste_atanh}
+  [Table 5.X placeholder: Method | BGE | RoBERTa | MPNet]
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: grouped bar chart comparing post-hoc binary,
+  BAT, and atanh-$\gamma$0.2 at 32$\times$ across all three backbones,
+  with float32 dashed reference lines.]
+  \caption{Mean MRR@10 at 32$\times$ compression for post-hoc binary,
+           BAT, and annealed tanh ($\gamma{=}0.2$) across backbones.}
+  \label{fig:ste_atanh}
+\end{figure}
+
+Table~\ref{tab:ste_atanh} and Figure~\ref{fig:ste_atanh} show that
+binarisation-aware training consistently and substantially outperforms
+post-hoc binary quantisation at 32$\times$ for all backbones.  BAT
+gains 1.3, 6.4, and 4.8 percentage points over post-hoc binary for
+BGE, RoBERTa, and MPNet respectively.  The improvement is largest for
+the general-purpose backbones, confirming that these models benefit
+more from having their embedding geometry explicitly shaped for
+binary retrieval.  For MPNet, BAT reaches 0.582, matching the
+fine-tuned float32 baseline to within 0.01 percentage points,
+a near-lossless result at 32$\times$ compression.  For RoBERTa, BAT
+reaches 0.565, exceeding the float32 baseline by 3.5 percentage
+points, consistent with the view that contrastive fine-tuning with a
+binarisation constraint can discover a more retrieval-effective
+geometry than unconstrained float32 training.
+
+Annealed tanh at $\gamma{=}0.2$ follows a similar pattern but with a
+backbone-dependent trade-off relative to BAT.  For RoBERTa, atanh
+($\gamma{=}0.2$) reaches 0.580, a further 1.5 percentage points above
+BAT and 5.0 percentage points above the float32 baseline,
+the strongest binary result for RoBERTa across all methods.  The gradual
+annealing schedule appears to give the RoBERTa geometry more time to
+reorganise around binary boundaries before the binarisation constraint
+fully activates.  For BGE and MPNet, however, BAT outperforms atanh
+($\gamma{=}0.2$) by 1.0 and 0.8 percentage points respectively (0.658
+vs 0.648 and 0.582 vs 0.573), suggesting that the harder straight-through
+gradient signal is more effective for backbones that begin with a
+stronger retrieval prior.  The results for $\gamma \in \{0.05, 0.10\}$
+(Table~\ref{tab:ste_atanh}) show a monotonic relationship between
+annealing rate and RoBERTa performance, with slower annealing
+consistently under-performing $\gamma{=}0.2$.
+
+%-------------------------------------------
+\subsection{Matryoshka Representation Learning}
+\label{subsec:mrl}
+
+Matryoshka Representation Learning (MRL) replaces the standard ranking
+loss with a weighted sum of losses computed at five nested
+sub-dimensions $d \in \{32, 64, 128, 256, 512\}$.  The resulting
+model produces a single 768-dimensional float32 embedding whose leading
+$d$ dimensions are independently informative, enabling truncation to
+any trained sub-dimension at deployment time without retraining.
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: MRL truncation curve (MRR@10 vs $d$) for
+  all three backbones, with the float32 768-dim baseline marked as
+  a horizontal dashed line.]
+  \caption{Mean MRR@10 as a function of MRL truncation dimension $d$
+           for all three backbones.  The float32 768-dim baseline is
+           shown as a dashed reference line for each backbone.}
+  \label{fig:mrl_curve}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 for MRL truncations at 512 and 256 dimensions,
+           with compression ratio and float32 baseline shown for
+           reference.}
+  \label{tab:mrl}
+  [Table 5.X placeholder: Truncation | $r$ | BGE | RoBERTa | MPNet]
+\end{table}
+
+Figure~\ref{fig:mrl_curve} and Table~\ref{tab:mrl} show that MRL
+achieves remarkably graceful quality degradation as $d$ decreases.
+At 512 dimensions (1.5$\times$ compression), MRL matches or marginally
+exceeds the full 768-dimensional float32 baseline for BGE and
+RoBERTa: BGE reaches 0.687 against a float32 ceiling of 0.685
+($+$0.2 percentage points), and RoBERTa reaches 0.533 vs 0.530
+($+$0.3 percentage points).  MPNet scores 0.579, within 0.3 percentage
+points of float32 (0.582).  The slight gains for BGE and RoBERTa
+reflect MRL's training incentive to concentrate retrieval signal
+into early dimensions: the 512-dimensional prefix may discard
+low-variance tail dimensions that contribute noise rather than signal
+in the full 768-dimensional space.
+
+At 256 dimensions (3$\times$ compression), quality remains within
+1.0 percentage points of float32 for all backbones: BGE scores 0.675
+($-$1.0 pp), RoBERTa 0.526 ($-$0.4 pp), and MPNet 0.577 ($-$0.5 pp).
+The curve in Figure~\ref{fig:mrl_curve} shows that degradation
+accelerates as $d$ falls below 128, where the information bottleneck
+becomes more severe.  The primary value of MRL truncation, however,
+lies not in stand-alone compression but in enabling stacked
+combinations with binary quantisation, TQ, and PQ, which are examined
+in Section~\ref{sec:cross_axis}.
+
+%----------------------------------------------------------------------------------------
+\section{Stacked Combinations}
+\label{sec:cross_axis}
+
+Stacked combinations pair dimensional reduction (MRL truncation)
+with precision reduction to reach compression ratios beyond what either
+method achieves alone.  Four pairings are evaluated: MRL+post-hoc binary
+and MRL+BAT at 48$\times$, and MRL+TQ and MRL+PQ across a range of
+memory budgets.
+
+\begin{table}[h]
+  \centering
+  \caption{Mean MRR@10 for stacked combinations, with compression
+           ratio and memory footprint per vector.  MRL float32 baselines
+           are included for reference.}
+  \label{tab:cross_axis}
+  [Table 5.X placeholder: Method | $r$ | Bytes | BGE | RoBERTa | MPNet]
+\end{table}
+
+\paragraph{MRL+post-hoc binary versus MRL+BAT.}
+Both MRL-512+post-hoc binary and MRL-512+BAT produce 512-bit binary
+vectors (64 bytes; 48$\times$ compression), but differ in whether
+binarisation is applied post-hoc to the MRL float32 checkpoint or
+jointly trained from scratch.  In the standalone setting
+(Section~\ref{subsec:ste_atanh}), BAT substantially outperforms
+post-hoc binary for all backbones.  The stacked results in
+Table~\ref{tab:cross_axis} reveal a striking reversal: for BGE and
+MPNet, post-hoc binary applied to MRL-512 embeddings \emph{outperforms}
+jointly trained MRL+BAT by 4.0 and 1.9 percentage points respectively
+(BGE: 0.633 vs 0.593; MPNet: 0.540 vs 0.521).  For RoBERTa the
+advantage of BAT is preserved but sharply reduced to 1.6 percentage
+points (0.517 vs 0.501), compared with the 6.4 percentage point gap
+in the standalone setting.
+
+This reversal suggests a significant optimisation conflict in joint
+MRL+BAT training.  MRL's loss requires the leading sub-dimensions to
+be informative as float32 representations across five nested budgets,
+while the straight-through binarisation gradient simultaneously
+pushes the geometry toward sign-separable boundaries.  These
+constraints appear to work against each other for BGE and MPNet, whose
+retrieval-specialised pre-training already anchors the embedding space
+strongly.  The two-stage approach (first train MRL for float32
+truncation quality, then apply post-hoc binary) avoids this conflict
+by optimising each objective independently.  RoBERTa is the exception:
+its weaker retrieval prior gives joint training more latitude to
+reorganise the embedding geometry, preserving the BAT advantage.
+
+\paragraph{MRL+TQ versus MRL+PQ.}
+MRL truncation compounds favourably with both TQ and PQ, enabling
+compression ratios in the 32$\times$--96$\times$ range while retaining
+meaningful retrieval quality.  Table~\ref{tab:cross_axis} and
+Figure~\ref{fig:mrl_cross_axis} report results for the best-performing
+configurations at each memory budget.
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: MRL+TQ and MRL+PQ quality--compression
+  curves for all three backbones, with standalone TQ and PQ curves
+  shown as dashed references.]
+  \caption{Mean MRR@10 vs compression ratio for MRL+TQ and MRL+PQ
+           stacked combinations.  Standalone TQ and PQ results
+           are shown as dashed reference curves.}
+  \label{fig:mrl_cross_axis}
+\end{figure}
+
+For BGE, MRL+PQ-$m$64-$n$8 reaches 0.673 at 48$\times$ (64 bytes),
+exceeding MRL-256+TQ-3bit (0.666 at 32$\times$, 96 bytes) by
+0.7 percentage points at \emph{higher} compression.  MRL+PQ therefore
+Pareto-dominates MRL+TQ on the BGE quality--compression frontier in
+this range: it achieves better quality with less memory.  For RoBERTa
+and MPNet this relationship is reversed: MRL+TQ-3bit scores 0.523
+and 0.576 against MRL+PQ-$m$64-$n$8's 0.515 and 0.565, so TQ retains
+a quality advantage when more memory is available, consistent with
+the backbone-dependent behaviour observed in
+Section~\ref{subsec:cross_method}.
+
+The MRL+TQ combination also yields the best results at extreme
+compression for BGE.  Taking the best-performing MRL+TQ configuration
+at each memory budget, the quality envelope for BGE is:
+0.373 at 8 bytes (384$\times$), 0.614 at 32 bytes (96$\times$), and
+0.666 at 96 bytes (32$\times$).  The 32-byte operating point is
+particularly notable: at 96$\times$ compression, BGE retains 0.614
+MRR@10, recovering substantial retrieval capability at a memory cost
+of just over 2\,\% of the float32 baseline.  The full stacked
+quality--compression curves are shown in Figure~\ref{fig:mrl_cross_axis}
+and discussed further in the Pareto analysis of
+Section~\ref{sec:pareto}.
+
+%----------------------------------------------------------------------------------------
+\section{Pareto Analysis}
+\label{sec:pareto}
+
+A configuration is Pareto-optimal if no other configuration achieves
+both higher retrieval quality \emph{and} higher compression ratio.
+The Pareto frontier therefore identifies the set of non-dominated
+operating points from which a practitioner should choose, given their
+memory budget.  This section characterises the frontier for each
+backbone (Section~\ref{subsec:pareto_frontiers}), identifies the best
+available method at key compression budgets
+(Section~\ref{subsec:best_at_budget}), and analyses which compression
+families, post-hoc versus training-time, appear on the frontier and
+why (Section~\ref{subsec:train_vs_posthoc}).
+
+%-------------------------------------------
+\subsection{Pareto Frontiers}
+\label{subsec:pareto_frontiers}
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: Pareto scatter plots (MRR@10 vs compression
+  ratio, log $x$-axis) for all three backbones, with frontier points
+  connected by a step line and off-frontier points shown as hollow
+  markers.  Training-time methods in a distinct colour.]
+  \caption{Quality--compression Pareto frontiers for BGE, RoBERTa, and
+           MPNet.  Compression ratio is shown on a log scale.  Filled
+           markers indicate Pareto-optimal configurations; hollow markers
+           are dominated.}
+  \label{fig:pareto}
+\end{figure}
+
+The BGE Pareto frontier (Figure~\ref{fig:pareto}) spans four orders of
+magnitude in compression ratio and is detailed in
+Table~\ref{tab:pareto_bge}.  Its composition is as follows:
+pre-trained BGE (1$\times$, 0.691) $\to$ MRL-512 (1.5$\times$, 0.687)
+$\to$ TQ-4bit (8$\times$, 0.685) $\to$ TQ-3bit (10.7$\times$, 0.680)
+$\to$ PQ-$m$96-$n$8 (32$\times$, 0.679) $\to$ MRL-256+PQ-$m$64-$n$8
+(48$\times$, 0.673) $\to$ PQ-$m$48-$n$8 (64$\times$, 0.663) $\to$
+MRL-256+PQ-$m$32-$n$8 (96$\times$, 0.637) $\to$ \ldots $\to$
+MRL-32+PQ-$m$4-$n$4 (1536$\times$, 0.201).
+
+\begin{table}[h]
+  \centering
+  \caption{BGE Pareto-optimal configurations, ordered by compression
+           ratio.  Method family is indicated for each point.}
+  \label{tab:pareto_bge}
+  [Table 5.X placeholder: Method | Family | $r$ | Bytes | MRR@10]
+\end{table}
+
+Three structural features of the BGE frontier deserve attention.
+First, the pre-trained checkpoint (0.691) appears at $1\times$ because
+fine-tuning slightly \emph{reduces} BGE quality
+(Section~\ref{sec:float32_baselines}); the fine-tuned float32 is thus
+dominated by its own pre-trained counterpart at the same memory cost.
+Second, TQ occupies the moderate-compression range (8$\times$--10.7$\times$)
+with remarkably small quality loss: the step from 1.5$\times$ to
+8$\times$ costs only 0.2 percentage points.  Third, PQ takes over
+from 32$\times$ onwards: at this ratio, PQ-$m$96-$n$8 (0.679)
+outperforms every other method including TQ-1bit (0.666) and BAT
+(0.658), both of which are off the frontier at 32$\times$.  Beyond
+32$\times$, stacked MRL+PQ combinations extend the frontier
+monotonically, with each step compounding both compression dimensions.
+
+The RoBERTa and MPNet frontiers differ from BGE in one important
+respect: training-time binarisation methods appear as Pareto-optimal
+points at 32$\times$.  For RoBERTa, annealed tanh ($\gamma{=}0.2$)
+achieves 0.580 at 32$\times$, exceeding the best post-hoc method at
+that ratio (PQ-$m$192-$n$4: 0.519) by 6.1 percentage points; for
+MPNet, BAT achieves 0.582, exceeding the best post-hoc method
+(PQ-$m$96-$n$8: 0.562) by 2.0 percentage points.  These gaps are large
+enough that no post-hoc configuration at any compression ratio
+dominates the training-time methods for these backbones, making them
+unambiguously Pareto-optimal at 32$\times$.
+
+%-------------------------------------------
+\subsection{Best Method at Each Compression Budget}
+\label{subsec:best_at_budget}
+
+\begin{table}[h]
+  \centering
+  \caption{Best-performing method and MRR@10 at four representative
+           compression budgets for each backbone.  Ties broken by
+           compression ratio (higher preferred).}
+  \label{tab:best_at_budget}
+  [Table 5.X placeholder: Budget | Best method (BGE) | MRR@10 |
+  Best method (RoBERTa) | MRR@10 | Best method (MPNet) | MRR@10]
+\end{table}
+
+Table~\ref{tab:best_at_budget} summarises the recommended configuration
+at four operating points.
+
+At \textbf{4$\times$}, INT8 quantisation is the clear choice for all
+backbones: BGE retains 0.678, RoBERTa 0.532, and MPNet 0.567, each
+within 1.5 percentage points of float32 with no corpus fitting or
+retraining required.
+
+At \textbf{8$\times$}, TQ-4bit achieves near-lossless compression
+across all three backbones (BGE: 0.685, RoBERTa: 0.532, MPNet: 0.579),
+matching or approaching the float32 baseline at one-eighth the memory.
+This operating point offers the best quality-per-byte of any method
+evaluated once the overhead of float32 is considered excessive.
+
+At \textbf{32$\times$}, the optimal method is backbone-dependent.  For
+BGE, PQ-$m$96-$n$8 (0.679) leads all methods, including training-time
+alternatives.  For RoBERTa and MPNet, training-time binarisation
+dominates: annealed tanh ($\gamma{=}0.2$) is best for RoBERTa (0.580)
+and BAT is best for MPNet (0.582), both substantially ahead of the
+best post-hoc methods at this ratio.
+
+At \textbf{48$\times$}, MRL-256+PQ-$m$64-$n$8 is the strongest
+configuration for BGE (0.673), extending the frontier via stacked
+compression with less than 2 percentage points of additional quality
+loss relative to 32$\times$.  For RoBERTa and MPNet, no stacked
+combination at 48$\times$ outperforms the training-time methods at
+32$\times$; practitioners targeting these backbones at extreme
+compression are better served by accepting the 32$\times$ training-time
+result than by pushing further with stacked combinations.
+
+%-------------------------------------------
+\subsection{Training-Time versus Post-Hoc Methods on the Frontier}
+\label{subsec:train_vs_posthoc}
+
+The Pareto analysis reveals a clear division of labour between the two
+compression paradigms.  For BGE, the frontier is composed entirely of
+post-hoc methods (TQ, PQ) and stacked combinations built on the
+MRL float32 checkpoint; no training-time binarisation method (BAT or
+annealed tanh) appears as a Pareto-optimal point.  At 32$\times$, the
+canonical comparison ratio for binary retrieval, PQ-$m$96-$n$8 (0.679)
+dominates BAT (0.658) and annealed tanh (0.648), meaning that fitting
+a product codebook to the corpus is more effective than shaping the
+embedding geometry during training for a backbone that already carries
+a strong retrieval prior.
+
+For RoBERTa and MPNet, the picture is reversed at 32$\times$:
+training-time methods are firmly on the frontier and post-hoc methods
+cannot reach them.  The gap of 6.1 percentage points between annealed
+tanh and the best post-hoc method for RoBERTa is larger than the total
+quality loss from post-hoc binary alone (2.9 pp), underscoring how
+profoundly binarisation-aware training reshapes the embedding geometry
+when the backbone lacks a retrieval prior.
+
+This backbone-conditioned split has a practical implication: the choice
+between training-time and post-hoc compression should be informed by
+the retrieval specialisation of the backbone.  For retrieval-specialised
+models such as BGE, post-hoc corpus-fitted quantisation achieves
+superior results without requiring any retraining.  For general-purpose
+models such as RoBERTa and MPNet, investment in binarisation-aware
+fine-tuning is necessary to reach the Pareto frontier at high
+compression ratios.  No single strategy dominates across all
+backbones, reinforcing the need for the controlled cross-backbone
+comparison conducted in this thesis.
+
+%----------------------------------------------------------------------------------------
+\section{Cross-Backbone Generalisability}
+\label{sec:cross_backbone}
+
+The three backbones span a wide range of retrieval specialisation,
+from the retrieval-pretrained BGE to the general-purpose RoBERTa and
+MPNet.  This section examines whether compression methods behave
+consistently across that range: whether rank orderings are stable,
+whether the magnitude of compression-induced quality loss is
+backbone-invariant, and whether conclusions drawn on one backbone
+transfer to others.
+
+\begin{figure}[h]
+  \centering
+  [Figure 5.X placeholder: quality-retention heat map (MRR@10 relative
+  to each backbone's float32 baseline) for all methods and all three
+  backbones, grouped by compression ratio.]
+  \caption{Quality retention (compressed MRR@10 / float32 MRR@10) for
+           all evaluated methods across backbones.  Values above 1.0
+           indicate the compressed model exceeds its float32 baseline.}
+  \label{fig:cross_backbone}
+\end{figure}
+
+\paragraph{Low-compression regime (up to 8$\times$).}
+INT8 (4$\times$) and TQ-4bit (8$\times$) are the most backbone-agnostic
+methods evaluated.  INT8 incurs losses of 0.7, $-$0.2 (gain), and
+1.5 percentage points for BGE, RoBERTa, and MPNet respectively;
+TQ-4bit incurs losses of 0.03, $-$0.2 (gain), and 0.3 percentage points.
+In both cases the direction of effect is consistent (near-zero) and
+the quality ordering of backbones is perfectly preserved:
+BGE $>$ MPNet $>$ RoBERTa throughout.  MRL truncation to 512
+dimensions (1.5$\times$) similarly shows uniform behaviour: all three
+backbones match or marginally exceed their float32 baselines (BGE
+$+$0.2 pp, RoBERTa $+$0.3 pp, MPNet $-$0.3 pp).  At 256 dimensions
+(3$\times$), losses remain small and consistent (BGE $-$1.0 pp,
+RoBERTa $-$0.4 pp, MPNet $-$0.5 pp).  These results indicate that
+for compression up to 8$\times$, and for MRL truncation up to 3$\times$,
+the choice of backbone does not materially affect the choice of
+compression method: all methods are near-lossless and all rank
+orderings are stable.
+
+\paragraph{High-compression regime (32$\times$).}
+At 32$\times$, backbone identity becomes the dominant factor in method
+selection.  Post-hoc binary quantisation degrades all backbones by
+2.9--4.8 percentage points in absolute terms, and its rank ordering
+relative to float32 is stable (BGE retains 94\,\%, RoBERTa 94\,\%,
+MPNet 92\,\%).  However, the relative effectiveness of other methods
+diverges sharply.
+
+For post-hoc learned quantisation (PQ), BGE benefits most: PQ retains
+99\,\% of its float32 quality, whereas RoBERTa and MPNet retain 97\,\%
+and 97\,\% respectively, a smaller but still meaningful advantage over
+raw binary.  For training-time binarisation, the effect is strongly
+backbone-dependent in direction, not just magnitude: BAT reduces BGE
+quality by 2.7 percentage points below float32 but \emph{raises}
+RoBERTa quality by 3.5 percentage points and leaves MPNet essentially
+unchanged ($-$0.01 pp).  Annealed tanh ($\gamma{=}0.2$) amplifies this
+pattern further, raising RoBERTa by 5.0 percentage points above float32
+while reducing BGE by 3.7 percentage points.  These opposing effects
+mean that a practitioner benchmarking on BGE would conclude that
+training-time binarisation underperforms post-hoc PQ, a conclusion
+that is the reverse of the truth for RoBERTa.
+
+\paragraph{Rank-ordering stability.}
+At low compression, method rankings are fully consistent across
+backbones.  At 32$\times$, they are not.  The most consequential
+reversal is between training-time and post-hoc methods: for BGE,
+PQ $>$ BAT $>$ post-hoc binary; for RoBERTa and MPNet, BAT and atanh
+$>$ PQ $>$ post-hoc binary.  Within post-hoc methods, however, the
+ordering is more stable: PQ consistently outperforms TQ-1bit which
+consistently outperforms post-hoc binary across all backbones, with
+only minor variation in the margin.  This suggests that post-hoc
+method rankings are transferable across backbones, while conclusions
+about training-time versus post-hoc compression are not.
+
+\paragraph{Backbone-independent observations.}
+Several findings hold uniformly across all three backbones and can be
+stated without qualification.  First, INT8 and TQ-4bit are effectively
+lossless at 4$\times$ and 8$\times$ respectively.  Second, post-hoc
+binary is always the weakest method at 32$\times$, and learned
+quantisation (PQ or training-time) always outperforms it.  Third, MRL
+truncation is the most backbone-consistent compression method at every
+truncation level, with quality losses that are small, monotonically
+increasing with compression ratio, and nearly uniform across backbones.
+Fourth, all stacked MRL+precision combinations degrade more
+gracefully for BGE than for RoBERTa and MPNet, reflecting the stronger
+retrieval geometry of the retrieval-pretrained backbone.
+
+These observations together suggest that evaluation on a single
+retrieval-specialised backbone, as is common in prior work, is
+sufficient to characterise post-hoc methods but insufficient to
+characterise training-time binarisation, whose benefit is
+disproportionately concentrated on general-purpose backbones.
+
+%----------------------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Embedding geometry as the central explanatory variable.}
+The most consistent explanatory factor across results is the
+\emph{retrieval geometry} of the backbone embedding space: the degree
+to which directions in the float32 space already encode retrieval
+relevance in a form amenable to compression.  BGE, which has undergone
+large-scale retrieval pre-training, enters the compression experiments
+with a geometry that is already near-optimal for dense retrieval; the
+sign of each dimension carries substantial relevance signal, and
+corpus-fitted codebooks (PQ) can exploit this structure without
+retraining.  RoBERTa and MPNet, whose float32 spaces are shaped by
+masked language modelling and general sentence similarity objectives,
+do not share this property.  Their signs are not retrieval-informative
+until the model is explicitly trained to make them so.
+
+This geometry hypothesis explains several otherwise puzzling results.
+It explains why binarisation-aware fine-tuning raises RoBERTa and MPNet
+\emph{above} their float32 baselines at 32$\times$: the binary
+constraint forces the model to discover a retrieval-oriented geometry
+that float32 training, without the constraint, never finds.  It
+explains why PQ, which adapts to the existing geometry without changing
+it, performs comparably to training-time binarisation for BGE but falls
+well short for RoBERTa and MPNet.  And it explains why fine-tuning
+slightly \emph{hurts} BGE: the backbone's pre-trained geometry is
+already well-adapted for retrieval, and further adaptation on a smaller
+mixed-domain corpus provides no benefit and may introduce minor
+distributional noise.
+
+\paragraph{Post-hoc corpus fitting as a substitute for geometry
+adaptation.}
+A secondary theme is the value of corpus-fitted quantisation (PQ and
+TQ) as a practical alternative to training-time methods.  Both PQ and
+TQ learn a non-linear mapping from the float32 embedding space to a
+compact code using only unlabelled corpus embeddings, with no
+label information or retraining.  For BGE, this approach reaches the
+Pareto frontier at every compression ratio tested, demonstrating that
+when the underlying geometry is sound, corpus-side adaptation is
+sufficient.  The Pareto dominance of PQ-$m$96-$n$8 over TQ-2bit for
+BGE (where PQ achieves higher quality at twice the compression ratio)
+illustrates that structured codebook learning extracts substantially
+more information from a good geometry than scalar rotation-and-threshold
+operations.  The practical implication is that practitioners deploying
+retrieval-specialised backbones can avoid the cost and complexity of
+retraining by investing instead in corpus-calibrated quantisation.
+
+\paragraph{Limits of joint optimisation in stacked compression.}
+The MRL+BAT reversal (Section~\ref{sec:cross_axis}) reveals a
+non-obvious failure mode of joint multi-objective training: when two
+compression objectives impose conflicting geometric constraints, joint
+optimisation can produce embeddings that are worse than either
+objective applied independently.  MRL's loss requires the leading
+$d$ dimensions to be informative float32 representations across five
+nested truncation sizes; the straight-through binarisation gradient
+simultaneously pushes the geometry toward sign-separable boundaries.
+The conflict is resolved differently by different backbones: for
+RoBERTa, which has more latitude to reorganise its geometry, the joint
+training succeeds; for BGE and MPNet, it does not.  A sequential strategy of training MRL for float32 truncation quality and
+then applying post-hoc binary quantization avoids the conflict entirely and consistently
+outperforms joint training for these backbones.  This result suggests
+that the design of multi-axis compression pipelines should consider
+constraint compatibility explicitly rather than assuming that jointly
+trained objectives reinforce one another.
+
+\paragraph{Limitations.}
+Several limitations constrain the scope of conclusions that can be
+drawn from this study.  First, NanoBEIR is a downsampled benchmark:
+corpora of 2,000--6,000 passages are smaller than production retrieval
+settings by one to two orders of magnitude, and PQ codebook quality
+in particular may differ at larger scale.  Second, only three backbone
+architectures are evaluated; while they span a range of retrieval
+specialisation, the findings may not generalise to decoder-based or
+cross-encoder models, or to backbones with non-standard embedding
+dimensions.  Third, PQ codebook storage is not counted in the
+per-vector memory budget, which understates the total memory cost of
+PQ relative to simpler methods at small corpus scales.  Fourth, the
+$\gamma$ sweep for annealed tanh covers only three values
+($\{0.05, 0.10, 0.20\}$); the optimal annealing schedule for each
+backbone may lie outside this range.  Finally, all evaluations are
+on English-language datasets; whether the geometry hypothesis and the
+backbone-conditioned method rankings extend to multilingual or
+cross-lingual retrieval remains an open question.
