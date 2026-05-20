@@ -153,7 +153,7 @@ parser.add_argument(
     "--expirement_number",
     type=str,
     default="e1",
-    choices=["e1", "e2", "e3", "e4", "e5", "e6_1b", "e6_2b", "e6_3b", "e6_4b"]
+    choices=["e1", "e2", "e3", "e4", "e5", "e6_1b", "e6_2b", "e6_3b", "e6_4b", "e7"]
     )
 parser.add_argument(
     "--annealed_tanh_gamma",
@@ -168,6 +168,7 @@ expirement_map = {
     "e3": "MRL Training",
     "e4": "MRL Training + Binarization Layer (STE)",
     "e5": "Add annealed tanh binarization layer",
+    "e7": "MRL Training + Annealed Tanh Binarization",
     "e6_1b": "Multi-bit annealed tanh quantization (1-bit)",
     "e6_2b": "Multi-bit annealed tanh quantization (2-bit)",
     "e6_3b": "Multi-bit annealed tanh quantization (3-bit)",
@@ -435,6 +436,24 @@ def initilize_model(local_rank):
             tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
             model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
         )
+    elif config["experiment"]["number"] == "e7":
+        word_embedding_model = models.Transformer(config["input_model"]["name"])
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(),
+        )
+        binarization_model = AnnealedTanhBinarizationLayer(
+            gamma=config["annealed_tanh_config"]["gamma"]
+        )
+        model = SentenceTransformer(
+            modules=[
+                word_embedding_model,
+                pooling_model,
+                binarization_model,
+            ],
+            device=f"cuda:{local_rank}",
+            tokenizer_kwargs={"model_max_length": config["input_model"]["max_len"], "truncation": True},
+            model_kwargs={"torch_dtype": torch.bfloat16 if bf16_supported else None},
+        )
     elif config["experiment"]["number"].startswith("e6_"):
         bits = int(config["experiment"]["number"].split("_")[1][:-1])  # e6_2b -> 2
         word_embedding_model = models.Transformer(config["input_model"]["name"])
@@ -523,7 +542,7 @@ def main(local_rank, rank):
     loss_funs = {
         n: cfg["loss"](model, similarity_fct=loss_sim_fun) for n, cfg in ds_config.items()
     }
-    if config["experiment"]["number"] in ["e3", "e4"]:
+    if config["experiment"]["number"] in ["e3", "e4", "e7"]:
         loss_funs = {
             n: MatryoshkaLoss(model=model, loss=base_loss, matryoshka_dims=config.get("mrl_config").get("matryoshka_dims") + [model.get_sentence_embedding_dimension()]) 
             for n, base_loss in loss_funs.items()

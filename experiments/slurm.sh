@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH --mail-user=sa0812@uah.edu
-#SBATCH --job-name=e5_gamma_sweep
+#SBATCH --job-name=e7_all_models
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:a100:2
 #SBATCH --cpus-per-task=8
@@ -50,47 +50,25 @@ echo "===== STARTING TRAINING ====="
 
 cd /rhome/sawale/thesis/experiments
 
-echo "--- e5 gamma=0.05 (BAAI/bge-base-en-v1.5) ---"
+echo "--- e7 (FacebookAI/roberta-base) ---"
 srun --mem=0 torchrun \
     --nproc_per_node=$GPUS_PER_NODE \
     --nnodes=$SLURM_NNODES \
     --rdzv_id="$SLURM_JOB_ID" \
     --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
     --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e5 --annealed_tanh_gamma 0.05
-echo "--- e5 gamma=0.05 (bge) done ---"
+    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e7 --model_name FacebookAI/roberta-base
+echo "--- e7 (roberta) done ---"
 
 MASTER_PORT=$(( RANDOM % (50000 - 30000 + 1 ) + 30000 ))
-echo "--- e5 gamma=0.2 (BAAI/bge-base-en-v1.5) ---"
+echo "--- e7 (microsoft/mpnet-base) ---"
 srun --mem=0 torchrun \
     --nproc_per_node=$GPUS_PER_NODE \
     --nnodes=$SLURM_NNODES \
     --rdzv_id="$SLURM_JOB_ID" \
     --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
     --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e5 --annealed_tanh_gamma 0.2
-echo "--- e5 gamma=0.2 (bge) done ---"
-
-MASTER_PORT=$(( RANDOM % (50000 - 30000 + 1 ) + 30000 ))
-echo "--- e5 gamma=0.05 (FacebookAI/roberta-base) ---"
-srun --mem=0 torchrun \
-    --nproc_per_node=$GPUS_PER_NODE \
-    --nnodes=$SLURM_NNODES \
-    --rdzv_id="$SLURM_JOB_ID" \
-    --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
-    --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e5 --annealed_tanh_gamma 0.05 --model_name FacebookAI/roberta-base
-echo "--- e5 gamma=0.05 (roberta) done ---"
-
-MASTER_PORT=$(( RANDOM % (50000 - 30000 + 1 ) + 30000 ))
-echo "--- e5 gamma=0.2 (FacebookAI/roberta-base) ---"
-srun --mem=0 torchrun \
-    --nproc_per_node=$GPUS_PER_NODE \
-    --nnodes=$SLURM_NNODES \
-    --rdzv_id="$SLURM_JOB_ID" \
-    --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
-    --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e5 --annealed_tanh_gamma 0.2 --model_name FacebookAI/roberta-base
-echo "--- e5 gamma=0.2 (roberta) done ---"
+    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e7 --model_name microsoft/mpnet-base
+echo "--- e7 (mpnet) done ---"
 
 echo "===== TRAINING DONE ====="

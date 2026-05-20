@@ -500,6 +500,62 @@ MODELS: dict[str, ModelSpec] = {
         pq_M=16,
         pq_nbits=4,
     ),
+    "finetuned-bge-base-en-v1.5-pq-m24-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M24, b8)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#c9184a", hatch="++", marker="star", pq_M=24, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M32, b8)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#c9184a", hatch="++", marker="star", pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M32, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m48-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M48, b8)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#c9184a", hatch="++", marker="star", pq_M=48, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m48-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M48, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+    ),
+
+    "finetuned-bge-base-en-v1.5-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M64, b8)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#c9184a", hatch="++", marker="star", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M64, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m96-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M96, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M96, b8)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#c9184a", hatch="++", marker="star", pq_M=96, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m128-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M128, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-pq-m192-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
+        display_name="PQ (M192, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+    ),
     # --- PQ only for roberta-base ---
     "finetuned-roberta-base-pq-m16-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
@@ -523,6 +579,62 @@ MODELS: dict[str, ModelSpec] = {
         pq_M=16,
         pq_nbits=4,
     ),
+    "finetuned-roberta-base-pq-m24-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M24, b8)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=24, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M32, b8)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M32, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-pq-m48-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M48, b8)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=48, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-pq-m48-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M48, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+    ),
+
+    "finetuned-roberta-base-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M64, b8)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M64, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-pq-m96-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M96, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M96, b8)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=96, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-pq-m128-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M128, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-pq-m192-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
+        display_name="PQ (M192, b4)", group="PQ", base_model="FacebookAI/roberta-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+    ),
     # --- PQ only for mpnet-base ---
     "finetuned-mpnet-base-pq-m16-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
@@ -538,6 +650,63 @@ MODELS: dict[str, ModelSpec] = {
         base_model="microsoft/mpnet-base",
         color="#ff758f", hatch="++", marker="star", pq_M=16, pq_nbits=4,
     ),
+    "finetuned-mpnet-base-pq-m24-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M24, b8)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=24, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M32, b8)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M32, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-pq-m48-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M48, b8)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=48, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-pq-m48-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M48, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+    ),
+
+    "finetuned-mpnet-base-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M64, b8)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M64, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-pq-m96-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M96, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M96, b8)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#c9184a", hatch="++", marker="star", pq_M=96, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-pq-m128-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M128, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-pq-m192-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
+        display_name="PQ (M192, b4)", group="PQ", base_model="microsoft/mpnet-base",
+        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+    ),
+
 
     # --- MRL + PQ (navy→teal gradient, hatch: oo, marker: hexagon) ---
     "finetuned-bge-base-en-v1.5-mrl-512-pq-m16-n8": ModelSpec(
@@ -636,6 +805,53 @@ MODELS: dict[str, ModelSpec] = {
         pq_M=4,
         pq_nbits=4,
     ),
+    "finetuned-bge-base-en-v1.5-mrl-64-pq-m4-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-64 + PQ (M4, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#48cae4", hatch="oo", marker="hexagon", truncate_dim=64, pq_M=4, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-128-pq-m8-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-128 + PQ (M8, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#00b4d8", hatch="oo", marker="hexagon", truncate_dim=128, pq_M=8, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-256-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-256 + PQ (M32, b4)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#0096c7", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-256-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-256 + PQ (M32, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-512-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-512 + PQ (M64, b4)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#023e8a", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-512-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-512 + PQ (M64, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#03045e", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-notrunc-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL + PQ (M64, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#010022", hatch="oo", marker="hexagon", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-notrunc-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL + PQ (M96, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#03045e", hatch="oo", marker="hexagon", pq_M=96, pq_nbits=8,
+    ),
+
+    "finetuned-bge-base-en-v1.5-mrl-256-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260408_01-54-42/bge-base-en-v1.5/final_model",
+        display_name="MRL-256 + PQ (M64, b8)", group="MRL+PQ", base_model="BAAI/bge-base-en-v1.5",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=64, pq_nbits=8,
+    ),
+
      # -- - MRL + PQ for roberta-base ---
     "finetuned-roberta-base-mrl-512-pq-m16-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
@@ -733,6 +949,53 @@ MODELS: dict[str, ModelSpec] = {
         pq_M=4,
         pq_nbits=4,
     ),
+    "finetuned-roberta-base-mrl-64-pq-m4-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-64 + PQ (M4, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#48cae4", hatch="oo", marker="hexagon", truncate_dim=64, pq_M=4, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-mrl-128-pq-m8-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-128 + PQ (M8, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#00b4d8", hatch="oo", marker="hexagon", truncate_dim=128, pq_M=8, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-mrl-256-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-256 + PQ (M32, b4)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#0096c7", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-mrl-256-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-256 + PQ (M32, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-mrl-512-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-512 + PQ (M64, b4)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#023e8a", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-roberta-base-mrl-512-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-512 + PQ (M64, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#03045e", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-mrl-notrunc-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL + PQ (M64, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#010022", hatch="oo", marker="hexagon", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-roberta-base-mrl-notrunc-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL + PQ (M96, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#03045e", hatch="oo", marker="hexagon", pq_M=96, pq_nbits=8,
+    ),
+
+    "finetuned-roberta-base-mrl-256-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260506_12-57-05/roberta-base/final_model",
+        display_name="MRL-256 + PQ (M64, b8)", group="MRL+PQ", base_model="FacebookAI/roberta-base",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=64, pq_nbits=8,
+    ),
+
     # -- - MRL + PQ for mpnet-base ---
     "finetuned-mpnet-base-mrl-512-pq-m16-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
@@ -790,6 +1053,53 @@ MODELS: dict[str, ModelSpec] = {
         base_model="microsoft/mpnet-base",
         color="#90e0ef", hatch="oo", marker="hexagon", truncate_dim=32, pq_M=4, pq_nbits=4,
     ),
+    "finetuned-mpnet-base-mrl-64-pq-m4-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-64 + PQ (M4, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#48cae4", hatch="oo", marker="hexagon", truncate_dim=64, pq_M=4, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-mrl-128-pq-m8-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-128 + PQ (M8, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#00b4d8", hatch="oo", marker="hexagon", truncate_dim=128, pq_M=8, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-mrl-256-pq-m32-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-256 + PQ (M32, b4)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#0096c7", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-mrl-256-pq-m32-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-256 + PQ (M32, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=32, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-mrl-512-pq-m64-n4": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-512 + PQ (M64, b4)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#023e8a", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=4,
+    ),
+    "finetuned-mpnet-base-mrl-512-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-512 + PQ (M64, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#03045e", hatch="oo", marker="hexagon", truncate_dim=512, pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-mrl-notrunc-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL + PQ (M64, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#010022", hatch="oo", marker="hexagon", pq_M=64, pq_nbits=8,
+    ),
+    "finetuned-mpnet-base-mrl-notrunc-pq-m96-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL + PQ (M96, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#03045e", hatch="oo", marker="hexagon", pq_M=96, pq_nbits=8,
+    ),
+
+    "finetuned-mpnet-base-mrl-256-pq-m64-n8": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-57-07/mpnet-base/final_model",
+        display_name="MRL-256 + PQ (M64, b8)", group="MRL+PQ", base_model="microsoft/mpnet-base",
+        color="#0077b6", hatch="oo", marker="hexagon", truncate_dim=256, pq_M=64, pq_nbits=8,
+    ),
+
 
     # --- MRL + BAT (pink/magenta gradient, hatch: **, marker: cross) ---
     "finetuned-bge-base-en-v1.5-mrl-notrunc-bat": ModelSpec(
@@ -968,7 +1278,18 @@ MODELS: dict[str, ModelSpec] = {
         color="#fce4ec", hatch="**", marker="cross", truncate_dim=32, similarity="hamming",
     ),
 
-    # --- Annealed Tanh (olive/chartreuse, hatch: +-, marker: bowtie) ---
+    # --- Annealed Tanh (olive/chartreuse gradient, lighter=lower γ, hatch: +-, marker: bowtie) ---
+    "finetuned-bge-base-en-v1.5-atanh-gamma0.05": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260510_11-25-29/bge-base-en-v1.5/final_model",
+        display_name="AnnTanh (γ=0.05)",
+        group="AnnealedTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#8fb34a",
+        hatch="+-",
+        marker="bowtie",
+        similarity="hamming",
+        atanh_gamma=0.05,
+    ),
     "finetuned-bge-base-en-v1.5-atanh-gamma0.1": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260420_23-33-12/bge-base-en-v1.5/final_model",
         display_name="AnnTanh (γ=0.1)",
@@ -980,7 +1301,29 @@ MODELS: dict[str, ModelSpec] = {
         similarity="hamming",
         atanh_gamma=0.1,
     ),
+    "finetuned-bge-base-en-v1.5-atanh-gamma0.2": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260510_17-18-22/bge-base-en-v1.5/final_model",
+        display_name="AnnTanh (γ=0.2)",
+        group="AnnealedTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#3a5217",
+        hatch="+-",
+        marker="bowtie",
+        similarity="hamming",
+        atanh_gamma=0.2,
+    ),
 
+    "finetuned-roberta-base-atanh-gamma0.05": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260510_23-13-40/roberta-base/final_model",
+        display_name="AnnTanh (γ=0.05)",
+        group="AnnealedTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#8fb34a",
+        hatch="+-",
+        marker="bowtie",
+        similarity="hamming",
+        atanh_gamma=0.05,
+    ),
     "finetuned-roberta-base-atanh-gamma0.1": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260507_00-56-26/roberta-base/final_model",
         display_name="AnnTanh (γ=0.1)",
@@ -992,12 +1335,257 @@ MODELS: dict[str, ModelSpec] = {
         similarity="hamming",
         atanh_gamma=0.1,
     ),
+    "finetuned-roberta-base-atanh-gamma0.2": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260511_05-12-15/roberta-base/final_model",
+        display_name="AnnTanh (γ=0.2)",
+        group="AnnealedTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#3a5217",
+        hatch="+-",
+        marker="bowtie",
+        similarity="hamming",
+        atanh_gamma=0.2,
+    ),
+
+    "finetuned-mpnet-base-atanh-gamma0.05": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260510_11-25-29/mpnet-base/final_model",
+        display_name="AnnTanh (γ=0.05)",
+        group="AnnealedTanh",
+        base_model="microsoft/mpnet-base",
+        color="#8fb34a", hatch="+-", marker="bowtie", similarity="hamming", atanh_gamma=0.05,
+    ),
     "finetuned-mpnet-base-atanh-gamma0.1": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_15-06-08/mpnet-base/final_model",
         display_name="AnnTanh (γ=0.1)",
         group="AnnealedTanh",
         base_model="microsoft/mpnet-base",
         color="#5c7a29", hatch="+-", marker="bowtie", similarity="hamming", atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-atanh-gamma0.2": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260511_00-11-34/mpnet-base/final_model",
+        display_name="AnnTanh (γ=0.2)",
+        group="AnnealedTanh",
+        base_model="microsoft/mpnet-base",
+        color="#3a5217", hatch="+-", marker="bowtie", similarity="hamming", atanh_gamma=0.2,
+    ),
+
+    # --- MRL + AnnTanh for bge (violet gradient, lighter=smaller dim, hatch: x-, marker: hash) ---
+    "finetuned-bge-base-en-v1.5-mrl-notrunc-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#4b1480",
+        hatch="x-",
+        marker="hash",
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-512-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-512+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#7b3db6",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=512,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-256-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-256+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#a570cb",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=256,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-128-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-128+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#c9a9e0",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=128,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-64-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-64+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#dbc8ee",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=64,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-bge-base-en-v1.5-mrl-32-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_00-41-40/bge-base-en-v1.5/final_model",
+        display_name="MRL-32+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="BAAI/bge-base-en-v1.5",
+        color="#ede0f5",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=32,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+
+    # --- MRL + AnnTanh for roberta-base (teal gradient, lighter=smaller dim, hatch: x-, marker: hash) ---
+    "finetuned-roberta-base-mrl-notrunc-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#4b1480",
+        hatch="x-",
+        marker="hash",
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-roberta-base-mrl-512-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-512+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#7b3db6",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=512,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-roberta-base-mrl-256-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-256+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#a570cb",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=256,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-roberta-base-mrl-128-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-128+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#c9a9e0",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=128,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-roberta-base-mrl-64-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-64+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#dbc8ee",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=64,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-roberta-base-mrl-32-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_12-38-06/roberta-base/final_model",
+        display_name="MRL-32+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="FacebookAI/roberta-base",
+        color="#ede0f5",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=32,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+
+    # --- MRL + AnnTanh for mpnet-base (orange gradient, lighter=smaller dim, hatch: x-, marker: hash) ---
+    "finetuned-mpnet-base-mrl-notrunc-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#4b1480",
+        hatch="x-",
+        marker="hash",
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-mrl-512-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-512+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#7b3db6",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=512,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-mrl-256-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-256+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#a570cb",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=256,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-mrl-128-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-128+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#c9a9e0",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=128,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-mrl-64-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-64+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#dbc8ee",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=64,
+        similarity="hamming",
+        atanh_gamma=0.1,
+    ),
+    "finetuned-mpnet-base-mrl-32-atanh": ModelSpec(
+        path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260512_19-41-28/mpnet-base/final_model",
+        display_name="MRL-32+AnnTanh",
+        group="MRL+AnnTanh",
+        base_model="microsoft/mpnet-base",
+        color="#ede0f5",
+        hatch="x-",
+        marker="hash",
+        truncate_dim=32,
+        similarity="hamming",
+        atanh_gamma=0.1,
     ),
 
     # --- TurboQuant post-hoc (gold/amber gradient, hatch: OO, marker: pentagon) ---

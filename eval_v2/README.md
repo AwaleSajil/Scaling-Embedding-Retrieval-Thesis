@@ -5,8 +5,8 @@ Modular retrieval evaluation pipeline for embedding compression experiments.
 Replaces the monolithic `eval/eval.py` with a clean, layered architecture that adds:
 - **Per-query results** — required for statistical significance testing
 - **Embedding cache for NanoBEIR** — shared across experiments with the same base checkpoint
-- **All-metric significance testing** — Wilcoxon signed-rank + Cohen's d over every metric × subset pair
-- **Interactive HTML dashboard** — Plotly.js, fully in-browser, no matplotlib charts generated
+- **All-metric significance testing** — Wilcoxon signed-rank + paired t-test + Cohen's d over every metric × subset pair
+- **Interactive HTML dashboard** — Plotly.js, fully in-browser, lazy-loads heavy data on demand
 - **Single model registry** — color, hatch, and marker all defined in one place
 
 ---
@@ -21,7 +21,7 @@ eval_v2/
 ├── core/
 │   ├── cache.py           # EmbeddingCache — multi-GPU encoding, shared across experiments
 │   ├── evaluator.py       # run_ir_eval() — per-query NDCG, MRR, Accuracy, Recall
-│   └── significance.py    # Wilcoxon signed-rank + Cohen's d, all metrics × all subsets
+│   └── significance.py    # Wilcoxon + paired t-test + Cohen's d, all metrics × all subsets
 ├── wrappers/
 │   ├── base.py            # DummyModel, hamming_similarity, embedding_info
 │   ├── transforms.py      # apply_transforms() — truncate / binarize / INT8/4 quantize
@@ -30,8 +30,8 @@ eval_v2/
 ├── results/
 │   └── store.py           # Atomic JSON I/O — aggregate, per_query, emb_info, significance
 ├── html/
-│   ├── builder.py         # Bundles all results into a self-contained HTML file
-│   └── template.html      # Plotly.js interactive dashboard (5 views)
+│   ├── builder.py         # Writes explorer.html + companion shard files
+│   └── template.html      # Plotly.js interactive dashboard (5 views, lazy data loading)
 └── run.py                 # CLI entry point
 ```
 
@@ -53,7 +53,7 @@ This will:
 3. Apply model-specific transforms (truncation, binarization, quantization, PQ, TurboQuant).
 4. Run per-query IR evaluation and save results incrementally.
 5. Compute pairwise significance tests for every metric × subset combination.
-6. Write `eval_v2/outputs/results/<dataset>/explorer.html` — open in any browser.
+6. Write `eval_v2/outputs/results/<dataset>/explorer.html` and companion shard files.
 
 ### Useful flags
 
@@ -90,14 +90,18 @@ Each dataset gets its own subdirectory so runs never collide:
 eval_v2/outputs/
 ├── results/
 │   ├── nanobeir/
-│   │   ├── aggregate.json     # model → subset → metric@k → float
-│   │   ├── per_query.json     # model → subset → query_id → {metrics, ranked_ids, relevant_ids}
-│   │   ├── emb_info.json      # model → subset → {queries, corpus} → {n, dim, element_size_bit}
-│   │   ├── significance.json  # "{modelA}|||{modelB}|||{subset}|||{metric}" → {p, effect, wins, ties, losses, n}
-│   │   └── explorer.html      # Self-contained interactive dashboard
-│   ├── beir/
-│   │   └── ...
-│   └── nasa_smd_ir/
+│   │   ├── aggregate.json          # model → subset → metric@k → float
+│   │   ├── per_query.json          # model → subset → query_id → {metrics, ranked_ids, relevant_ids}
+│   │   ├── emb_info.json           # model → subset → {queries, corpus} → {n, dim, element_size_bit}
+│   │   ├── significance.json       # "{modelA}|||{modelB}|||{subset}|||{metric}" → {p, effect, wins, ...}
+│   │   ├── explorer.html           # Lightweight dashboard (~2 MB), fetches shards on demand
+│   │   ├── significance_shards/    # One JSON per (subset, metric) — fetched when Significance tab opens
+│   │   │   ├── NanoArguAna__mrr-10.json
+│   │   │   └── ...                 # ~208 files, ~3 MB each
+│   │   └── per_query_shards/       # One JSON per subset — fetched when Query tab opens
+│   │       ├── NanoArguAna.json
+│   │       └── ...                 # 13 files, ~8 MB each
+│   └── beir/
 │       └── ...
 └── cache/
     └── <model_hash>/<dataset>/<subset>/
@@ -107,17 +111,47 @@ eval_v2/outputs/
 
 ### Embedding cache
 
-```
-eval_v2_cache/
-└── <model_hash>/
-    └── <dataset>/<subset>/
-        ├── corpus.npz   # float32, shape (N, D)
-        └── queries.npz  # float32, shape (M, D)
-```
-
 The cache key is `sha256(model_path)[:16]`. Experiments that share the same base
 checkpoint (e.g. all MRL variants trained from the same fine-tuned model) automatically
 reuse the same cached embeddings — transforms are applied on load.
+
+---
+
+## Viewing the dashboard
+
+The dashboard uses `fetch()` to load shard files on demand, so it must be served over HTTP
+(browsers block `fetch()` for `file://` URLs).
+
+```bash
+cd eval_v2/outputs/results/nanobeir
+python -m http.server 8080
+# open http://localhost:8080/explorer.html
+```
+
+If you are on a remote server via VS Code SSH, the port is forwarded automatically and
+opens in your local browser.
+
+The initial page load is ~2 MB. Heavy data loads lazily:
+- **Significance tab** — fetches one ~3 MB shard for the selected subset + metric; cached for the rest of the session.
+- **Query tab** — fetches one ~8 MB shard for the selected subset; cached for the rest of the session.
+- All other tabs (bar, scatter, table, line) use only the inline aggregate data and are instant.
+
+---
+
+## Interactive HTML dashboard
+
+| Tab | What you see |
+|---|---|
+| **Model Comparison** | Grouped bar chart — metric@k for the chosen subset, with hatch patterns |
+| **Size vs Perf** | Scatter — embedding size (MB) vs performance; std error bars load with per-query shard |
+| **Metrics Table** | Sortable table of all metric@k values across models |
+| **Query Browser** | Pick a subset and query → ranked results per model side-by-side, relevant docs highlighted |
+| **Significance** | Heatmap of p-values (Wilcoxon / paired t-test) for the chosen subset + metric |
+| **Metric@K Trend** | Line chart — how a metric changes as K varies, per model |
+
+Use the **sidebar** to filter by subset, metric, K value, or model group. Click any significance
+cell to open a normality diagnostics panel (Q-Q plot, histogram, Shapiro-Wilk test). Use
+Plotly's built-in camera icon to save any plot as PNG.
 
 ---
 
@@ -143,32 +177,11 @@ MODELS["my_new_model"] = ModelSpec(
 
 ---
 
-## Interactive HTML dashboard
-
-Open `explorer.html` in any browser — no server needed.
-
-| Tab | What you see |
-|---|---|
-| **Model Comparison** | Grouped bar chart — metric@k for the chosen subset, with hatch patterns |
-| **Size vs Perf** | Scatter — embedding size (bits) vs performance, marker shapes from model config |
-| **Query Browser** | Pick a subset and query → ranked results per model side-by-side, relevant docs highlighted |
-| **Significance** | Heatmap of p-values (Wilcoxon) for the chosen metric — red = significant (p < 0.05) |
-| **Metric@K Trend** | Line chart — how a metric changes as K varies, per model |
-
-Use the **sidebar** to filter by subset, metric, K value, or model group. Use Plotly's
-built-in camera icon to save any plot as PNG.
-
----
-
 ## Future extensions
-
-The architecture is designed to support:
 
 | Feature | What to add |
 |---|---|
 | **H-EQAT** (multi-level quant) | `quant_levels: list[int]` field in `ModelSpec`; cache stores `{bits: array}` dict |
 | **Unified H-EQAT + MRL** | `mrl_dims: list[int]` in `ModelSpec`; cache key includes `(mrl_dim, bits)` |
 | **Student-Teacher** | New entry in `MODELS` only |
-| **Annealed Hard Tanh** | New wrapper in `wrappers/` + register in `ModelSpec` |
-| **TurboQuant + MRL** | Compose `truncate_dim` + `tq_bits` in existing `ModelSpec` fields |
 | **New dataset** | Add `DatasetSpec` to `config/datasets.py` + loader function in `run.py` |

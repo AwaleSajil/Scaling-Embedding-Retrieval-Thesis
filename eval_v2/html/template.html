@@ -39,6 +39,33 @@
                  transition: background .1s; }
   .group-check:hover { background: #f0f2ff; }
   .group-check input { cursor: pointer; accent-color: #4361ee; width: 14px; height: 14px; }
+  /* nested model checkboxes */
+  .group-item { display: flex; flex-direction: column; }
+  .group-header { display: flex; align-items: center; gap: 2px; }
+  .group-toggle { background: none; border: none; cursor: pointer; color: #9a9ab8;
+                  font-size: 11px; padding: 1px 4px; flex-shrink: 0; line-height: 1;
+                  border-radius: 3px; transition: transform .15s, background .1s; }
+  .group-toggle:hover { background: #f0f2ff; color: #4361ee; }
+  .group-toggle.closed { transform: rotate(-90deg); }
+  .group-models { padding-left: 20px; display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .group-models.hidden { display: none; }
+  .model-check { display: flex; align-items: flex-start; gap: 6px; cursor: pointer;
+                 padding: 3px 5px; border-radius: 5px; transition: background .1s; }
+  .model-check:hover { background: #f0f2ff; }
+  .model-check input { cursor: pointer; accent-color: #4361ee; width: 12px; height: 12px;
+                       margin-top: 2px; flex-shrink: 0; }
+  .model-label { display: flex; flex-direction: column; }
+  .model-disp { font-size: 12px; color: #333; }
+  .model-key { font-size: 10px; color: #bbb; font-family: monospace; line-height: 1.3; }
+  /* drag-and-drop reordering */
+  .drag-handle { cursor: grab; color: #d0d2e0; font-size: 14px; padding: 0 3px;
+                 user-select: none; flex-shrink: 0; }
+  .drag-handle:hover { color: #666; }
+  .group-item.drag-above { border-top: 2px solid #4361ee; }
+  .group-item.drag-below { border-bottom: 2px solid #4361ee; }
+  .model-check.drag-above { border-top: 2px solid #4361ee; }
+  .model-check.drag-below { border-bottom: 2px solid #4361ee; }
+  .is-dragging { opacity: 0.35; }
 
   /* ── Main ── */
   #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -313,7 +340,13 @@
     <!-- ── Scatter ── -->
     <div id="tab-scatter" class="tab-panel">
       <div class="plot-card" style="flex:1">
-        <div id="scatter-chart" style="height:calc(100vh - 190px); min-height:700px"></div>
+        <div style="display:flex; gap:16px; align-items:center; padding:6px 2px 10px 2px; flex-wrap:wrap;">
+          <label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#41486d;">
+            <input type="checkbox" id="scatter-use-compression" checked onchange="renderScatter()">
+            Show as compression ratio
+          </label>
+        </div>
+        <div id="scatter-chart" style="height:calc(100vh - 220px); min-height:670px"></div>
       </div>
     </div>
 
@@ -457,7 +490,12 @@ let _tableSelectedKs = new Set();
 let _tableSortKey = null;
 let _tableSortDir = 0; // 0 none, 1 asc, -1 desc
 let _selectedTest = 'wilcoxon';
+let _dragEl = null;
 let _normPair = null; // {modelA, modelB, subset, metric}
+
+// Lazy-load caches: track which shards have already been fetched
+const _sigLoaded = new Set();   // "subset|||metric" keys already merged into DATA.significance
+const _pqLoaded  = new Set();   // subset keys already merged into DATA.per_query
 
 // ═══════════════════════════════════════════════════════════════════
 // Helpers
@@ -485,6 +523,35 @@ function setSelectOptions(id, values) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// Lazy loaders
+// ═══════════════════════════════════════════════════════════════════
+async function ensureSignificance(subset, metric) {
+  const cacheKey = `${subset}|||${metric}`;
+  if (_sigLoaded.has(cacheKey)) return;
+  const fname = `${subset}__${metric.replace('@', '-')}.json`;
+  const resp = await fetch(`./significance_shards/${fname}`);
+  if (!resp.ok) { console.warn(`[sig] shard not found: ${fname}`); return; }
+  const shard = await resp.json();
+  if (!DATA.significance) DATA.significance = {};
+  Object.assign(DATA.significance, shard);
+  _sigLoaded.add(cacheKey);
+}
+
+async function ensurePerQuery(subset) {
+  if (_pqLoaded.has(subset)) return;
+  const resp = await fetch(`./per_query_shards/${subset}.json`);
+  if (!resp.ok) { console.warn(`[pq] shard not found: ${subset}.json`); return; }
+  const shard = await resp.json(); // {modelKey: {qid: {...}}}
+  if (!DATA.per_query) DATA.per_query = {};
+  for (const [modelKey, queries] of Object.entries(shard)) {
+    if (!DATA.per_query[modelKey]) DATA.per_query[modelKey] = {};
+    DATA.per_query[modelKey][subset] = queries;
+  }
+  _pqLoaded.add(subset);
+  _metricStatsCache.clear();
+}
+
 function renderPlotlyUnavailable(targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
@@ -507,22 +574,80 @@ function colorWithAlpha(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function activeGroups() {
-  return Array.from(document.querySelectorAll('#group-list input:checked')).map(el => el.value);
-}
-
 function activeBaseModels() {
   const sel = document.querySelector('#base-model-list input[name="base-model-radio"]:checked');
   return sel ? [sel.value] : [];
 }
 
 function visibleModels() {
-  const groups = activeGroups();
-  const baseModels = activeBaseModels();
-  return DATA.model_keys.filter(k =>
-    groups.includes(DATA.models_meta[k]?.group) &&
-    baseModels.includes(DATA.models_meta[k]?.base_model)
+  const checkedKeys = new Set(
+    Array.from(document.querySelectorAll('#group-list input[data-model-key]:checked'))
+      .map(el => el.dataset.modelKey)
   );
+  const baseModels = activeBaseModels();
+  // Read order directly from DOM so drag-and-drop is immediately reflected
+  return Array.from(document.querySelectorAll('#group-list input[data-model-key]'))
+    .map(el => el.dataset.modelKey)
+    .filter(k => checkedKeys.has(k) && baseModels.includes(DATA.models_meta[k]?.base_model));
+}
+
+// ── Sidebar drag-and-drop helpers ────────────────────────────────────────
+function _dndStart(el) {
+  _dragEl = el;
+  setTimeout(() => el.classList.add('is-dragging'), 0);
+}
+function _dndEnd(el) {
+  el?.classList.remove('is-dragging');
+  document.querySelectorAll('.drag-above, .drag-below').forEach(x =>
+    x.classList.remove('drag-above', 'drag-below')
+  );
+  _dragEl = null;
+}
+function _dndOver(e, target) {
+  e.preventDefault();
+  if (!_dragEl || _dragEl === target) return;
+  target.parentElement?.querySelectorAll('.drag-above, .drag-below').forEach(x => {
+    if (x !== target) x.classList.remove('drag-above', 'drag-below');
+  });
+  const mid = target.getBoundingClientRect().top + target.getBoundingClientRect().height / 2;
+  target.classList.toggle('drag-above', e.clientY < mid);
+  target.classList.toggle('drag-below', e.clientY >= mid);
+}
+function _dndDrop(e, target) {
+  e.preventDefault();
+  if (!_dragEl || _dragEl === target) { _dndEnd(_dragEl); return; }
+  const before = target.classList.contains('drag-above');
+  target.parentElement?.insertBefore(_dragEl, before ? target : target.nextSibling);
+  _dndEnd(_dragEl);
+  refreshAll();
+}
+
+// ── Filter sidebar model rows to match selected base model ───────────────
+function syncGroupVisibility() {
+  const selBM = activeBaseModels()[0];
+  if (!selBM) return;
+
+  document.querySelectorAll('#group-list .model-check').forEach(label => {
+    label.style.display = label.dataset.baseModel === selBM ? '' : 'none';
+  });
+
+  // Per-group: hide the whole group item if it has no models for this base model,
+  // otherwise recompute the group checkbox checked/indeterminate state.
+  document.querySelectorAll('#group-list .group-item').forEach(item => {
+    const modelsDiv = item.querySelector('.group-models');
+    const groupInput = item.querySelector('input[data-group]');
+    if (!modelsDiv || !groupInput) return;
+
+    const visible = Array.from(modelsDiv.querySelectorAll('.model-check'))
+      .filter(l => l.style.display !== 'none');
+
+    if (visible.length === 0) { item.style.display = 'none'; return; }
+    item.style.display = '';
+
+    const nChecked = visible.filter(l => l.querySelector('input[data-model-key]')?.checked).length;
+    groupInput.indeterminate = nChecked > 0 && nChecked < visible.length;
+    groupInput.checked = nChecked === visible.length;
+  });
 }
 
 function metricKey(metricBase, k) {
@@ -544,6 +669,18 @@ function embMB(modelKey, subset) {
   const bits = embBits(modelKey, subset);
   if (bits === null) return null;
   return bits / 8 / 1024 / 1024;
+}
+
+// Baseline: float32 BGE-base at full 768 dims (per-corpus-vector bits, n cancels in ratio)
+const BASELINE_BITS_PER_VEC = 768 * 32;
+
+function compressionRatio(modelKey, subset) {
+  const info = DATA.emb_info?.[modelKey]?.[subset];
+  if (!info) return null;
+  const c = info.corpus || {};
+  const bitsPerVec = (c.dimension || 0) * (c.element_size_bit || 32);
+  if (!bitsPerVec) return null;
+  return BASELINE_BITS_PER_VEC / bitsPerVec;
 }
 
 function metricLabel(metric) {
@@ -584,6 +721,14 @@ function metricStats(modelKey, subset, metric, k) {
   const cacheKey = `${modelKey}|||${subset}|||${metric}|||${k}`;
   if (_metricStatsCache.has(cacheKey)) return _metricStatsCache.get(cacheKey);
 
+  // Use precomputed stats embedded in the payload (works without fetch / file://).
+  const precomputed = DATA.stats?.[modelKey]?.[subset]?.[metricKey(metric, k)];
+  if (precomputed) {
+    _metricStatsCache.set(cacheKey, precomputed);
+    return precomputed;
+  }
+
+  // Fallback: compute from lazy-loaded per_query data (only available after fetch).
   const samples = metricSamples(modelKey, subset, metric, k);
   if (!samples.length) {
     _metricStatsCache.set(cacheKey, null);
@@ -674,38 +819,25 @@ function init() {
   const subsets = DATA.subsets || [];
   ['ctrl-subset','line-subset','query-subset-sel'].forEach(id => setSelectOptions(id, subsets));
 
-  // sig-subset: derive from actual significance keys so "mean" appears when computed
-  const sigSubsets = [...new Set(
-    Object.keys(DATA.significance || {}).map(k => k.split('|||')[2])
-  )].sort((a, b) => {
-    if (a === 'mean') return 1;
-    if (b === 'mean') return -1;
-    return a.localeCompare(b);
-  });
-  setSelectOptions('sig-subset', sigSubsets.length ? sigSubsets : subsets.filter(s => s !== 'mean'));
+  // sig-subset: use all subsets (significance is lazy-loaded, keys not available at init)
+  setSelectOptions('sig-subset', subsets);
 
   const firstRealSubset = subsets.find(s => s !== 'mean') || subsets[0];
   if (firstRealSubset && subsets.includes('mean')) {
     document.getElementById('ctrl-subset').value = 'mean';
-    document.getElementById('sig-subset').value = sigSubsets.includes('mean') ? 'mean' : (firstRealSubset || sigSubsets[0]);
+    document.getElementById('sig-subset').value = 'mean';
     document.getElementById('line-subset').value = firstRealSubset;
   } else if (firstRealSubset) {
     ['ctrl-subset', 'line-subset', 'query-subset-sel'].forEach(id => {
       document.getElementById(id).value = firstRealSubset;
     });
     if (document.getElementById('sig-subset'))
-      document.getElementById('sig-subset').value = sigSubsets[0] || firstRealSubset;
+      document.getElementById('sig-subset').value = firstRealSubset;
   }
 
-  // Significance metric dropdown
-  const sigMetrics = [...new Set(
-    Object.keys(DATA.significance || {}).map(k => k.split('|||')[3])
-  )].sort((a, b) => {
-    const order = ['ndcg', 'mrr', 'accuracy', 'recall'];
-    const [baseA, kA] = a.split('@'); const [baseB, kB] = b.split('@');
-    const oi = order.indexOf(baseA) - order.indexOf(baseB);
-    return oi !== 0 ? oi : (+kA) - (+kB);
-  });
+  // Significance metric dropdown — derive from aggregate (available at init, unlike significance)
+  const { bases: aggBases, ks: aggKs } = collectMetricBasesAndKs();
+  const sigMetrics = aggBases.flatMap(b => aggKs.map(k => `${b}@${k}`));
   const sigSel = document.getElementById('sig-metric');
   setSelectOptions('sig-metric', sigMetrics.length ? sigMetrics : ['mrr@10']);
   Array.from(sigSel.options).forEach(opt => { opt.textContent = opt.value.toUpperCase(); });
@@ -731,22 +863,118 @@ function init() {
     bml.appendChild(label);
   });
 
-  // Group checkboxes
+  // Group checkboxes — nested tree with per-model toggles + drag-to-reorder
   const groups = [...new Set(DATA.model_keys.map(k => DATA.models_meta[k]?.group).filter(Boolean))];
   const gl = document.getElementById('group-list');
   gl.innerHTML = '';
   groups.forEach(g => {
-    const label = document.createElement('label');
-    label.className = 'group-check';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = g;
-    input.checked = true;
-    input.addEventListener('change', refreshAll);
-    const text = document.createTextNode(g);
-    label.appendChild(input);
-    label.appendChild(text);
-    gl.appendChild(label);
+    const modelsInGroup = DATA.model_keys.filter(k => DATA.models_meta[k]?.group === g);
+    const item = document.createElement('div');
+    item.className = 'group-item';
+
+    // Header: drag handle + collapse button + group checkbox
+    const headerRow = document.createElement('div');
+    headerRow.className = 'group-header';
+    headerRow.draggable = true;
+    headerRow.addEventListener('dragstart', e => { e.stopPropagation(); _dndStart(item); });
+    headerRow.addEventListener('dragend', () => _dndEnd(item));
+    item.addEventListener('dragover', e => _dndOver(e, item));
+    item.addEventListener('dragleave', () => item.classList.remove('drag-above', 'drag-below'));
+    item.addEventListener('drop', e => _dndDrop(e, item));
+
+    const groupDragHandle = document.createElement('span');
+    groupDragHandle.className = 'drag-handle';
+    groupDragHandle.textContent = '⠿';
+    groupDragHandle.title = 'Drag to reorder group';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'group-toggle closed';
+    toggleBtn.textContent = '▾';
+    toggleBtn.title = 'Expand / collapse';
+
+    const groupLabel = document.createElement('label');
+    groupLabel.className = 'group-check';
+    groupLabel.style.flex = '1';
+    const groupInput = document.createElement('input');
+    groupInput.type = 'checkbox';
+    groupInput.dataset.group = g;
+    groupInput.checked = true;
+    groupLabel.appendChild(groupInput);
+    groupLabel.appendChild(document.createTextNode(g));
+
+    // Per-model checkboxes (collapsed by default)
+    const modelsDiv = document.createElement('div');
+    modelsDiv.className = 'group-models hidden';
+
+    modelsInGroup.forEach(modelKey => {
+      const meta = DATA.models_meta[modelKey];
+      const modelLabel = document.createElement('label');
+      modelLabel.className = 'model-check';
+      modelLabel.dataset.baseModel = meta.base_model ?? '';
+      modelLabel.draggable = true;
+      modelLabel.addEventListener('dragstart', e => { e.stopPropagation(); _dndStart(modelLabel); });
+      modelLabel.addEventListener('dragend', () => _dndEnd(modelLabel));
+      modelLabel.addEventListener('dragover', e => _dndOver(e, modelLabel));
+      modelLabel.addEventListener('dragleave', () => modelLabel.classList.remove('drag-above', 'drag-below'));
+      modelLabel.addEventListener('drop', e => _dndDrop(e, modelLabel));
+
+      const modelDragHandle = document.createElement('span');
+      modelDragHandle.className = 'drag-handle';
+      modelDragHandle.textContent = '⠿';
+      modelDragHandle.title = 'Drag to reorder';
+
+      const modelInput = document.createElement('input');
+      modelInput.type = 'checkbox';
+      modelInput.dataset.modelKey = modelKey;
+      modelInput.dataset.group = g;
+      modelInput.checked = true;
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'model-label';
+      const dispSpan = document.createElement('span');
+      dispSpan.className = 'model-disp';
+      dispSpan.textContent = meta.display_name;
+      const keySpan = document.createElement('span');
+      keySpan.className = 'model-key';
+      keySpan.textContent = modelKey;
+      labelSpan.appendChild(dispSpan);
+      labelSpan.appendChild(keySpan);
+
+      modelLabel.appendChild(modelDragHandle);
+      modelLabel.appendChild(modelInput);
+      modelLabel.appendChild(labelSpan);
+      modelsDiv.appendChild(modelLabel);
+
+      modelInput.addEventListener('change', () => {
+        const all = Array.from(modelsDiv.querySelectorAll('input[data-model-key]'));
+        const n = all.filter(i => i.checked).length;
+        groupInput.indeterminate = n > 0 && n < all.length;
+        groupInput.checked = n === all.length;
+        refreshAll();
+      });
+    });
+
+    // Group checkbox: toggle all children
+    groupInput.addEventListener('change', () => {
+      modelsDiv.querySelectorAll('input[data-model-key]').forEach(inp => {
+        inp.checked = groupInput.checked;
+      });
+      groupInput.indeterminate = false;
+      refreshAll();
+    });
+
+    // Expand / collapse children
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = modelsDiv.classList.toggle('hidden');
+      toggleBtn.classList.toggle('closed', isHidden);
+    });
+
+    headerRow.appendChild(groupDragHandle);
+    headerRow.appendChild(toggleBtn);
+    headerRow.appendChild(groupLabel);
+    item.appendChild(headerRow);
+    item.appendChild(modelsDiv);
+    gl.appendChild(item);
   });
 
   if (!subsets.length) {
@@ -771,10 +999,19 @@ function showTab(name) {
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
+  // Pre-fetch per_query for current subset in the background when scatter is opened
+  // so std error bars appear once the data arrives
+  if (name === 'scatter') {
+    const subset = document.getElementById('ctrl-subset')?.value;
+    if (subset && !_pqLoaded.has(subset)) {
+      ensurePerQuery(subset).then(() => { if (activeTab === 'scatter') renderScatter(); });
+    }
+  }
   requestAnimationFrame(refreshActive);
 }
 
 function refreshAll() {
+  syncGroupVisibility();
   renderBar();
   if (activeTab === 'scatter') renderScatter();
   renderMetricsTable();
@@ -797,6 +1034,9 @@ function renderBar() {
   if (!PLOTLY_READY) { renderPlotlyUnavailable('bar-chart'); return; }
   const subset = ctrl('ctrl-subset');
   if (!subset) { Plotly.purge('bar-chart'); return; }
+  if (!_pqLoaded.has(subset)) {
+    ensurePerQuery(subset).then(() => { if (activeTab === 'bar') renderBar(); });
+  }
   const metric = ctrl('ctrl-metric');
   const k = ctrl('ctrl-k');
   const models = visibleModels();
@@ -825,7 +1065,6 @@ function renderBar() {
     return;
   }
 
-  rows.sort((a, b) => a.name.localeCompare(b.name));
   const xs    = rows.map(r => r.name);
   const ys    = rows.map(r => r.value);
   const err   = rows.map(r => Number.isFinite(r.std) ? r.std : 0);
@@ -876,10 +1115,11 @@ function renderBar() {
     hoverinfo: 'skip',
   }));
 
+  const baseModel = (activeBaseModels()[0] || '').split('/').pop();
   const layout = {
-    title: { text: `${metricLabel(metric)} @ ${k}  ·  ${subset}`, font: { size: 14 } },
+    title: { text: `${metricLabel(metric)} @ ${k}  ·  ${subset}${baseModel ? `  ·  ${baseModel}` : ''}`, font: { size: 14 } },
     showlegend: false,
-    xaxis: { tickangle: -40, automargin: true, categoryorder: 'array', categoryarray: xs },
+    xaxis: { tickangle: -90, automargin: true, categoryorder: 'array', categoryarray: xs },
     yaxis: { title: `${metricLabel(metric)} @ ${k}`, range: [0, Math.min(1, Math.max(maxY, maxUpper) * 1.18)] },
     margin: { t: 50, l: 60, r: 20, b: 130 },
     plot_bgcolor: 'white',
@@ -896,19 +1136,23 @@ function renderScatter() {
   if (!PLOTLY_READY) { renderPlotlyUnavailable('scatter-chart'); return; }
   const subset = ctrl('ctrl-subset');
   if (!subset) { Plotly.purge('scatter-chart'); return; }
+  if (!_pqLoaded.has(subset)) {
+    ensurePerQuery(subset).then(() => { if (activeTab === 'scatter') renderScatter(); });
+  }
   const metric = ctrl('ctrl-metric');
   const k = ctrl('ctrl-k');
   const models = visibleModels();
 
   const showStd = document.getElementById('ctrl-show-std')?.checked ?? true;
   const showGroupLines = document.getElementById('ctrl-show-group-lines')?.checked ?? true;
+  const useCompression = document.getElementById('scatter-use-compression')?.checked ?? true;
 
   const rows = [];
   models.forEach(mKey => {
     const meta = DATA.models_meta[mKey] || {};
     const perf = getAggValue(mKey, subset, metric, k);
-    const sizeMB = embMB(mKey, subset);
-    if (perf === null || sizeMB === null) return;
+    const xVal = useCompression ? compressionRatio(mKey, subset) : embMB(mKey, subset);
+    if (perf === null || xVal === null) return;
     const stats = metricStats(mKey, subset, metric, k);
     rows.push({
       name: meta.display_name || mKey,
@@ -916,7 +1160,7 @@ function renderScatter() {
       color: meta.color || '#888',
       marker: meta.marker || 'circle',
       plotly_pattern: meta.plotly_pattern || '',
-      x: sizeMB,
+      x: xVal,
       y: +perf.toFixed(4),
       std: stats?.std ?? 0,
       n: stats?.n ?? 0,
@@ -973,12 +1217,17 @@ function renderScatter() {
       thickness: 1,
       width: 2,
     },
-    hovertemplate: `<b>${escapeHtml(r.name)}</b><br>Group: ${escapeHtml(r.group)}<br>Size: ${r.x.toFixed(3)} MB<br>${metricLabel(metric)}@${k}: ${r.y.toFixed(4)}<br>std: ${Number.isFinite(r.std) ? r.std.toFixed(4) : '—'}<br>n: ${r.n || '—'}<extra></extra>`,
+    hovertemplate: `<b>${escapeHtml(r.name)}</b><br>Group: ${escapeHtml(r.group)}<br>${useCompression ? `Compression: ${r.x.toFixed(1)}×` : `Size: ${r.x.toFixed(3)} MB`}<br>${metricLabel(metric)}@${k}: ${r.y.toFixed(4)}<br>std: ${Number.isFinite(r.std) ? r.std.toFixed(4) : '—'}<br>n: ${r.n || '—'}<extra></extra>`,
   }))];
 
+  const xTitle = useCompression
+    ? 'Compression ratio vs float32 768-dim baseline'
+    : 'Total corpus embedding size (MB)';
+  const baseModel = (activeBaseModels()[0] || '').split('/').pop();
   const layout = {
-    title: { text: `${metricLabel(metric)}@${k}  vs  Embedding Size (MB)  ·  ${subset}`, font: { size: 14 } },
-    xaxis: { title: 'Total corpus embedding size (MB)' },
+    title: { text: `${metricLabel(metric)}@${k}  vs  ${useCompression ? 'Compression Ratio' : 'Embedding Size (MB)'}  ·  ${subset}${baseModel ? `  ·  ${baseModel}` : ''}`, font: { size: 14 } },
+    xaxis: { title: xTitle, type: useCompression ? 'log' : 'linear',
+             tickformat: useCompression ? '~r' : undefined },
     yaxis: { title: `${metricLabel(metric)} @ ${k}`, range: [0, 1] },
     legend: { title: { text: 'Model' }, orientation: 'v', x: 1.01, y: 1, font: { size: 10 } },
     hovermode: 'closest',
@@ -1219,6 +1468,13 @@ function selectQuery(subset, qid, idx) {
   document.querySelectorAll('.query-item').forEach(el => el.classList.remove('active'));
   document.getElementById(`qi-${idx}`)?.classList.add('active');
 
+  if (!_pqLoaded.has(subset)) {
+    const detail = document.getElementById('query-detail');
+    detail.innerHTML = `<div style="padding:24px;color:#888;font-size:13px;">Loading per-query data for ${subset}…</div>`;
+    ensurePerQuery(subset).then(() => selectQuery(subset, qid, idx));
+    return;
+  }
+
   const detail = document.getElementById('query-detail');
   const queryText = DATA.query_texts?.[subset]?.[qid] || qid;
 
@@ -1365,6 +1621,13 @@ function closeNormalityCheck() {
 function renderNormalityCheck() {
   if (!_normPair || !PLOTLY_READY) return;
   const { modelA, modelB, subset, metric } = _normPair;
+
+  const subsetsNeeded = subset === 'mean' ? (DATA.subsets || []).filter(s => s !== 'mean') : [subset];
+  const missing = subsetsNeeded.filter(s => !_pqLoaded.has(s));
+  if (missing.length > 0) {
+    Promise.all(missing.map(s => ensurePerQuery(s))).then(() => renderNormalityCheck());
+    return;
+  }
 
   const card = document.getElementById('normality-card');
   card.style.display = '';
@@ -1591,6 +1854,12 @@ function renderSignificance() {
   if (!subset) { Plotly.purge('sig-chart'); return; }
   const metric = document.getElementById('sig-metric').value;
 
+  if (!_sigLoaded.has(`${subset}|||${metric}`)) {
+    renderChartMessage('sig-chart', `Loading significance data for ${subset} / ${metric}…`);
+    ensureSignificance(subset, metric).then(() => renderSignificance());
+    return;
+  }
+
   const sig = DATA.significance || {};
   const models = visibleModels();
   const n = models.length;
@@ -1645,7 +1914,7 @@ function renderSignificance() {
 
   const layout = {
     title: { text: `${testLabel} Significance: ${metric} — ${subset}`, font: { size: 14 } },
-    xaxis: { tickangle: -45, tickfont: { size: 10 } },
+    xaxis: { tickangle: -90, tickfont: { size: 10 } },
     yaxis: { tickfont: { size: 10 }, autorange: 'reversed' },
     margin: { t: 60, b: 160, l: 180, r: 80 },
     annotations: [{

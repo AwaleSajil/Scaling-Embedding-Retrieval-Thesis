@@ -105,6 +105,24 @@ def build_html(store: ResultsStore, output_path: str) -> None:
                     k: v for k, v in qdata.items() if k not in ("text",)
                 }
 
+    # Precompute per-(model, subset, metric@k) std and n so the dashboard
+    # can render error bars without a fetch() call (which fails on file://).
+    stats: dict = {}
+    for model_key, model_data in per_query_slim.items():
+        stats[model_key] = {}
+        for subset, queries in model_data.items():
+            metric_samples: dict[str, list] = {}
+            for qdata in queries.values():
+                for mk, v in qdata.items():
+                    if "@" in mk and isinstance(v, (int, float)) and math.isfinite(v):
+                        metric_samples.setdefault(mk, []).append(v)
+            stats[model_key][subset] = {}
+            for mk, samples in metric_samples.items():
+                n = len(samples)
+                mean = sum(samples) / n
+                std = math.sqrt(sum((x - mean) ** 2 for x in samples) / n)
+                stats[model_key][subset][mk] = {"std": std, "n": n}
+
     payload = {
         "models_meta": _models_meta(MODELS),
         "model_keys": [k for k in MODELS if k in aggregate],
@@ -112,6 +130,7 @@ def build_html(store: ResultsStore, output_path: str) -> None:
         "aggregate": _round_floats(aggregate),
         "emb_info": emb_info,
         "query_texts": query_texts,
+        "stats": _round_floats(stats),
         # significance and per_query are lazy-loaded from companion shard files
         "significance": None,
         "per_query": None,
