@@ -71,101 +71,44 @@ optimization; it is a prerequisite for deploying dense retrieval at scale.
 Even simple compression approaches already show real promise: replacing each 32-bit float
 with a single bit (binary quantization) shrinks the index by $32\times$ and retains much of
 the retrieval quality when applied to a strong pre-trained model~\cite{shakir2024embedding}.
-Compression can be pushed further by stacking multiple techniques. The open questions are how
-far compression can go before retrieval quality degrades substantially, and whether
-incorporating compression awareness into fine-tuning produces better representations than
-applying compression post-hoc. This thesis investigates both.
-
-\section{Embedding Compression Landscape}
-
-This thesis organizes embedding compression methods along two orthogonal axes.
-The first axis is \textit{when} compression is applied: \textbf{post-hoc} methods
-are applied to the generated embeddings without modifying the model, while \textbf{training-time}
-methods incorporate compression awareness into the model's fine-tuning objective.
-The second axis is \textit{how} memory is reduced: \textbf{precision reduction} decreases
-the number of bits per dimension, \textbf{dimensionality reduction} decreases the number
-of dimensions kept, and \textbf{learning to hash} fits a codebook that maps embeddings to discrete codes directly,
-rather than applying scalar quantization per dimension.
-Table~\ref{tab:compression-taxonomy} places the methods studied in this thesis along
-these two axes.
-
-\begin{table}[ht]
-\caption[Organization of embedding compression methods studied in this thesis]{Organization of embedding compression methods studied in this thesis, by when compression is applied and how memory is reduced.
-Abbreviations: INT8 = 8-bit integer quantization;
-PQ = Product Quantization;
-BAT = Binary-Aware Training (STE and Annealed Tanh are two training variants);
-STE = Straight-Through Estimator; MRL = Matryoshka Representation Learning.}
-\label{tab:compression-taxonomy}
-\begin{center}
-\begin{tabular}{| l | c | c | c |}
-\hline
- & \textbf{Precision Reduction} & \textbf{Dim.\ Reduction} & \textbf{Learning to Hash} \\ [0.5ex]
-\hline
-\textbf{Post-hoc}       & INT8, Binary, TurboQuant & ---  & PQ            \\
-\hline
-\textbf{Training-time}  & BAT (STE / Annealed Tanh)  & MRL  & ---  \\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
-
-Each method reduces embedding memory through a distinct mechanism.
-\textbf{8-bit integer (INT8)} quantization maps each float32 value to an 8-bit integer,
-yielding $4\times$ compression with minimal quality loss.
-\textbf{Binary quantization} maps each dimension to a single bit ($32\times$ compression),
-enabling fast Hamming-distance similarity search.
-\textbf{Product Quantization (PQ)}~\cite{jegou2010product} partitions each embedding into
-fixed-width sub-vectors and quantizes each to a small learned codebook, achieving high
-compression ratios with better quality retention than scalar binary quantization.
-\textbf{TurboQuant}~\cite{zandieh2025turboquant} applies a random rotation to each embedding before scalar quantization, distributing distortion uniformly across dimensions to approach information-theoretic compression bounds.
-\textbf{Binary-Aware Training (BAT)} fine-tunes the model with an inserted sign function
-to produce binary-friendly representations; two gradient approximation variants are studied:
-the Straight-Through Estimator (STE)~\cite{bengio2013estimating}, which passes gradients
-unchanged through the discontinuity, and Annealed Tanh, which replaces the STE with a
-temperature-annealed $\tanh(\beta \cdot x)$ surrogate that smoothly transitions toward the
-sign function as training progresses.
-\textbf{Matryoshka Representation Learning (MRL)}~\cite{kusupati2022matryoshka} trains
-nested subspace representations so that any leading $k$-dimensional prefix suffices for
-retrieval, enabling post-hoc truncation to any desired dimensionality at inference time.
-
-The fundamental tension in embedding compression is between compression depth and retrieval
-quality. Every method in Table~\ref{tab:compression-taxonomy} trades information loss for
-a smaller memory footprint: reducing bits per dimension discards numerical precision,
-reducing dimensions discards representational capacity, and learned codes introduce
-quantization error. At moderate compression (INT8 at $4\times$), quality losses are
-negligible. At aggressive compression (binary embeddings at $32\times$, heavily truncated
-MRL representations, or stacked combinations), degradation becomes more substantial, and
-the shape of this trade-off varies significantly across methods and compression levels.
+Compression can be pushed further by stacking multiple techniques. The open questions are how far compression can go before retrieval
+quality degrades substantially, and whether incorporating compression
+directly into fine-tuning (\textbf{training-time compression}) produces
+better representations than compression applied to a pre-trained model
+without retraining (\textbf{post-hoc compression}). This thesis
+investigates both.
 
 \section{Problem Statement}
 
-The most fundamental open question in embedding compression is whether training-time methods
-actually outperform post-hoc compression, a comparison that has never been made under
-controlled conditions. BPR~\cite{yamada2021efficient} and QAMA~\cite{qama2025} both
-demonstrate that training-time binarization works well in their respective settings, while
-post-hoc studies~\cite{shakir2024embedding} also report strong results; yet these bodies
-of work use different base models, different training corpora, and different benchmarks.
-When everything changes at once, a method that appears to win may simply reflect a better
-starting point rather than a genuinely better compression strategy. CoRECT~\cite{correct2025},
-the most recent large-scale evaluation, takes a step toward systematic comparison, but its
-primary focus is how compression holds as corpus size scales, it covers only a limited set
-of post-hoc techniques, and it leaves training-time methods entirely out of scope. A
-secondary open question concerns stacking: while post-hoc combinations such as MRL with
-binary quantization have received some attention~\cite{correct2025}, broader combinations
-involving training-time methods (such as MRL jointly trained with BAT or PQ) remain
-unstudied.
+The fundamental tension in embedding compression is between compression
+depth and retrieval quality. Every compression approach trades information
+for a smaller memory footprint, and the shape of this trade-off varies
+across methods and compression levels.
 
-This thesis addresses that gap through a controlled empirical study. We fine-tune three
-encoder architectures (BGE-base-en-v1.5~\cite{xiao2023c}, RoBERTa-base~\cite{liu2019roberta},
-and MPNet-base~\cite{song2020mpnet}) on the same multi-source retrieval corpus of
-4.3~million query-passage pairs, and evaluate all compression methods on the same benchmark.
-By holding training data and evaluation fixed and varying only the compression method, any
-difference in retrieval quality can be attributed to the compression strategy itself rather
-than to the choice of model. Post-hoc and training-time methods are evaluated side by side,
-and MRL is systematically combined with five compression techniques to characterize the
-stacked compression frontier. All results are reported as Pareto curves on the NanoBEIR
-benchmark~\cite{thakur2021beir}, directly answering the practitioner's question: given a
-memory budget, which approach should you use?
+Recent work has begun to map this trade-off systematically.
+\citep{correct2025} systematically evaluate
+retrieval performance across multiple post-hoc compression techniques
+at various compression ratios. However, no existing study extends this
+comparison to training-time compression. In most prior
+work~\cite{yamada2021efficient, gan2023binary, shakir2024embedding,
+qama2025}, each method is evaluated on a different base model, training
+corpus, and benchmark. A method that appears to win may therefore reflect
+a better starting point rather than a genuinely better compression
+strategy.
+
+A secondary gap concerns stacking. Combinations of multiple complementary
+compression techniques, such as dimensionality reduction combined with
+quantization, remain largely unstudied. Chapter~2 surveys the prior work
+that establishes both gaps.
+
+This thesis addresses both gaps through a controlled empirical study.
+Results are reported as Pareto frontiers on the NanoBEIR
+benchmark~\cite{thakur2021beir}. A Pareto frontier is the set of
+configurations where no alternative achieves both higher retrieval
+quality and higher compression. This directly answers the
+practitioner's question: given a memory budget, which approach should
+you use? The contributions are detailed in
+Section~\ref{sec:contributions}.
 
 \section{Research Questions}
 
@@ -173,60 +116,62 @@ This thesis is organized around four research questions:
 
 \begin{enumerate}
 
-    \item \textbf{Training-time versus post-hoc compression.}
-    Does embedding quantization-aware training (such as BAT with STE or Annealed Tanh,
-    or MRL) yield better retrieval quality than post-hoc compression applied to a
-    float-trained baseline at equivalent embedding sizes?
+    \item \textbf{Post-hoc versus training-time compression.}
+    Does training-time compression yield better retrieval quality than
+    post-hoc compression at equivalent memory budgets?
 
-    \item \textbf{Binarization training strategy.}
-    Between STE and Annealed Tanh Binarization, which gradient surrogate produces
-    better binary embeddings, and how sensitive are results to the annealing rate?
+    \item \textbf{Gradient approximation strategy for binary embeddings.}
+    Does the choice of gradient surrogate used during binarization training
+    affect retrieval quality ?
 
-    \item \textbf{Compression stacking with MRL.}
-    Does combining MRL with other compression methods (binary quantization, PQ,
-    TurboQuant, and BAT) yield better Pareto efficiency than either technique
+    \item \textbf{Stacking complementary compression techniques.}
+    Does combining multiple complementary compression techniques yield better
+    retrieval performance to compression ratio trade-offs than either technique
     applied independently?
 
     \item \textbf{Cross-architecture generalizability.}
-    Do the above findings hold consistently across different encoder architectures
-    (BGE-base, RoBERTa-base, and MPNet-base), or are they specific to a particular model?
+    Do the above findings hold consistently across encoder architectures
+    of different retrieval starting quality, or are they model-specific?
 
 \end{enumerate}
 
 \section{Contributions}
+\label{sec:contributions}
 
 This thesis makes the following contributions to the field of efficient dense text retrieval:
 
 \begin{enumerate}
 
     \item \textbf{Systematic cross-method comparison.}
-    Post-hoc and training-time compression methods are evaluated side by side under
-    identical training data and benchmark, across three encoder architectures (BGE-base,
-    RoBERTa-base, MPNet-base). Both single methods and stacked combinations are covered,
-    spanning binary, scalar, product quantization, and dimensionality reduction at multiple
-    operating points. Prior work evaluates each method under different setups; this study
-    provides a direct, fair comparison.
+    Post-hoc and training-time compression are evaluated side by side
+    under identical training data and benchmark, across three encoder
+    architectures. Both single methods and stacked combinations are
+    covered at multiple compression ratios. Prior work evaluates each
+    method under different setups; this study provides the direct,
+    fair comparison.
 
-    \item \textbf{Binarization strategy comparison.}
-    STE and Annealed Tanh have each been used for retrieval binarization in prior
-    work~\cite{bengio2013estimating, yamada2021efficient}, but never compared directly.
-    Both are trained under identical conditions to isolate the effect of the gradient
-    surrogate on retrieval quality. A sweep of the temperature schedule parameter measures
-    how sensitive Annealed Tanh is to the annealing rate.
+    \item \textbf{Binarization training strategy comparison.}
+    Two gradient approximation strategies, the Straight-Through Estimator
+    and Annealed Tanh, for training with a binarization objective are
+    compared directly for the first time under identical
+    conditions~\cite{bengio2013estimating, yamada2021efficient}.
 
-    \item \textbf{Compression stacking with MRL.}
-    MRL is combined with five compression techniques: post-hoc binary quantization, PQ,
-    TurboQuant, BAT (STE), and Annealed Tanh. Results establish which combinations achieve
-    the best Pareto trade-offs and whether jointly training MRL with binarization
-    outperforms applying the two techniques independently.
+    \item \textbf{Stacking complementary compression techniques.}
+    Dimensionality reduction is systematically combined with five
+    quantization techniques, covering both post-hoc and training-time
+    variants. Results establish which combinations achieve the best
+    retrieval quality to memory trade-offs, and whether stacking
+    outperforms applying each technique independently.
 
     \item \textbf{Reproducible experimental pipeline.}
-    A DDP fine-tuning setup over seven heterogeneous retrieval datasets with
-    domain-weighted batch sampling provides the controlled training baseline. An embedding
-    caching and transform pipeline decouples encoding from evaluation, enabling any
-    compression variant to be benchmarked without re-encoding. Results are surfaced through
-    an interactive Plotly dashboard with pairwise Wilcoxon signed-rank and paired t-test
-    significance testing across all model pairs.
+    We released the training codebase for training-time compression,
+    supporting multi-GPU training across seven heterogeneous retrieval
+    datasets with domain-weighted batch sampling. We also released the
+    evaluation codebase that encodes embeddings once and applies any
+    compression transform at evaluation time, avoiding redundant
+    re-encoding. All results are viewable through an interactive
+    dashboard with pairwise statistical significance testing across all
+    model pairs.
 
 \end{enumerate}
 
@@ -235,11 +180,11 @@ This thesis makes the following contributions to the field of efficient dense te
 The remainder of this thesis is organized as follows. Chapter 2 provides background on dense
 retrieval, contrastive learning objectives, and the embedding compression methods compared in
 this work. Chapter 3 describes the training and evaluation datasets, including the multi-source
-training corpus construction and the NanoBEIR benchmark. Chapter 4 details the training setup
-and the fine-tuned float32 baseline that serves as the anchor for all downstream comparisons.
-Chapter 5 presents the compression methods, both post-hoc and training-time, including the
-derivation of the Annealed Tanh Binarization approach and its relationship to the
-STE-based BAT baseline. Chapter 6 reports the experimental results, including NanoBEIR
-evaluations and Pareto analysis across all methods.
-Chapter 7 concludes with a summary of findings, practical guidance on method selection at
+training corpus construction and the NanoBEIR benchmark. Chapter 4 sets out the methodology:
+the training setup and fine-tuned float32 baseline, the training-time and post-hoc compression
+methods (including the Annealed Tanh Binarization approach and its relationship to the
+STE-based BAT baseline), the stacked combinations, and the evaluation framework.
+Chapter 5 reports the results and analysis, including per-method comparisons across three
+encoder backbones, Pareto frontier analysis, and a cross-backbone generalisability study.
+Chapter 6 concludes with a summary of findings, practical guidance on method selection at
 given memory budgets, and directions for future work.

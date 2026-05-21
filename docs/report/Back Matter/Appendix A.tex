@@ -12,8 +12,9 @@ annealing rate $\gamma \in \{0.05, 0.1, 0.2\}$. No single value of $\gamma$
 consistently outperforms the others across all backbones. BGE-base favours
 $\gamma = 0.2$ (wins on 8 of 13 subsets), while RoBERTa-base favours
 $\gamma = 0.1$ (7 of 13) and MPNet-base favours $\gamma = 0.05$ (6 of 13).
-The maximum MRR@10 spread within any backbone is 0.012, indicating that the
-results are not practically sensitive to this hyperparameter. We fix
+The maximum MRR@10 spread within any backbone is 0.014 (RoBERTa),
+indicating that the results are not practically sensitive to this
+hyperparameter. We fix
 $\gamma = 0.1$ throughout as a principled default following
 \cite{yamada2021efficient}.
 

@@ -1,7 +1,7 @@
 
 \chapter{Chapter 2. Background and Related Work}
 
-This chapter establishes the technical foundations on which the remainder of the thesis is built. Section~\ref{sec:biencoder} describes bi-encoder architectures for dense retrieval and introduces the three backbone models used in this thesis (BGE-base-en-v1.5, RoBERTa-base, and MPNet-base). Section~\ref{sec:contrastive} covers the contrastive learning objectives used during fine-tuning. Section~\ref{sec:compression_bg} provides technical descriptions of each compression method surveyed in this thesis, including Matryoshka Representation Learning (MRL). Section~\ref{sec:ir_eval} defines the retrieval evaluation metrics and significance testing procedure used throughout this thesis. Section~\ref{sec:related} surveys related work on binary and quantized retrieval, differentiable quantization techniques, adaptive representations, and controlled compression evaluation, and positions this thesis relative to prior contributions.
+This chapter covers the technical foundations for the rest of the thesis. Section~\ref{sec:biencoder} introduces bi-encoder dense retrieval and the three backbone models. Section~\ref{sec:contrastive} describes the contrastive learning objectives used during fine-tuning. Section~\ref{sec:compression_bg} presents each embedding compression method. Section~\ref{sec:ir_eval} defines the evaluation metrics and significance tests. Section~\ref{sec:related} surveys related work and positions this thesis relative to prior contributions.
 
 \section{Dense Retrieval with Bi-Encoders}
 \label{sec:biencoder}
@@ -12,52 +12,82 @@ Modern dense retrieval systems are built on top of transformer-based language mo
 
 \subsection{Bi-Encoder Architecture}
 
-A bi-encoder, also called a dual encoder, consists of two transformer encoders, one for queries and one for documents, whose outputs are compressed into fixed-size dense vectors~\cite{reimers2019sbert, karpukhin2020dense}. In practice the two towers typically share weights. Given a query $q$ and a document $d$, each is encoded independently:
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Figures/biencoder_arch.pdf}
+  \caption[Bi-encoder retrieval architecture.]{Bi-encoder retrieval architecture. At index time (left), all corpus passages are encoded and stored in an ANN index. At query time (right), the query is encoded and compared against the index via cosine similarity to retrieve the top-$k$ most relevant passages. Both encoders share weights.}
+  \label{fig:biencoder}
+\end{figure}
+
+A bi-encoder, also called a dual encoder, consists of two transformer encoders, one for queries and one for passages, whose outputs are compressed into fixed-size dense vectors~\cite{reimers2019sbert, karpukhin2020dense}. Figure~\ref{fig:biencoder} illustrates the full bi-encoder retrieval pipeline. In practice the two towers typically share weights. Given a query $q$ and a passage $p$, each is encoded independently:
 %
 \begin{equation}
-  \mathbf{e}_q = \text{pool}(\text{Enc}(q)), \qquad \mathbf{e}_d = \text{pool}(\text{Enc}(d)),
+  \mathbf{e}_q = \text{pool}(\text{Enc}(q)), \qquad \mathbf{e}_p = \text{pool}(\text{Enc}(p)),
 \end{equation}
 %
-where $\text{pool}(\cdot)$ is a pooling operation applied to the sequence of hidden states. Mean pooling, which averages all token hidden states, is standard for retrieval models and was established by Sentence-BERT (SBERT)~\cite{reimers2019sbert}. Relevance is scored as the cosine similarity between the query and document embeddings:
+where $\text{pool}(\cdot)$ is a pooling operation applied to the sequence of hidden states. Mean pooling, which averages all token hidden states, is standard for retrieval models and was established by Sentence-BERT (SBERT)~\cite{reimers2019sbert}. Relevance is scored as the cosine similarity between the query and passage embeddings:
 %
 \begin{equation}
-  \text{sim}(\mathbf{e}_q, \mathbf{e}_d) = \frac{\mathbf{e}_q \cdot \mathbf{e}_d}{\|\mathbf{e}_q\| \|\mathbf{e}_d\|}.
+  \text{sim}(\mathbf{e}_q, \mathbf{e}_p) = \frac{\mathbf{e}_q \cdot \mathbf{e}_p}{\|\mathbf{e}_q\| \|\mathbf{e}_p\|}.
 \end{equation}
 %
-The architectural separation of query and document encoding is the critical property of bi-encoders for large-scale retrieval: document embeddings can be computed offline and stored in an approximate nearest-neighbor (ANN) index, so that at query time only the query encoder runs and retrieval reduces to a single nearest-neighbor lookup~\cite{karpukhin2020dense}. This is in contrast to cross-encoders, which jointly encode the query and document and therefore cannot pre-compute document representations.
+The architectural separation of query and passage encoding is the critical property of bi-encoders for large-scale retrieval: passage embeddings can be computed offline and stored in an approximate nearest-neighbor (ANN) index, so that at query time only the query encoder runs and retrieval reduces to a single nearest-neighbor lookup~\cite{karpukhin2020dense}. This is in contrast to cross-encoders, which jointly encode the query and passage and therefore cannot pre-compute passage representations.
 
-Exact exhaustive search, computing similarity against every document vector, is $\mathcal{O}(N \cdot d)$ per query, where $N$ is the number of documents and $d$ is the embedding dimension. At ten million documents with 768-dimensional embeddings this requires roughly 15 billion floating-point operations per query, making sub-millisecond latency unachievable on a single machine. Approximate nearest-neighbor (ANN) indices such as Hierarchical Navigable Small World (HNSW)~\cite{malkov2018efficient} and Inverted File Index (IVF)~\cite{johnson2021billion} address this by organizing vectors so that only a small fraction of the corpus is visited per query, recovering the necessary speed at a small, controlled loss in recall. Specialized disk-resident indices such as DiskANN~\cite{subramanya2019diskann} narrow this memory requirement further through SSD-optimized graph traversal, but incur latency overheads of roughly three orders of magnitude over DRAM, making in-memory indexing the standard for interactive workloads. Even with ANN indexing, the full set of document embeddings must reside in memory for typical deployments; this memory requirement is the bottleneck this thesis addresses through embedding compression.
+Exact exhaustive search, computing similarity against every passage vector, is $\mathcal{O}(N \cdot d)$ per query, where $N$ is the number of passages and $d$ is the embedding dimension. At ten million passages with 768-dimensional embeddings this requires roughly 15 billion floating-point operations per query, making sub-millisecond latency unachievable on a single machine. ANN indices such as Hierarchical Navigable Small World (HNSW)~\cite{malkov2018efficient} and Inverted File Index (IVF)~\cite{johnson2021billion} address this by organizing vectors so that only a small fraction of the corpus is visited per query, recovering the necessary speed at a small, controlled loss in recall. Specialized disk-resident indices such as DiskANN~\cite{subramanya2019diskann} narrow this memory requirement further through SSD-optimized graph traversal, but incur latency overheads of roughly three orders of magnitude over DRAM, making in-memory indexing the standard for interactive workloads. Even with ANN indexing, the full set of passage embeddings must reside in memory for typical deployments; this memory requirement is the bottleneck this thesis addresses through embedding compression.
 
-\subsection{BGE-base-en-v1.5}
+\subsection{Backbone Models}
 
-This thesis evaluates compression methods across three backbone architectures to test whether compression trade-offs are model-specific or generalize. The primary backbone is BGE-base-en-v1.5~\cite{xiao2023c}. BGE (BAAI General Embedding) is a family of English bi-encoders released by the Beijing Academy of Artificial Intelligence (BAAI). The \textit{base} variant uses a 12-layer BERT-like architecture with a hidden size of 768, producing 768-dimensional float32 embeddings via mean pooling. BGE-base-en-v1.5 was selected as the primary backbone because it achieves strong performance on the Massive Text Embedding Benchmark (MTEB)~\cite{muennighoff2022mteb} at a moderate parameter count (109M parameters), and because its 768-dimensional output makes the memory costs and compression trade-offs studied in this thesis directly relevant to production deployments.
+This thesis evaluates compression methods across three backbone encoders to test whether compression trade-offs generalize or are model-specific. Table~\ref{tab:backbones} summarizes their key properties.
 
-\subsection{RoBERTa-base}
+\begin{table}[ht]
+\caption[Backbone encoder models used in this thesis]{Backbone encoder models. All three use a 12-layer transformer architecture and produce 768-dimensional float32 embeddings via mean pooling.}
+\label{tab:backbones}
+\begin{center}
+\begin{tabular}{| l | c | l |}
+\hline
+\textbf{Model} & \textbf{Parameters} & \textbf{Pre-training Strategy} \\ [0.5ex]
+\hline
+BGE-base-en-v1.5~\cite{xiao2023c}   & 109M & MLM + retrieval fine-tuning \\
+\hline
+RoBERTa-base~\cite{liu2019roberta}   & 125M & Optimized MLM \\
+\hline
+MPNet-base~\cite{song2020mpnet}      & 110M & Masked + permuted LM \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
-RoBERTa (Robustly Optimized BERT Pretraining Approach)~\cite{liu2019roberta} is a replication study of BERT that identifies and corrects several under-training choices in the original recipe. Key differences from BERT include: removal of the Next Sentence Prediction (NSP) objective, dynamic masking (each training sequence receives a freshly sampled mask at each epoch rather than a static one), larger batch sizes, and substantially more training data (160\,GB versus BERT's 16\,GB). These changes together yield stronger representations than BERT on most GLUE (a suite of natural language understanding tasks spanning sentiment, inference, and similarity~\cite{wang2018glue}) and SQuAD (a reading comprehension benchmark requiring span extraction from Wikipedia passages~\cite{rajpurkar2016squad}) benchmarks while using the identical 12-layer, 768-dimensional transformer architecture (125M parameters). RoBERTa-base is included as a second backbone in this thesis to test whether the compression trade-offs observed on BGE, which is itself initialized from a retrieval-tuned BERT, also hold for a pre-training-optimized general-purpose encoder.
+\textbf{BGE-base-en-v1.5}~\cite{xiao2023c} is the primary backbone. BGE (BAAI General Embedding) is a family of English bi-encoders from the Beijing Academy of Artificial Intelligence (BAAI). The base variant was selected for its strong performance on the Massive Text Embedding Benchmark (MTEB)~\cite{muennighoff2022mteb} at a moderate parameter count. Its 768-dimensional output makes the memory costs studied in this thesis directly relevant to production deployments.
 
-\subsection{MPNet-base}
+\textbf{RoBERTa-base} (Robustly Optimized BERT Pretraining Approach)~\cite{liu2019roberta} is a replication study of BERT that corrects several under-training choices: it removes the Next Sentence Prediction (NSP) objective, uses dynamic masking, larger batch sizes, and 10$\times$ more training data (160\,GB versus 16\,GB). These changes yield stronger representations on standard NLU benchmarks~\cite{wang2018glue, rajpurkar2016squad} while retaining the same architecture. RoBERTa-base is included to test whether compression trade-offs observed on a retrieval-tuned model also hold for a general-purpose encoder.
 
-MPNet (Masked and Permuted Pre-training)~\cite{song2020mpnet} addresses a dependency gap in masked language modeling: when BERT predicts a masked token it treats other masked positions as absent, so the model never explicitly learns dependencies among masked tokens. MPNet resolves this by combining masked language modeling with permuted language modeling (PLM, from XLNet): the model predicts all tokens autoregressively in a random permutation order while attending to the full original sequence, so masked-token dependencies are captured without the position-discrepancy problem of pure PLM. The result is a 12-layer, 768-dimensional encoder (110M parameters) that outperforms both BERT and RoBERTa on several sentence-level benchmarks. MPNet-base is included as a third backbone to provide a pre-training objective that is architecturally distinct from both BERT-style MLM and the retrieval-oriented BGE, further stress-testing the generality of the compression findings.
+\textbf{MPNet-base} (Masked and Permuted Pre-training)~\cite{song2020mpnet} combines masked language modelling with permuted language modelling. Where BERT treats other masked positions as absent when predicting a masked token, MPNet predicts tokens autoregressively in a random permutation order while attending to the full sequence, capturing dependencies between masked tokens that MLM-only models miss. MPNet-base provides a pre-training objective distinct from both BERT-style MLM and retrieval-oriented BGE, further stress-testing the generality of compression findings.
 
-The three backbones span a range of pre-training quality for retrieval. BGE arrives already fine-tuned for retrieval and serves as the strongest starting point. MPNet produces richer sentence-level representations than RoBERTa owing to its masked-and-permuted objective, which captures dependencies between masked tokens that MLM-only models miss. RoBERTa, trained purely on token-level MLM, produces the weakest initial retrieval representations of the three. This ordering, BGE $>$ MPNet $>$ RoBERTa, is confirmed by the NanoBEIR zero-shot baseline results reported in Chapter~4. The central question this spread is designed to answer is whether compression trade-offs are stable across backbones of different starting quality, or whether a model that begins with weaker retrieval representations degrades differently under the same compression budget.
+The three backbones span a range of retrieval starting quality. BGE arrives already fine-tuned for retrieval and is the strongest starting point. MPNet produces richer sentence-level representations than RoBERTa owing to its masked-and-permuted objective. RoBERTa, trained purely on token-level MLM, yields the weakest initial retrieval representations. This ordering (BGE $>$ MPNet $>$ RoBERTa) is confirmed by the NanoBEIR zero-shot baselines in Chapter~4. The central question this spread addresses is whether compression trade-offs are stable across backbones of different starting quality, or whether weaker models degrade differently under the same compression budget.
 
 \section{Contrastive Learning for Dense Retrieval}
 \label{sec:contrastive}
 
 \subsection{The InfoNCE Objective}
 
-Contrastive learning trains a model to embed semantically related items close together and unrelated items far apart~\cite{oord2018representation}. The Information Noise-Contrastive Estimation loss (InfoNCE) formalizes this as a $N$-way classification task: given a query $q$ paired with a positive document $p^{+}$ and $N-1$ negative documents $\{p_i^{-}\}$, the model must identify the one correct document among all candidates. The model is trained to assign the highest similarity score to the positive pair:
+Contrastive learning trains a model to embed semantically related items close together and unrelated items far apart~\cite{oord2018representation}. The Information Noise-Contrastive Estimation loss (InfoNCE) formalizes this as an $N$-way classification task: given a query $q$ paired with a positive passage $p^{+}$ and $N-1$ negative passages $\{p_i^{-}\}$, the model must identify the one correct passage among all candidates. The model is trained to assign the highest similarity score to the positive pair:
 %
 \begin{equation}
   \mathcal{L}_{\text{InfoNCE}} = -\log \frac{\exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p^+}) / \tau\right)}{\exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p^+}) / \tau\right) + \sum_{i=1}^{N-1} \exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p_i^-}) / \tau\right)},
 \end{equation}
 %
-where $\tau > 0$ is a temperature hyperparameter that controls how peaked the softmax distribution is: smaller $\tau$ sharpens the distribution toward the highest-scoring document, while larger $\tau$ flattens it across all candidates.
+where $\tau > 0$ is a temperature hyperparameter that controls how peaked the softmax distribution is: smaller $\tau$ sharpens the distribution toward the highest-scoring passage, while larger $\tau$ flattens it across all candidates.
 
 \subsection{Multiple Negatives Ranking Loss}
 
-Multiple Negatives Ranking Loss (MNRL) applies InfoNCE in the sentence-transformers training framework~\cite{reimers2019sbert}. In MNRL, negatives are obtained for free from the other examples in the same training batch: for a batch of $N$ query-positive pairs $\{(q_i, p_i^+)\}_{i=1}^{N}$, the positive document of every other pair in the batch serves as a negative for query $q_i$. The loss for the full batch is:
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Figures/mnrl_loss.pdf}
+  \caption[Multiple Negatives Ranking Loss (MNRL).]{Multiple Negatives Ranking Loss. A batch of $N$ query-passage pairs is encoded by shared-weight encoders. The $N \times N$ similarity matrix scores every query against every passage in the batch. The diagonal (green) contains positive pairs and forms the numerator of the loss; each full row forms the denominator, making each row an $N$-way softmax classification.}
+  \label{fig:mnrl}
+\end{figure}
+
+Multiple Negatives Ranking Loss (MNRL) applies InfoNCE in the sentence-transformers training framework~\cite{reimers2019sbert}. Figure~\ref{fig:mnrl} illustrates the in-batch negative construction and the resulting similarity matrix. In MNRL, negatives are obtained for free from the other examples in the same training batch: for a batch of $N$ query-positive pairs $\{(q_i, p_i^+)\}_{i=1}^{N}$, the positive passage of every other pair in the batch serves as a negative for query $q_i$. The loss for the full batch is:
 %
 \begin{equation}
   \mathcal{L}_{\text{MNRL}} = -\frac{1}{N} \sum_{i=1}^{N} \log \frac{\exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_i^+}) / \tau\right)}{\sum_{j=1}^{N} \exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_j^+}) / \tau\right)}.
@@ -69,11 +99,62 @@ In-batch negatives are effective because large batch sizes expose each query to 
 \section{Embedding Compression Methods}
 \label{sec:compression_bg}
 
-Chapter~1 introduced a taxonomy of embedding compression methods along two axes: \textit{when} compression is applied (post-hoc vs.\ training-time) and \textit{how} memory is reduced (precision reduction, dimensionality reduction, or learning to hash). This section provides technical depth for each method.
+This thesis organizes embedding compression methods along two orthogonal axes.
+The first axis is \textit{when} compression is applied: \textbf{post-hoc} methods
+are applied to the generated embeddings without modifying the model, while \textbf{training-time}
+methods incorporate compression awareness into the model's fine-tuning objective.
+The second axis is \textit{how} memory is reduced: \textbf{precision reduction} decreases
+the number of bits per dimension, \textbf{dimensionality reduction} decreases the number
+of dimensions kept, and \textbf{learning to hash} fits a codebook that maps embeddings to
+discrete codes directly, rather than applying scalar quantization per dimension.
+Table~\ref{tab:compression-taxonomy} places the methods studied in this thesis along
+these two axes.
 
-\subsection{Scalar Quantization}
+\begin{table}[ht]
+\caption[Organization of embedding compression methods studied in this thesis]{Organization of embedding compression methods studied in this thesis, by when compression is applied and how memory is reduced.
+Abbreviations: INT8 = 8-bit integer quantization;
+PQ = Product Quantization;
+BAT = Binary-Aware Training (STE and Annealed Tanh are two training variants);
+STE = Straight-Through Estimator; MRL = Matryoshka Representation Learning.}
+\label{tab:compression-taxonomy}
+\begin{center}
+\begin{tabular}{| l | c | c | c |}
+\hline
+ & \textbf{Precision Reduction} & \textbf{Dim.\ Reduction} & \textbf{Learning to Hash} \\ [0.5ex]
+\hline
+\textbf{Post-hoc}       & INT8, Binary, TurboQuant & ---  & PQ            \\
+\hline
+\textbf{Training-time}  & BAT (STE / Annealed Tanh)  & MRL  & ---  \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
-Scalar quantization maps each float32 dimension to a lower-precision integer.
+The classification in Table~\ref{tab:compression-taxonomy} reflects when
+\textit{training is modified}, not when the compressed representation is
+produced. Every method involves some operation at retrieval time: scalar
+quantisation, sign-thresholding, table lookup, or truncation. For post-hoc
+methods this retrieval-time operation is the entire compression step, applied
+to a model that was not trained for it. For training-time methods the same
+kind of operation is still required at retrieval (taking the sign of a BAT
+embedding, truncating an MRL embedding to its first $m$ dimensions), but it
+is effective only because training was modified to make that operation lossy
+in a controlled way rather than destructive.
+
+The following subsections describe each method, grouped by when compression is applied.
+
+\subsection{Post-hoc Methods}
+
+\subsubsection{Scalar Quantization}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.75\textwidth]{Figures/scalar_quant.pdf}
+  \caption[Scalar quantization of a single embedding dimension.]{Scalar quantization of a single embedding dimension. The float32 value $x$ (left), drawn from the per-dimension calibration range $[\min_j, \max_j]$, is mapped to a signed 8-bit integer $x_q \in [-128, 127]$ (right) using 256 uniform quantization levels of width $\delta_j$. The bell curve indicates the approximate value distribution across the corpus.}
+  \label{fig:scalar_quant}
+\end{figure}
+
+Scalar quantization maps each float32 dimension to a lower-precision integer, as illustrated in Figure~\ref{fig:scalar_quant}.
 For INT8 quantization, a calibration pass over a representative corpus sample
 computes per-dimension bounds $[\min_j, \max_j]$, where $j$ indexes embedding
 dimensions. Each value $x$ in dimension $j$ is then quantized as:
@@ -93,34 +174,51 @@ per dimension ($4\times$ compression)~\cite{douze2024faiss}.
 The same calibration bounds are applied to both corpus and query embeddings,
 ensuring that corresponding dimensions are mapped to a consistent integer scale.
 
-\subsection{Binary Quantization}
+\subsubsection{Binary Quantization}
 
-Binary quantization replaces each float32 dimension with a single bit by applying the sign function:
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.75\textwidth]{Figures/step_function.pdf}
+  \caption[Binary quantization via the sign function.]{Binary quantization maps each float32 embedding dimension $x_i$ to a binary value $b_i \in \{-1, +1\}$ via the sign function (bold line). All positive values map to $+1$ (green region) and all negative values map to $-1$ (red region). Two example dimensions illustrate the per-dimension mapping. Applied across all $d = 768$ dimensions, this achieves $32\times$ compression over float32.}
+  \label{fig:binary_quant}
+\end{figure}
+
+Binary quantization replaces each float32 dimension with a single bit by applying the sign function, as illustrated in Figure~\ref{fig:binary_quant}:
 %
 \begin{equation}
   b_i = \text{sign}(x_i) \in \{-1, +1\},
 \end{equation}
 %
-where $x_i$ is the $i$-th dimension of the float32 embedding and $b_i$ is the corresponding bit, yielding $32\times$ compression over float32. Similarity between binary query vector $\mathbf{b}_q$ and document vector $\mathbf{b}_d$ is computed via Hamming distance $d_H(\mathbf{b}_q, \mathbf{b}_d) = \sum_i \mathbf{1}[b_{q,i} \neq b_{d,i}]$, where $\mathbf{1}[\cdot]$ is the indicator function, which reduces to a bitwise XOR followed by a popcount instruction on modern hardware, enabling extremely fast similarity computation~\cite{gan2023binary}. Applied post-hoc to a float32-trained model, binary quantization is aggressive and typically incurs a non-trivial drop in retrieval quality relative to INT8.
-\subsection{Product Quantization}
+where $x_i$ is the $i$-th dimension of the float32 embedding and $b_i$ is the corresponding bit, yielding $32\times$ compression over float32. Similarity between binary query vector $\mathbf{b}_q$ and passage vector $\mathbf{b}_p$ is computed via Hamming distance $d_H(\mathbf{b}_q, \mathbf{b}_p) = \sum_i \mathbf{1}[b_{q,i} \neq b_{p,i}]$, where $\mathbf{1}[\cdot]$ is the indicator function, which reduces to a bitwise XOR followed by a popcount instruction on modern hardware, enabling extremely fast similarity computation~\cite{gan2023binary}. Applied post-hoc to a float32-trained model, binary quantization is aggressive and typically incurs a non-trivial drop in retrieval quality relative to INT8.
 
-Product quantization (PQ)~\cite{jegou2010product} achieves high compression by dividing each $d$-dimensional embedding into $M$ equal sub-vectors and representing each sub-vector by a single integer index rather than raw floats. For each of the $M$ sub-spaces, a codebook of $K$ centroids $\{\mathbf{c}_k^{(m)}\}$ is fit by $k$-means on the corpus embeddings. Each corpus sub-vector $\mathbf{e}^{(m)} \in \mathbb{R}^{d/M}$ is then replaced by the index of its nearest centroid:
+\subsubsection{Product Quantization}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Figures/pq.pdf}
+  \caption[Product quantization (PQ) encoding pipeline.]{Product quantization encoding pipeline. Each passage embedding $\mathbf{e}_p \in \mathbb{R}^d$ is split into $M$ equal sub-vectors. Each sub-vector is assigned to the nearest centroid in its sub-space codebook, fit offline by $k$-means on the corpus. The $M$ centroid indices form the compact PQ code, reducing storage from $d \times 4$ bytes to $M \times \lceil \log_2 K \rceil$ bits (e.g., $48\times$ compression for $M{=}64$, $K{=}256$).}
+  \label{fig:pq}
+\end{figure}
+
+Product quantization (PQ)~\cite{jegou2010product} achieves high compression by dividing each $d$-dimensional embedding into $M$ equal sub-vectors and representing each sub-vector by a single integer index rather than raw floats. Figure~\ref{fig:pq} illustrates the full encoding pipeline. For each of the $M$ sub-spaces, a codebook of $K$ centroids $\{\mathbf{c}_k^{(m)}\}$ is fit by $k$-means on the corpus embeddings. Each corpus sub-vector $\mathbf{e}^{(m)} \in \mathbb{R}^{d/M}$ is then replaced by the index of its nearest centroid:
 %
 \begin{equation}
   \hat{k}^{(m)} = \operatorname*{arg\,min}_{k} \left\|\mathbf{e}^{(m)} - \mathbf{c}_k^{(m)}\right\|.
 \end{equation}
 %
-A document is stored as the sequence of $M$ indices $(\hat{k}^{(1)}, \ldots, \hat{k}^{(M)})$, each requiring $\log_2 K$ bits. For $M = 64$ sub-vectors and $K = 256$ centroids, a 768-dimensional float32 embedding shrinks from 3,072 bytes to 64 bytes, a $48\times$ compression ratio.
+A passage is stored as the sequence of $M$ indices $(\hat{k}^{(1)}, \ldots, \hat{k}^{(M)})$, each requiring $\log_2 K$ bits. For $M = 64$ sub-vectors and $K = 256$ centroids, a 768-dimensional float32 embedding shrinks from 3,072 bytes to 64 bytes, a $48\times$ compression ratio.
 
-At retrieval time, corpus embeddings are decoded from their PQ codes back to approximate float32 representations using the learned centroids, while query embeddings are kept at full float32 precision. Scoring then proceeds as standard cosine similarity between the reconstructed corpus and exact query vectors. Compressing only the document side while keeping the query exact (asymmetric reconstruction) recovers much of the quality lost by compression~\cite{johnson2021billion}.
+At retrieval time, corpus embeddings are decoded from their PQ codes back to approximate float32 representations using the learned centroids, while query embeddings are kept at full float32 precision. Scoring then proceeds as standard cosine similarity between the reconstructed corpus and exact query vectors. Compressing only the passage side while keeping the query exact (asymmetric reconstruction) recovers much of the quality lost by compression~\cite{johnson2021billion}.
 
-\subsection{TurboQuant}
+\subsubsection{TurboQuant}
 
-TurboQuant~\cite{zandieh2025turboquant} is a \textit{post-hoc, precision-reduction} method: it is calibrated on corpus embeddings after the embedding model has run, with no retraining of the model itself. It claims near-optimal rate-distortion performance: for a given number of bits, it loses less retrieval-relevant information than scalar or product quantization methods can achieve. This is possible because TurboQuant fits a global non-linear quantizer that minimises reconstruction error across the full embedding dimension jointly, rather than partitioning dimensions into independent sub-codebooks. Originally developed for online quantization of key-value (KV) caches in large language model inference, its structure applies directly to offline retrieval index compression. At retrieval time, stored codes are decoded back to approximate float32 vectors, and scoring proceeds with standard cosine similarity.
+TurboQuant~\cite{zandieh2025turboquant} is a post-hoc precision-reduction method that achieves near-optimal rate-distortion performance through three stages. First, a random orthogonal rotation (randomized Hadamard transform, $O(d \log d)$) is applied to each embedding. Rotation preserves all pairwise distances and inner products but makes each coordinate independently follow a known Beta distribution (converging to Gaussian as $d$ grows), so a single scalar quantizer works uniformly across all dimensions. Second, a Lloyd-Max quantizer (1D $k$-means on the analytic post-rotation distribution) is precomputed for each target bit-width. Lloyd-Max places non-uniform bucket boundaries that minimize mean squared error (MSE), yielding distortion within $2.7\times$ of the Shannon lower bound. Third, because Lloyd-Max reconstruction introduces bias in inner product estimation, TurboQuant allocates $b{-}1$ bits to MSE-optimal quantization and reserves 1 bit for a Quantized Johnson-Lindenstrauss (QJL) residual correction that is provably unbiased for inner products. At retrieval time, stored codes are decoded to approximate float32 vectors and scoring proceeds with standard cosine similarity.
 
-\subsection{Straight-Through Estimator Binarization}
+\subsection{Training-Time Methods}
 
-Post-hoc binary quantization may be substantially improved by incorporating the sign function into the model architecture during fine-tuning, a hypothesis this thesis evaluates empirically. The fundamental obstacle is that the sign function is non-differentiable at zero and has zero derivative everywhere else, making standard backpropagation impossible. The Straight-Through Estimator (STE)~\cite{bengio2013estimating} resolves this by using the sign function in the forward pass and passing gradients through it unchanged in the backward pass, as if the operation were the identity function:
+\subsubsection{Straight-Through Estimator Binarization}
+
+Post-hoc binary quantization may be substantially improved by incorporating the sign function into the model during fine-tuning. The fundamental obstacle is that the sign function is non-differentiable at zero and has zero derivative everywhere else, making standard backpropagation impossible. The Straight-Through Estimator (STE)~\cite{bengio2013estimating} resolves this by using the sign function in the forward pass and passing gradients through it unchanged in the backward pass, as if the operation were the identity function:
 %
 \begin{equation}
   \text{forward:} \quad \hat{\mathbf{e}} = \text{sign}(\mathbf{e}), \qquad \text{backward:} \quad \frac{\partial \mathcal{L}}{\partial \mathbf{e}} = \frac{\partial \mathcal{L}}{\partial \hat{\mathbf{e}}},
@@ -128,7 +226,7 @@ Post-hoc binary quantization may be substantially improved by incorporating the 
 %
 where $\mathbf{e}$ is the pre-binarization embedding and $\hat{\mathbf{e}}$ is its binarized counterpart. The estimator is biased (the passed gradient is not the true gradient of the sign function), yet \citeauthor{bengio2013estimating} report that it surprisingly outperforms more mathematically rigorous unbiased alternatives in practice. Training with the STE encourages the model to produce representations whose pre-binarization values are already close to $\pm 1$, so that the quantization step introduces minimal information loss at inference time. This approach is referred to in this thesis as Binarization-Aware Training (BAT) with the STE variant.
 
-\subsection{Annealed Tanh Binarization}
+\subsubsection{Annealed Tanh Binarization}
 
 The STE's gradient approximation is coarse: gradients are propagated regardless of the magnitude of the pre-activation, even when values are near zero and the sign function is therefore poorly approximated by the identity. Annealed Tanh binarization replaces the STE with a smooth surrogate that progressively sharpens toward the sign function over the course of training~\cite{cao2017hashnet}:
 %
@@ -136,23 +234,37 @@ The STE's gradient approximation is coarse: gradients are propagated regardless 
   \hat{\mathbf{e}} = \tanh(\beta \cdot \mathbf{e}),
 \end{equation}
 %
-where $\beta$ is annealed according to the schedule $\beta_t = \sqrt{\gamma \cdot t + 1}$, with $t$ the global optimizer step and $\gamma$ a growth rate hyperparameter~\cite{yamada2021efficient}. At the start of training ($t = 0$), $\beta = 1$ and $\tanh(\mathbf{e}) \approx \mathbf{e}$ for small activations, leaving the model in a nearly unconstrained float32 regime. As training progresses, $\beta$ grows and $\tanh(\beta \cdot \mathbf{e})$ sharpens toward $\text{sign}(\mathbf{e})$, gradually tightening the binarization constraint. At inference time the hard sign function is applied, recovering a standard binary representation. The annealing schedule avoids the abrupt gradient discontinuity of the STE and allows the model to adapt its representations before the constraint becomes binding.
+where $\beta$ is annealed according to the schedule $\beta_t = \sqrt{\gamma \cdot t + 1}$, with $t$ the global optimizer step and $\gamma$ a growth rate hyperparameter~\cite{yamada2021efficient}. At the start of training ($t = 0$), $\beta = 1$ and $\tanh(\mathbf{e}) \approx \mathbf{e}$ for small activations, leaving the model in a nearly unconstrained float32 regime. As training progresses, $\beta$ grows and $\tanh(\beta \cdot \mathbf{e})$ sharpens toward $\text{sign}(\mathbf{e})$, gradually tightening the binarization constraint. At inference time the hard sign function is applied, recovering a standard binary representation. The annealing schedule avoids the abrupt gradient discontinuity of the STE and allows the model to adapt its representations before the constraint becomes binding. Figure~\ref{fig:atanh} shows this progression across six training checkpoints. At step~0, $\beta = 1.0$ and the surrogate reduces to $\tanh(x) \approx x$, nearly linear. At step~8{,}000, $\beta = 28.3$ and the curve is nearly indistinguishable from the hard $\text{sign}(x)$ applied at inference.
 
-\subsection{Matryoshka Representation Learning}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Figures/atanh.pdf}
+  \caption[Annealed Tanh binarization surrogate at six training checkpoints.]{Annealed Tanh binarization surrogate $\tanh(\beta_t \cdot x)$ at six training checkpoints under the schedule $\beta_t = \sqrt{\gamma \cdot t + 1}$ with $\gamma = 0.1$. The surrogate sharpens from a nearly linear curve at step~0 ($\beta = 1.0$) toward the hard sign function at step~8{,}000 ($\beta = 28.3$, dashed), which is applied at inference time.}
+  \label{fig:atanh}
+\end{figure}
+
+\subsubsection{Matryoshka Representation Learning}
 \label{sec:mrl}
 
 Matryoshka Representation Learning (MRL)~\cite{kusupati2022matryoshka} trains a model to produce embeddings in which every leading $m$-dimensional prefix $\mathbf{e}_{1:m}$ is independently useful for retrieval. The core insight is that if the model is trained to solve the retrieval task at multiple granularities simultaneously, the first few dimensions will capture the most discriminative information, and later dimensions contribute increasingly fine-grained detail, analogous to the nested structure of Russian matryoshka dolls.
 
-MRL augments the standard MNRL objective with losses computed at a fixed set of nested dimensionalities $\mathcal{M} = \{m_1, m_2, \ldots, m_K\}$ where $m_1 < m_2 < \cdots < m_K = d$. The multi-granularity loss is:
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Figures/mrl.pdf}
+  \caption[Matryoshka Representation Learning (MRL) training.]{MRL training. The passage embedding $\mathbf{e}_p \in \mathbb{R}^{768}$ is truncated to each prefix $\mathbf{e}_{1:m}$ for $m \in \mathcal{M} = \{32, 64, 128, 256, 512, 768\}$. A separate MNRL loss is computed for each truncation and the final loss $\mathcal{L}_{\text{MRL}}$ is their weighted sum (Equation~\ref{eq:mrl}).}
+  \label{fig:mrl}
+\end{figure}
+
+MRL augments the standard MNRL objective with losses computed at a fixed set of nested dimensionalities $\mathcal{M} = \{m_1, m_2, \ldots, m_K\}$ where $m_1 < m_2 < \cdots < m_K = d$, as illustrated in Figure~\ref{fig:mrl}. The multi-granularity loss is:
 %
 \begin{equation}
   \mathcal{L}_{\text{MRL}} = \sum_{m \in \mathcal{M}} c_m \cdot \mathcal{L}_{\text{MNRL}}\!\left(\mathbf{e}_{1:m}\right),
   \label{eq:mrl}
 \end{equation}
 %
-where $c_m$ are positive scalar weights (set to uniform in this thesis) and $\mathcal{L}_{\text{MNRL}}(\mathbf{e}_{1:m})$ is the MNRL loss computed using only the first $m$ dimensions. This thesis uses $\mathcal{M} = \{32, 64, 128, 256, 512\}$ for all MRL experiments.
+where $c_m$ are positive scalar weights (set to uniform in this thesis) and $\mathcal{L}_{\text{MNRL}}(\mathbf{e}_{1:m})$ is the MNRL loss computed using only the first $m$ dimensions. This thesis uses $\mathcal{M} = \{32, 64, 128, 256, 512, 768\}$ for all MRL experiments, where $768 = d$ is the full embedding dimension.
 
-At inference time, MRL allows the embedding to be truncated to any $m \in \mathcal{M}$ dimensions without additional fine-tuning, directly enabling post-hoc dimensionality reduction. This makes MRL embeddings qualitatively different from standard embeddings: truncating a standard embedding arbitrarily destroys retrieval quality, whereas an MRL-trained embedding is designed to remain useful at each supported granularity. The memory saving is proportional to the truncation ratio; using only the first 64 dimensions of a 512-dimensional MRL embedding yields an $8\times$ reduction.
+At inference time, MRL allows the embedding to be truncated to any $m \in \mathcal{M} \setminus \{d\}$ dimensions without additional fine-tuning, directly enabling post-hoc dimensionality reduction. This makes MRL embeddings qualitatively different from standard embeddings: truncating a standard embedding arbitrarily destroys retrieval quality, whereas an MRL-trained embedding is designed to remain useful at each supported granularity. The memory saving is proportional to the truncation ratio; using only the first 64 dimensions of a 768-dimensional MRL embedding yields a $12\times$ reduction.
 
 \section{Information Retrieval Evaluation}
 \label{sec:ir_eval}
@@ -262,9 +374,8 @@ the negative-signed ranks (queries where model B wins):
   \item $H_1$: the median difference is not zero.
 \end{itemize}
 
-\textbf{Cohen's $d$}~\cite{cohen1988statistical} measures the practical
-magnitude of the difference between two models. It is computed as the mean of
-the per-query differences divided by their standard deviation:
+\textbf{Cohen's $d$}~\cite{cohen1988statistical} quantifies the practical
+magnitude of the difference between two models:
 %
 \begin{equation}
   d = \frac{\bar{d}}{s_d}, \qquad
@@ -273,89 +384,22 @@ the per-query differences divided by their standard deviation:
   \label{eq:cohens_d}
 \end{equation}
 %
-Cohen's $d$ quantifies the practical magnitude of the difference: values of
-$|d| \approx 0.2$, $0.5$, and $0.8$ are conventionally interpreted as small,
-medium, and large effects respectively. A statistically significant result
-with a small Cohen's $d$ indicates a reliable but practically negligible
-difference.
+Values of $|d| \approx 0.2$, $0.5$, and $0.8$ are conventionally interpreted
+as small, medium, and large effects respectively. A statistically significant
+result with a small Cohen's $d$ indicates a reliable but practically
+negligible difference.
 
 \section{Related Work}
 \label{sec:related}
 
-Early evidence that discrete embeddings can match float32 retrieval quality came from
-Yamada et al.~\cite{yamada2021efficient}, whose Binary Passage Retriever (BPR) integrated
-learning-to-hash into the dense passage retrieval framework, achieving a $32\times$ memory
-reduction from 65~GB to 2~GB with zero accuracy loss on Natural Questions and TriviaQA.
-BPR uses a two-stage pipeline: binary Hamming search over the full corpus for candidate
-generation, followed by float32 inner product reranking over the shortlist. Training
-combines a margin ranking loss on the binary codes with MNRL on the float32 embeddings
-jointly. At production scale, Gan et al.~\cite{gan2023binary} deployed binary retrieval at
-Tencent using recurrent residual binarization with STE for gradient flow, reporting
-30--50\% index cost reductions across web search, video retrieval, and copyright detection.
-The Hugging Face embedding quantization survey~\cite{shakir2024embedding} established that
-even post-hoc binary and INT8 quantization, applied without retraining, retains strong MTEB
-quality when paired with asymmetric scoring. These results collectively establish that
-compressed embeddings are viable for large-scale retrieval. Each study evaluates a different
-base model on a different benchmark, however, so cross-method comparisons are unreliable:
-the effect of compression is conflated with differences in pre-training, fine-tuning, and
-data curation.
+The post-hoc methods described in Section~\ref{sec:compression_bg} are already practical at scale. The Hugging Face embedding quantization survey~\cite{shakir2024embedding} showed that post-hoc binary ($32\times$) and INT8 ($4\times$) quantization retain strong MTEB quality. This established that compressed embeddings are viable for large-scale retrieval without retraining, but left open whether training-time methods can do better at the same or lower memory budget.
 
-The key technical challenge in training-time compression is that quantization functions are
-non-differentiable. Two families of solutions have been established. The
-STE~\cite{bengio2013estimating} passes gradients through the sign function unchanged.
-Courbariaux et al.~\cite{courbariaux2016bnn} established it as the standard approach for
-binarizing neural network weights and activations; both BPR~\cite{yamada2021efficient} and
-Gan et al.~\cite{gan2023binary} rely on it for retrieval binarization. The alternative is
-the continuation approach of Cao et al.~\cite{cao2017hashnet}, which replaces the sign
-function with tanh activations whose temperature is progressively annealed during training
-until each tanh approximates a step function. BPR adapts this schedule to passage retrieval
-alongside STE. The annealed tanh experiments in this thesis build on the same lineage,
-applying temperature annealing within the sentence-transformers framework with MNRL as the
-sole training objective and no float32 reranking stage. STE and annealed tanh have each
-been used for retrieval binarization in prior work, but have never been compared directly
-under identical conditions; this thesis isolates that comparison. Beyond these binary
-approaches, Shah et al.~\cite{shah2024decoupled} propose a Decoupled STE that uses
-separate temperatures for the forward and backward passes, reducing the bias inherent in
-the standard estimator. For multi-bit quantization, Yang et al.~\cite{yang2019quantization}
-represent a $k$-level quantizer as a sum of $k{-}1$ shifted sigmoid functions with
-learnable biases, each sharpened by an annealed temperature. Schr{\"o}dter
-et al.~\cite{schrodter2025trainable} apply a similar sigmoid staircase to input feature
-compression, achieving 5--16$\times$ compression with modest accuracy loss. Neither
-approach has been applied to retrieval embeddings; both are directions for future work.
+The STE (Section~\ref{sec:compression_bg}) was originally proposed by Bengio et al.~\cite{bengio2013estimating} for gradient estimation through stochastic neurons. Courbariaux et al.~\cite{courbariaux2016bnn} later established it as the standard for binarizing neural network weights and activations. The annealed tanh alternative originated in HashNet~\cite{cao2017hashnet} for deep hashing. Beyond binary quantization, Yang et al.~\cite{yang2019quantization} represent a $k$-level quantizer as a sum of $k{-}1$ shifted sigmoid functions with learnable biases. Shah et al.~\cite{shah2024decoupled} reduce STE bias with separate forward and backward temperatures. Schr{\"o}dter et al.~\cite{schrodter2025trainable} apply a similar sigmoid staircase to input feature compression. None of these multi-bit or decoupled variants have been applied to retrieval embeddings; they remain a natural direction for future work.
 
-Kusupati et al.~\cite{kusupati2022matryoshka} introduced MRL, training a single embedding
-so that any prefix of dimensions forms a useful representation. MRL now appears prominently
-on the MTEB leaderboard~\cite{muennighoff2022mteb} and offers an attractive operating point
-when memory and latency budgets vary by deployment context. Sequential Matryoshka Embedding
-Compression (SMEC)~\cite{smec2025} identifies three limitations of standard MRL: gradient
-fluctuation from jointly optimizing all dimension scales simultaneously, information
-degradation from blind truncation, and weak contrastive learning from easy in-batch
-negatives. Addressing these with sequential dimension training, adaptive dimension
-selection, and cross-batch memory, SMEC improves BEIR NDCG@10 by 1.9 points at 128
-dimensions over MRL baselines on LLM-scale models. Quantization-Aware Matryoshka
-Adaptation (QAMA)~\cite{qama2025}, the closest prior work to this thesis, combines MRL
-with multi-level quantization-aware training. QAMA uses learnable thresholds initialized
-from percentile statistics and updated by exponential moving average, and applies a hybrid
-precision scheme that allocates higher bits to early MRL dimensions (2-bit for the first
-25\%) and progressively lower bits to later ones (0.5-bit for the final 25\%), reaching an
-average of 1.625~bits per dimension while retaining 95--98\% of full-precision NDCG@10.
-QAMA evaluates on ModernBERT and MiniLM, leaving open whether these findings generalize
-across architectures with different retrieval starting quality.
+Both STE and annealed tanh have been adopted for dense retrieval. Yamada et al.~\cite{yamada2021efficient} integrated both into the Binary Passage Retriever (BPR). BPR achieves a $32\times$ memory reduction from 65~GB to 2~GB with zero accuracy loss on Natural Questions and TriviaQA. It uses binary Hamming search for candidate generation followed by float32 reranking, trained with a joint margin ranking and MNRL loss. At production scale, Gan et al.~\cite{gan2023binary} deployed recurrent residual binarization with STE at Tencent. Their approach stacks multiple binary stages to reach a user-specified bit depth, reporting 30--50\% index cost reductions across web search, video retrieval, and copyright detection. These results suggest that training-time binarization can deliver strong retrieval quality. However, each study uses a different base model and benchmark, so the effect of compression is conflated with differences in pre-training and data curation. STE and annealed tanh have never been compared directly under identical conditions; this thesis isolates that comparison.
 
-Controlled Retrieval Evaluation of Compression Techniques
-(CoRECT)~\cite{correct2025} provides the most rigorous comparison of post-hoc methods to
-date, evaluating eight compression techniques across four embedding models on a benchmark
-spanning 10K to 100M passages. Its findings are directly relevant to this thesis:
-quantization outperforms dimensionality truncation at equal compression ratios, MRL
-training matters significantly for truncation quality, and combining quantization with
-moderate truncation achieves the best recall for three of the four models tested. CoRECT
-does not fix the base model across compression types, however, and leaves training-time
-methods entirely out of scope. No existing study therefore enables a direct comparison
-between post-hoc and training-time compression under controlled conditions. Every prior
-study also evaluates a single backbone, leaving open whether compression trade-offs are
-model-specific or generalize across architectures with different retrieval starting quality.
-Stacked combinations involving training-time methods, such as MRL jointly trained with
-binarization, remain unstudied. This thesis addresses all three gaps: all compression
-variants share a single float32 baseline fine-tuned on the same corpus and are evaluated on
-NanoBEIR~\cite{nanobeir2024, thakur2021beir} across BGE-base-en-v1.5, RoBERTa-base, and
-MPNet-base.
+MRL (Section~\ref{sec:mrl}) now appears prominently on the MTEB leaderboard~\cite{muennighoff2022mteb} and is attractive when memory budgets vary across deployments. SMEC~\cite{smec2025} identifies three limitations of standard MRL: gradient fluctuation from simultaneous optimization of shared encoder weights under different dimensionality losses, information degradation from blind truncation, and weak contrastive learning from easy in-batch negatives. It addresses these with sequential dimension training, adaptive dimension selection, and cross-batch memory, improving BEIR NDCG@10 by 1.9 points at 128 dimensions. QAMA~\cite{qama2025} combines MRL with multi-level quantization-aware training. It uses learnable thresholds and a hybrid precision scheme: 2-bit for the first 25\% of dimensions, 0.5-bit for the final 25\%, reaching 1.625~bits per dimension while retaining 95--98\% of full-precision NDCG@10. QAMA is the closest prior work to this thesis in method, but evaluates only on ModernBERT and MiniLM, leaving cross-architecture generality open.
+
+CoRECT~\cite{correct2025} provides the most rigorous comparison of post-hoc methods to date. Its primary focus is how retrieval performance degrades as corpus size scales from 10K to 100M passages, evaluating eight techniques across four embedding models. It also reports performance versus compression ratio for post-hoc methods. Key findings include: quantization outperforms truncation at equal ratios, MRL training matters for truncation quality, and combining quantization with moderate truncation achieves the best recall for three of four models. CoRECT is the closest prior work in evaluation methodology, but does not fix the base model across compression types and leaves training-time methods entirely out of scope.
+
+No existing study enables a direct comparison between post-hoc and training-time compression under controlled conditions. Every prior study evaluates a single backbone, leaving open whether compression trade-offs generalize across architectures of different retrieval starting quality. Stacked combinations involving training-time methods remain unstudied. This thesis addresses all three gaps: all compression variants share a single float32 baseline fine-tuned on the same corpus and are evaluated on NanoBEIR~\cite{nanobeir2024, thakur2021beir} across BGE-base-en-v1.5, RoBERTa-base, and MPNet-base.

@@ -2,42 +2,53 @@
 \chapter{Chapter 4. Methodology}
 \label{ch:methodology}
 
-This chapter describes how the experiments in this thesis were designed and
-executed. Section~\ref{sec:exp_design} presents the overarching experimental
-framework. Section~\ref{sec:training_infra} describes the shared training
-infrastructure and hyperparameters. Section~\ref{sec:baseline} details the
-float32 baseline fine-tuning, which serves as the starting point for all
-post-hoc compression methods.
-Section~\ref{sec:training_time} describes each training-time compression
-variant. Section~\ref{sec:posthoc} describes how post-hoc compression methods
-are calibrated and applied. Section~\ref{sec:cross_axis} defines the
-stacked combinations evaluated. Section~\ref{sec:eval_framework} describes
-the evaluation pipeline, metrics, memory budget calculation, and significance
-testing procedure.
-
 \section{Experimental Design}
 \label{sec:exp_design}
 
-The central design principle of this thesis is controlled comparison: every
-compression method, whether post-hoc or training-time, is applied to
-the same set of backbone models fine-tuned under identical conditions, and
-evaluated on the same benchmark under the same pipeline. This eliminates the
-confounds that make cross-method comparisons unreliable in prior work
-(Section~\ref{sec:related}).
+The goal of this thesis is to compare embedding compression methods on equal
+terms. Prior work makes this hard. Different papers use different backbones,
+different training data, and different benchmarks (Section~\ref{sec:related}).
+This thesis controls all three.
 
-The experimental workflow has two parallel tracks, both rooted in the same
-pre-trained backbone weights. In the post-hoc track, each backbone is
-fine-tuned without any compression modification, producing a float32
-checkpoint; compression is then applied to the saved embeddings without
-touching model weights. In the training-time track, each backbone is
-fine-tuned independently from the same pre-trained weights with a modified
-architecture or loss function; no float32 checkpoint is used as
-initialization. All resulting embedding variants are evaluated on the
-NanoBEIR benchmark under the unified pipeline described in
-Section~\ref{sec:eval_framework}.
+Every method studied here is applied to the same set of backbone models. Every
+backbone is fine-tuned under the same conditions. Every variant is evaluated on
+the same benchmark with the same pipeline.
 
-Table~\ref{tab:experiment_summary} summarises all six training variants and
-the post-hoc transforms available for each.
+The experiments are organized into two tracks, illustrated in
+Figure~\ref{fig:methodology_overview}. Both start from the same pre-trained
+backbone weights.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/methodology_main.pdf}
+  \caption[Overview of the experimental methodology.]{%
+  Overview of the experimental methodology. Each pre-trained backbone
+  (BGE-base-en-v1.5, RoBERTa-base, MPNet-base) is taken through two
+  independent tracks. The post-hoc compression track fine-tunes a standard
+  fp32 baseline with MNRL and then applies INT8, binary, PQ, or TurboQuant
+  compression to the cached embeddings. The training-time track modifies the
+  architecture or loss during fine-tuning: STE or annealed-tanh
+  binarization-aware training (BAT), Matryoshka Representation Learning
+  (MRL), and joint MRL$+$BAT variants. MRL checkpoints additionally support
+  post-hoc truncation to $d \in \{32, 64, 128, 256, 512\}$, optionally
+  stacked with binary, PQ, or TurboQuant. All resulting variants are
+  evaluated on the NanoBEIR benchmark with paired significance tests.}
+  \label{fig:methodology_overview}
+\end{figure}
+
+\paragraph{Post-hoc track.} Each backbone is fine-tuned without any
+compression, producing a fine-tuned fp32 baseline checkpoint. Compression is
+then applied to the embeddings produced by this checkpoint; the checkpoint
+itself is not touched by the compression step.
+
+\paragraph{Training-time track.} Each backbone is fine-tuned with a modified
+architecture, a modified loss, or both. This track does not start from the
+fine-tuned fp32 baseline. It starts from the pre-trained backbone weights, the
+same as the post-hoc track.
+
+All variants are evaluated on NanoBEIR using the pipeline described in
+Section~\ref{sec:eval_framework}. Table~\ref{tab:experiment_summary} lists the
+six training variants and the post-hoc transforms applied to each.
 
 \begin{table}[ht]
 \caption[Summary of training variants and applicable post-hoc transforms.]{%
@@ -50,7 +61,7 @@ weight modification.}
   \hline
   \textbf{Variant} & \textbf{Architecture change} & \textbf{Loss function} & \textbf{Post-hoc options} \\
   [0.5ex] \hline
-  Float32 baseline &
+  Fine-tuned fp32 baseline &
     None &
     MNRL &
     INT8, Binary, PQ, TurboQuant \\
@@ -87,35 +98,28 @@ weight modification.}
 \end{table}
 
 
-\section{Training Infrastructure and Hyperparameters}
+\section{Training Setup}
 \label{sec:training_infra}
 
-\subsection{Backbone Models}
-
 All training variants are run independently on three backbone architectures:
-BGE-base-en-v1.5, RoBERTa-base, and MPNet-base (described in
-Section~\ref{sec:biencoder}). No weights are shared across backbones.
+BGE-base-en-v1.5, RoBERTa-base, and MPNet-base
+(Section~\ref{sec:biencoder}). No weights are shared across backbones.
 
-\subsection{Training Setup}
+The training objective is the Multiple Negatives Ranking Loss (MNRL,
+Section~\ref{sec:contrastive}) computed with cosine similarity, with in-batch
+negatives drawn from the other positive passages in the same batch. Batches
+are sampled from the eight-dataset training mixture (Chapter~3) using a
+weighted sampler that controls each dataset's contribution per epoch.
 
-Training is implemented with the \textit{sentence-transformers}
-library~\cite{reimers2019sbert} using the HuggingFace Trainer API. Multi-GPU
-training is performed via PyTorch Distributed Data Parallel (DDP) launched
-with \texttt{torchrun} across four GPUs. Gradients are synchronized across
-all ranks; checkpoint saving and mid-training evaluation are performed only on
-rank~0.
+The fine-tuned fp32 baseline is produced by this setup with no additional
+compression layer. It serves as the starting point for all post-hoc
+compression methods. Training-time variants use the same setup, with
+modifications to the architecture, the loss, or both
+(Section~\ref{sec:training_time}); they fine-tune from the pre-trained
+backbone weights, not from the baseline checkpoint.
 
-All models are trained in \texttt{bfloat16} precision where hardware support
-is available, falling back to \texttt{float16} otherwise. The
-\texttt{NO\_DUPLICATES} batch sampler is used within each dataset to prevent
-the same (query, document) pair from appearing more than once per batch,
-preserving the diversity of in-batch negatives required by the MNRL objective.
-
-\subsection{Hyperparameters}
-
-Hyperparameters are shared across all training variants and backbone
-experiments; none are tuned per-variant. Table~\ref{tab:hyperparams}
-summarises the complete configuration.
+Hyperparameters are shared across all variants and backbones; none are tuned
+per-variant. Table~\ref{tab:hyperparams} summarises the configuration.
 
 \begin{table}[H]
 \caption[Training hyperparameters.]{%
@@ -148,165 +152,117 @@ gradient accumulation.}
   \hline
   Max sequence length  & 512 tokens \\
   \hline
-  Precision            & bfloat16 (float16 fallback) \\
+  Precision            & bfloat16 \\
   \hline
 \end{tabular}
 \end{center}
 \end{table}
 
 
-\section{Baseline Fine-Tuning}
-\label{sec:baseline}
-
-The float32 baseline is produced by fine-tuning each backbone as a standard
-\texttt{SentenceTransformer} with mean pooling (Section~\ref{sec:biencoder}).
-No compression layer is added. The training objective is the Multiple
-Negatives Ranking Loss (MNRL, Section~\ref{sec:contrastive}) computed with
-cosine similarity; in-batch negatives are drawn from all other positive
-passages in the same batch. Training applies MNRL to batches drawn from all
-datasets; the \texttt{WeightedBatchSampler} controls how frequently each
-dataset contributes batches during an epoch (Chapter~3).
-
-At the end of training the complete \texttt{SentenceTransformer} checkpoint
-(transformer weights, pooling configuration, and tokenizer) is saved to
-disk. This checkpoint serves as the common starting point for all post-hoc
-compression methods. Training-time compression experiments do not use this
-checkpoint; they are fine-tuned independently from the same pre-trained
-backbone weights.
-
-
 \section{Training-Time Compression Experiments}
 \label{sec:training_time}
 
-Each training-time experiment fine-tunes the pre-trained backbone directly,
-not the float32 baseline checkpoint, modifying either the model
-architecture, the loss function, or both. All other settings, including
-training infrastructure, hyperparameters, and training data, remain identical to
-the baseline.
+Each variant below modifies the architecture, the loss, or both. All other
+settings follow Section~\ref{sec:training_infra}.
 
 \subsection{STE Binarization-Aware Training}
 \label{sec:bat_ste}
 
-A \texttt{BinarizationLayer} is appended as an additional module after the
-mean-pooling layer in the \texttt{SentenceTransformer} module sequence. In
-the forward pass the layer applies \texttt{sign($\cdot$)} to the pooled
-float32 embedding, mapping each dimension to $\{-1, +1\}$. In the backward
-pass the layer acts as the identity (the Straight-Through Estimator,
-Section~\ref{sec:compression_bg}), passing gradients to the encoder
-unchanged. The loss function is unchanged from the baseline: MNRL with cosine
-similarity. Training encourages the encoder to produce pre-binarization
-activations already close to $\pm 1$, so that the discrete sign step
-introduces minimal information loss at inference time.
-
-At inference, \texttt{sign($\cdot$)} is applied and the resulting bit-vector
-is packed into \texttt{uint8} for storage.
+A binarization layer is appended after mean pooling. The forward pass applies
+$\text{sign}(\cdot)$ to the pooled embedding, mapping each dimension to
+$\{-1, +1\}$; the backward pass uses the Straight-Through Estimator
+(Section~\ref{sec:compression_bg}), passing gradients to the encoder
+unchanged. The training loss is MNRL with cosine similarity, computed on the
+binarized outputs. Training encourages the encoder to produce pre-binarization
+activations already close to $\pm 1$, minimising the information loss of the
+sign step at inference.
 
 \subsection{MRL Fine-Tuning}
 \label{sec:mrl_train}
 
-No architectural change is made; the model is identical to the baseline. The
-MNRL loss is wrapped by \texttt{MatryoshkaLoss}, which
-evaluates them at each of six nested granularities $\{32, 64, 128, 256, 512,
-768\}$. The five truncation granularities $\{32, 64, 128, 256, 512\}$ are the
-supported post-hoc truncation points; the full-dimension loss ($d = 768$) is
-included to ensure the complete representation is not degraded during
-training. All six losses are weighted equally ($c_m = 1$ for all $m$,
-Equation~\ref{eq:mrl}).
-
-At inference the MRL checkpoint is identical to the baseline float32
-checkpoint; truncation to any supported granularity is applied post-hoc by
-the evaluation pipeline (Section~\ref{sec:cross_axis}).
+The model is identical to the baseline; only the loss changes. MNRL is wrapped
+by the Matryoshka loss (Section~\ref{sec:compression_bg}), which evaluates it
+at six nested granularities $\{32, 64, 128, 256, 512, 768\}$. The five
+truncation granularities $\{32, 64, 128, 256, 512\}$ are the supported
+post-hoc truncation points; the full-dimension loss ($d = 768$) prevents
+degradation of the complete representation. All six losses are weighted
+equally ($c_m = 1$, Equation~\ref{eq:mrl}). The trained checkpoint is
+structurally identical to the baseline; truncation is applied post-hoc by the
+evaluation pipeline (Section~\ref{sec:cross_axis}).
 
 \subsection{Joint MRL and STE Binarization-Aware Training}
 \label{sec:mrl_bat}
 
-This variant combines the architectural change of
-Section~\ref{sec:bat_ste} with the loss modification of
-Section~\ref{sec:mrl_train}. The \texttt{BinarizationLayer} (STE) is
-inserted after mean pooling, and the loss is \texttt{MatryoshkaLoss} wrapping
-MNRL at all six granularities. The combination trains representations that are
-both nested and binarization-aware, enabling post-hoc truncation followed by
-binary packing.
+This variant applies both the binarization layer of Section~\ref{sec:bat_ste}
+and the Matryoshka loss of Section~\ref{sec:mrl_train}, training
+representations that are simultaneously nested and binarization-aware.
 
 \subsection{Annealed Tanh Binarization-Aware Training}
 \label{sec:bat_atanh}
 
-An \texttt{AnnealedTanhBinarizationLayer} replaces the STE layer after mean
-pooling, applying the annealed tanh surrogate described in
-Section~\ref{sec:compression_bg}. The annealing rate is $\gamma = 0.1$,
-following \cite{yamada2021efficient}; the empirical validation of this choice
-across $\gamma \in \{0.05, 0.1, 0.2\}$ is reported in
-Table~\ref{tab:gamma_ablation}. At approximately $t = 8{,}000$ steps (one
-epoch over the full training mixture), $\beta \approx 28$, at which point
+The binarization layer of Section~\ref{sec:bat_ste} is replaced with the
+annealed-tanh surrogate of Section~\ref{sec:compression_bg}. The annealing
+rate is $\gamma = 0.1$, following \cite{yamada2021efficient}; the empirical
+validation across $\gamma \in \{0.05, 0.1, 0.2\}$ is reported in
+Table~\ref{tab:gamma_ablation}. After approximately $t = 8{,}000$ steps (one
+epoch over the training mixture), $\beta \approx 28$, at which point
 $\tanh(\beta_t \cdot \mathbf{e}) \approx \text{sign}(\mathbf{e})$ for typical
-activation magnitudes.
-
-A \texttt{BetaAnnealCallback} increments $t$ after every optimizer step and
-logs $\beta$ to Weights \& Biases. At inference the layer switches to the
-hard \texttt{sign($\cdot$)} function. The loss function is MNRL with cosine
-similarity applied to the soft-binarized embeddings during training.
+activation magnitudes. At inference the layer switches to $\text{sign}(\cdot)$.
+The loss is MNRL with cosine similarity applied to the soft-binarized
+embeddings during training.
 
 \subsection{Joint MRL and Annealed Tanh Binarization-Aware Training}
 \label{sec:mrl_atanh}
 
-This variant combines the \texttt{AnnealedTanhBinarizationLayer} of
-Section~\ref{sec:bat_atanh} with the \texttt{MatryoshkaLoss} of
-Section~\ref{sec:mrl_train}. Architecture and loss are modified
-simultaneously, training representations that are both nested and
-binarization-aware via the smooth annealed surrogate.
+This variant combines the annealed-tanh layer of Section~\ref{sec:bat_atanh}
+with the Matryoshka loss of Section~\ref{sec:mrl_train}.
 
 
 \section{Post-Hoc Compression}
 \label{sec:posthoc}
 
-All post-hoc methods are applied after the float32 checkpoint has been
-trained; they do not modify the model weights. Raw float32 embeddings are
-encoded once and cached (Section~\ref{sec:eval_framework}); the compression
-transform is applied at evaluation load time.
+Post-hoc methods are applied to the cached embeddings of the fine-tuned fp32
+baseline; the model weights are not modified.
 
 \subsection{INT8 Scalar Quantization}
 
-Following the procedure in Section~\ref{sec:compression_bg} (Equation~\ref{eq:int8}),
-calibration bounds are derived from the first 1,000 corpus embeddings after any
-dimensionality truncation. The same bounds are applied identically to corpus and
-query embeddings. Similarity is cosine similarity on the quantized representations.
+Following Section~\ref{sec:compression_bg}, calibration bounds are derived
+from the first 1{,}000 corpus embeddings (after any dimensionality
+truncation) and applied identically to corpus and query embeddings. At
+retrieval time, the int8 values are scored directly with cosine similarity
+(cast to float for normalisation, without an explicit dequantisation step;
+since cosine is scale-invariant, this yields the same ranking as scoring the
+dequantised vectors).
 
 \subsection{Binary Quantization}
 
 Post-hoc binary quantization follows the procedure in
-Section~\ref{sec:compression_bg}. Bits are packed into \texttt{uint8} format
-using the \textit{sentence-transformers} \texttt{quantize\_embeddings} utility.
-Similarity is Hamming similarity between packed binary query and corpus vectors.
+Section~\ref{sec:compression_bg}, with bits packed into \texttt{uint8}.
+Similarity is Hamming similarity between packed binary query and corpus
+vectors.
 
 \subsection{Product Quantization}
 
-PQ is fitted on corpus embeddings using Faiss~\cite{douze2024faiss} following
-the procedure in Section~\ref{sec:compression_bg}. $M \in \{16, 24, 32, 48, 64, 96, 128, 192\}$ sub-spaces are evaluated with
-centroid bit-widths of $n_{\text{bits}} \in \{4, 8\}$.
+PQ is fitted on the corpus embeddings using Faiss~\cite{douze2024faiss}.
+Sub-space counts $M \in \{16, 24, 32, 48, 64, 96, 128, 192\}$ are evaluated
+with centroid bit-widths $n_{\text{bits}} \in \{4, 8\}$.
 
 \subsection{TurboQuant}
 
-TurboQuant~\cite{zandieh2025turboquant} is calibrated on the corpus embeddings
-via the \texttt{TurboQuantMSE} fitter (Section~\ref{sec:compression_bg}).
-Bit-depths of $\{1, 2, 3, 4, 8\}$ bits per dimension are evaluated.
+TurboQuant~\cite{zandieh2025turboquant} is calibrated on the corpus
+embeddings. Bit-depths of $\{1, 2, 3, 4, 8\}$ bits per dimension are evaluated.
 
 
 \section{Stacked Combinations}
 \label{sec:cross_axis}
 
-MRL-trained checkpoints support simultaneous compression along two dimensions:
-dimensionality reduction via post-hoc truncation, followed by any
-precision-reducing method. Specifically, each MRL checkpoint is truncated to
-each of the five supported granularities $\{32, 64, 128, 256, 512\}$, and
-then binary quantization, PQ, or TurboQuant is applied to the truncated
-embedding. This yields a grid of (backbone $\times$ truncation dimension
-$\times$ precision method) combinations evaluated in Chapter~5.
-
-Each combination is registered as a separate \texttt{ModelSpec} in
-\texttt{eval\_v2/config/models.py}. All variants that share the same
-checkpoint reuse a single cached float32 embedding, so encoding is performed
-only once per checkpoint regardless of how many compression variants are
-derived from it.
+MRL-trained checkpoints support simultaneous compression along two
+dimensions: dimensionality reduction via post-hoc truncation, followed by a
+precision-reducing transform. Each MRL checkpoint is truncated to each of the
+five granularities $\{32, 64, 128, 256, 512\}$, and then binary quantization,
+PQ, or TurboQuant is applied to the truncated embedding. This yields the grid
+of (backbone $\times$ truncation dimension $\times$ precision method)
+combinations evaluated in Chapter~5.
 
 
 \section{Evaluation Framework}
@@ -314,31 +270,29 @@ derived from it.
 
 \subsection{Embedding Cache and Transform Pipeline}
 
-Raw float32 embeddings are computed once per checkpoint and stored under a
-content-addressed cache. The cache key is the first 16 hex characters of the
-SHA-256 hash of the model path, ensuring distinct checkpoints produce distinct
-cache entries while variants sharing a checkpoint reuse a single cached copy.
-For each NanoBEIR subset, corpus and query embeddings are stored as compressed
-NumPy arrays (\texttt{.npz}) together with a JSON sidecar recording the model
-path, embedding count, and dimension. A cache miss triggers a multi-GPU
-encoding pass.
+Each checkpoint encodes the NanoBEIR corpus and queries once into float32
+embeddings, which are cached on disk. All compression variants derived from a
+given checkpoint are then evaluated by applying their transforms to these
+cached embeddings, with no re-encoding.
 
-At evaluation time, the transform pipeline is applied to the cached float32
-embeddings in the following fixed order:
+A variant applies at most one optional dimensionality truncation, followed by
+at most one precision-reducing transform. The transforms are applied in this
+fixed order:
 %
 \begin{enumerate}
-  \item Dimensionality truncation (if \texttt{truncate\_dim} is set).
-  \item Binary quantization and \texttt{uint8} packing (if
-        \texttt{similarity = hamming}).
-  \item INT8 scalar quantization (if \texttt{quant\_bits} $= 8$).
-  \item PQ fitting and asymmetric reconstruction (if \texttt{pq\_M} is
-        set); fitted on corpus.
-  \item TurboQuant quantization and dequantization (if \texttt{tq\_bits}
-        is set); fitted on corpus.
+  \item Dimensionality truncation (MRL variants only).
+  \item Binary quantization with \texttt{uint8} packing.
+  \item INT8 scalar quantization.
+  \item Product quantization (PQ).
+  \item TurboQuant.
 \end{enumerate}
 %
-Steps 4 and 5 are mutually exclusive; only one precision-reducing transform
-is active per model variant.
+Steps 2--5 are mutually exclusive: only one precision-reducing transform is
+active per variant. Step 1 may combine with any of steps 2--5, producing the
+stacked combinations defined in Section~\ref{sec:cross_axis}. The
+hyperparameters for each transform (PQ sub-spaces $M$ and bits per centroid;
+TurboQuant bits per dimension; INT8 calibration bounds) are specified in
+Section~\ref{sec:posthoc}.
 
 \subsection{Metrics}
 \label{sec:metrics}
@@ -362,8 +316,25 @@ Embedding memory is computed as:
 where $n$ is the number of embeddings, $d_{\text{stored}}$ is the stored
 dimension (number of PQ sub-spaces for PQ variants), and $b$ is the number
 of bits per stored element. For float32, $b = 32$; for INT8, $b = 8$; for
-binary packed embeddings, $b = 1$. Compression ratio is
-reported relative to the float32 baseline at the same embedding dimension.
+binary packed embeddings, $b = 1$.
+
+The compression ratio $r$ is reported relative to the float32 baseline at
+the original embedding dimension. A 768-dimensional float32 embedding
+occupies $768 \times 4 = 3{,}072$ bytes per vector. The ratio takes the
+following form for each method family:
+%
+\begin{itemize}
+  \item Scalar precision reduction to $b$ bits per component:
+        $r = 32 / b$ (INT8: $4\times$; binary: $32\times$).
+  \item MRL truncation to $d'$ dimensions: $r = 768 / d'$.
+  \item Product quantization with $M$ sub-spaces and $n$-bit codes per
+        sub-space: $r = (768 \times 32) / (M \times n)$.
+  \item TurboQuant at $b$ bits per dimension: $r = 32 / b$.
+\end{itemize}
+%
+Stacked combinations multiply the per-axis ratios. For example,
+MRL-256 followed by binary quantization gives
+$(768/256) \times 32 = 96\times$ compression.
 
 \subsection{Statistical Significance Testing}
 \label{sec:significance}
