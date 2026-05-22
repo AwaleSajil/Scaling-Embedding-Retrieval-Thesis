@@ -73,3 +73,41 @@ statistically detectable shift in retrieval quality.
     Table~\ref{tab:sig_bge_finetune}.}
     \label{fig:sig_bge_diffhist}
 \end{figure}
+
+\section{Binarisation-Aware Training Exceeds Float32 on RoBERTa}
+\label{sec:significance_bat_roberta}
+
+Per-query MRR@10 is recorded for the RoBERTa float32 fine-tune and
+for each of its two binarisation-aware variants (BAT-STE and
+BAT-atanh) on the 13 NanoBEIR subsets. Pooling across subsets while
+preserving within-subset pairing yields the test sample summarised
+in Table~\ref{tab:sig_bat_roberta}. Positive Cohen's $d$ favours the
+binarised variant.
+
+\begin{table}[h]
+    \centering
+    \caption[BAT vs float32 on RoBERTa: significance summary]%
+    {Paired significance summary for BAT-STE and BAT-atanh against
+    the RoBERTa float32 fine-tune on per-query MRR@10, pooled across
+    the 13 NanoBEIR subsets.}
+    \label{tab:sig_bat_roberta}
+    \begin{tabular}{l r r p{0.45\textwidth}}
+        \toprule
+        \textbf{Parameter} & \textbf{BAT-STE} & \textbf{BAT-atanh} & \textbf{Description} \\
+        \midrule
+        $n$               & 649        & 649        & Paired per-query observations pooled across the 13 NanoBEIR subsets. \\
+        Wins              & 155        & 167        & Queries where the binarised variant scores higher. \\
+        Ties              & 361        & 370        & Queries where both models return identical MRR@10. \\
+        Losses            & 133        & 112        & Queries where the float32 fine-tune scores higher. \\
+        Cohen's $d$       & $+0.117$   & $+0.207$   & Effect size on the difference vector; both favour the binarised variant. \\
+        Shapiro--Wilk $p$ & $<10^{-3}$ & $<10^{-3}$ & Rejects normality of the paired differences; motivates the Wilcoxon test in preference to the paired $t$-test. \\
+        Wilcoxon $p$      & $0.005$    & $<10^{-3}$ & Two-sided paired signed-rank test; rejects $H_0$ of zero median difference at $\alpha = 0.05$ in both cases. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Both tests reject the null of zero median difference at
+$\alpha = 0.05$, and both effect sizes point the same way: the
+binarised variant scores higher than the float32 fine-tune on
+average per query. The gain is therefore real, not a sampling
+artefact, and BAT-atanh shows the larger effect of the two.

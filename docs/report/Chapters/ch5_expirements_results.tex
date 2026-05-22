@@ -317,17 +317,21 @@ points (pp) over post-hoc binary on BGE, RoBERTa, and MPNet
 respectively, with the largest gains on the general-purpose backbones
 whose float32 geometry is least adapted to retrieval. BAT-STE matches
 the fine-tuned float32 ceiling on MPNet (0.582) and exceeds it by 3.5
-pp on RoBERTa (0.565 vs 0.530), indicating that the binarisation
-constraint can shape a more retrieval-effective geometry than
-unconstrained fine-tuning when the starting checkpoint is not already
-retrieval-specialised.
+pp on RoBERTa (0.565 vs 0.530; paired Wilcoxon signed-rank test on
+per-query MRR@10, $p = 0.005$;
+Appendix~\ref{sec:significance_bat_roberta}), indicating that the
+binarisation constraint can shape a more retrieval-effective geometry
+than unconstrained fine-tuning when the starting checkpoint is not
+already retrieval-specialised.
 
 The two surrogates show a backbone-dependent trade-off. BAT-atanh
 wins on RoBERTa (0.590 vs 0.565, $+2.5$ pp), the strongest binary
-result for RoBERTa across all methods. BAT-STE wins on BGE ($+2.0$
-pp) and effectively ties on MPNet ($+0.2$ pp). The ablation in
-Appendix~\ref{sec:gamma_ablation} shows the best $\gamma$ differs by
-backbone, but no backbone moves by more than 0.014 MRR@10 across
+result for RoBERTa across all methods and significantly above the
+float32 fine-tune (0.590 vs 0.530; paired Wilcoxon $p < 10^{-3}$;
+Appendix~\ref{sec:significance_bat_roberta}). BAT-STE wins on BGE
+($+2.0$ pp) and effectively ties on MPNet ($+0.2$ pp). The ablation
+in Appendix~\ref{sec:gamma_ablation} shows the best $\gamma$ differs
+by backbone, but no backbone moves by more than 0.014 MRR@10 across
 $\gamma \in \{0.05, 0.1, 0.2\}$, so the choice has little practical
 effect.
 
@@ -436,8 +440,7 @@ separability from the first optimiser step, conflicting with MRL's
 requirement that the leading sub-dimensions remain informative as
 float32 magnitudes across five nested budgets; BAT-atanh tightens
 the same constraint only gradually, leaving the early-training
-geometry close to the standard MRL optimum. The mechanism is
-examined further in Section~\ref{sec:discussion}.
+geometry close to the standard MRL optimum.
 
 \paragraph{Stacking pushes the quality--compression frontier
 outward.} The MRL-only reference (grey dashed) in
@@ -542,12 +545,12 @@ Pareto-optimal at $32\times$ for RoBERTa and MPNet.
 \section{Cross-Backbone Generalisability}
 \label{sec:cross_backbone}
 
-This section asks whether compression behaviour is invariant to the
-choice of backbone. If it is, conclusions drawn on one backbone
-generalise to the others. If it is not, the choice of evaluation
-backbone shapes the conclusion. The three backbones span a range of
-retrieval specialisation: BGE is retrieval-pretrained, while RoBERTa
-and MPNet are general-purpose.
+Figure~\ref{fig:cross_backbone} reports \emph{quality retention}
+(compressed MRR@10 divided by the same backbone's float32 MRR@10)
+rather than raw MRR@10. All three backbones have inherent retrieval
+capability after fine-tuning (Section~\ref{sec:float32_baselines}),
+with BGE the strongest. Normalising by each backbone's own float32
+ceiling removes that absolute-quality gap.
 
 \begin{figure}[h]
   \centering
@@ -556,112 +559,14 @@ and MPNet are general-purpose.
            backbone's float32 MRR@10) for a representative set of
            configurations, ordered by compression ratio.  The rightmost
            column shows the standard deviation of retention across the
-           three backbones.  A low std means the method behaves
-           consistently across backbones; a high std means it does not.}
+           three backbones.}
   \label{fig:cross_backbone}
 \end{figure}
 
-\paragraph{Low compression is backbone-invariant.}
-At ratios up to $16\times$, every method in the figure retains at
-least $99\%$ of float32 quality on every backbone, with std below
-$0.02$.  INT8, TQ-4bit, TQ-2bit, MRL-512, and MRL-256 all sit in this
-regime.  The choice of method is independent of the backbone.
-
-\paragraph{At 32$\times$, std splits the cohort by method family.}
-Post-hoc methods stay invariant: PQ ($M{=}96, n{=}8$) has std
-$0.011$, TQ-1bit $0.016$, post-hoc binary $0.013$.  Training-time
-methods do not: BAT-STE has std $0.043$ and BAT-atanh
-($\gamma{=}0.1$) has $0.075$, the largest in the figure.  The
-training-time gap is not just larger in magnitude, it changes
-direction.  BAT-atanh \emph{loses} seven retention points on BGE
-($0.93$) but \emph{gains} eleven on RoBERTa ($1.11$), with MPNet
-near-neutral ($1.00$).  A practitioner benchmarking on BGE alone would
-conclude that training-time binarisation underperforms post-hoc PQ;
-the reverse is true on RoBERTa.
-
-\paragraph{Stacked combinations inherit the pattern.}
-Pairing MRL truncation with a post-hoc quantiser preserves invariance:
-MRL-256 + PQ ($M{=}64, n{=}8$) at $48\times$ has std $0.006$, and
-MRL-256 + TQ-1bit at $96\times$ has std $0.002$.  Pairing MRL with
-training-time binarisation amplifies divergence: MRL-512 + BAT-STE
-at $48\times$ has std $0.046$, and MRL-256 + BAT-STE at $96\times$
-has $0.053$.  The backbone-dependence of training-time methods
-propagates to every stack that includes them.
-
-\paragraph{Implication.}
-Evaluating only on a retrieval-pretrained backbone is sufficient to
-characterise post-hoc compression but not training-time binarisation.
-On BGE alone, post-hoc PQ appears strictly better than BAT-STE.  On
-general-purpose backbones, the ranking inverts.  The practical benefit
-of training-time binarisation is concentrated on the backbones that
-lack a retrieval prior.
-
-%----------------------------------------------------------------------------------------
-\section{Discussion}
-\label{sec:discussion}
-
-The patterns reported across this chapter admit a common explanation
-in terms of the \emph{retrieval geometry} of the backbone embedding
-space and the kind of intervention each compression method makes on
-that geometry.  This section sets out three mechanisms that together
-account for the empirical results.
-
-\paragraph{Why sign-aligned geometry decides where post-hoc methods
-succeed.}
-Compression methods can be classified by what they touch.  Sign
-thresholding, scalar quantisation, and product quantisation operate on
-a \emph{fixed} embedding distribution; they re-coordinate or partition
-the space without altering the directions the model has learned.  These
-methods can therefore only recover quality that is already latent in
-the geometry.  Their success depends on whether the float32 sign
-pattern, or the codebook-aligned subspaces, encode retrieval relevance.
-Contrastive pre-training at scale (BGE) produces a space in which these
-properties hold; masked language modelling (RoBERTa) and general
-sentence-similarity training (MPNet) do not. This mechanism predicts the empirical pattern observed in
-Sections~\ref{sec:posthoc_compression} and \ref{sec:cross_backbone}:
-post-hoc methods retain near-float32 quality on BGE at every
-compression ratio tested, while their behaviour on RoBERTa and MPNet
-deteriorates more sharply as the compression ratio increases.  It also
-predicts the small loss from fine-tuning BGE itself
-(Section~\ref{sec:float32_baselines}): when the geometry is already
-adapted, further unconstrained fine-tuning on a smaller mixture has
-little to optimise toward.
-
-\paragraph{Why training-time binarisation can exceed the float32
-baseline.}
-Binarisation-aware training is a different kind of intervention.
-Rather than re-coordinating a fixed space, it modifies the parameters
-themselves under a constraint that the inference-time geometry be
-sign-separable.  The resulting optimisation problem has fewer degrees
-of freedom than unconstrained float32 training, so it can only reach
-the float32 frontier if the binary-constrained optimum happens to be
-near-equivalent to the unconstrained one.  For backbones without a
-retrieval prior, the constraint instead acts as a useful inductive
-bias: the model is forced to allocate retrieval signal along
-sign-separable directions, a structure unconstrained fine-tuning is not
-incentivised to discover.  This is why BAT-STE and BAT-atanh raise
-RoBERTa and MPNet above their float32 baselines at 32$\times$
-(Section~\ref{subsec:ste_atanh}) while reducing BGE quality below its
-own.
-
-\paragraph{Why MRL and binarisation conflict under joint training.}
-The MRL$+$BAT-STE reversal (Section~\ref{sec:cross_axis}) is the
-sharpest illustration of constraint incompatibility.  MRL requires
-the leading $d$ dimensions to encode rankable retrieval signal in
-continuous magnitudes across five nested truncations; sign
-thresholding discards those magnitudes entirely.  The two constraints
-share the same parameters but pull the geometry in different
-directions.  Crucially, the MRL$+$BAT-atanh results show that this
-conflict is not a property of joint training in general but of the
-surrogate gradient: the gradual
-$\beta$ schedule keeps the early-training geometry close to the
-standard MRL optimum and only tightens the sign-separation constraint
-once the nested-truncation structure has been established.  The
-straight-through gradient imposes the same constraint from the first
-optimiser step and forces an immediate compromise.  Backbones with
-weaker retrieval priors (RoBERTa) absorb this compromise more easily;
-strongly-anchored backbones (BGE, MPNet) cannot.  The implication for
-compression pipeline design is that the choice of surrogate gradient,
-not the decision to train jointly, governs whether stacked training
-objectives reinforce or undermine one another.
+The highest cross-backbone variance sits with BAT-STE (std $0.043$)
+and BAT-atanh (std $0.075$). As established in
+Section~\ref{subsec:ste_atanh}, the relative gain from these methods
+follows RoBERTa $>$ MPNet $>$ BGE. The remaining configurations,
+covering MRL truncation, INT8, TQ, PQ, post-hoc binary, and their
+non-BAT stacked variants, are largely invariant to the backbone.
 

@@ -2,198 +2,114 @@
 %	CHAPTER 6: CONCLUSIONS
 %----------------------------------------------------------------------------------------
 
-\chapter{Chapter 6. Conclusions}
+\chapter{Chapter 6. Conclusion and Future Work}
 \label{ch:conclusions}
 
 This thesis set out to compare embedding compression methods for dense
-retrieval on equal terms.  Three encoder backbones with different
+retrieval on equal terms. Three encoder backbones with different
 retrieval priors were fine-tuned under identical conditions, evaluated
 on the same benchmark (NanoBEIR), and exposed to the same family of
-post-hoc, training-time, and stacked compression methods.  This chapter
-revisits the research questions in
-Section~\ref{sec:findings}, distils the empirical results into
-operating-point guidance in Section~\ref{sec:recommendations}, and
-identifies directions for future work in Section~\ref{sec:future_work}.
+post-hoc, training-time, and stacked compression methods.
 
 %----------------------------------------------------------------------------------------
-\section{Summary of Findings}
-\label{sec:findings}
+\section{Conclusion}
+\label{sec:conclusion}
 
-\paragraph{RQ1: Post-hoc versus training-time compression.}
-Training-time compression does not yield uniformly better retrieval
-quality than post-hoc compression at equivalent memory budgets.  The
-answer depends on the retrieval prior of the backbone.  For BGE, which
-enters compression experiments with a retrieval-aligned geometry from
-large-scale contrastive pre-training, post-hoc Product Quantisation
-(PQ) reaches the Pareto frontier at every compression ratio tested
-and outperforms training-time binarisation at 32$\times$
-(PQ-$m$96-$n$8: 0.679 vs Straight-Through Estimator binarisation (BAT):
-0.658).  For RoBERTa and MPNet, which lack a retrieval prior,
-training-time binarisation is firmly on the frontier at 32$\times$ and
-no post-hoc method reaches it: annealed tanh ($\gamma{=}0.2$) achieves
-0.580 for RoBERTa and BAT achieves 0.582 for MPNet, each substantially
-above the best post-hoc configuration at the same budget
-(Sections~\ref{subsec:cross_method}, \ref{subsec:ste_atanh},
-\ref{sec:pareto}).
+\paragraph{Post-hoc versus training-time compression.}
+Training-time compression is not uniformly better than post-hoc
+compression; the winner depends on the backbone. BGE was
+pre-trained at large scale with a contrastive retrieval objective,
+so it begins from a retrieval-friendly representation. For BGE,
+post-hoc Product Quantisation (PQ) sits on the Pareto frontier at
+every compression ratio tested and beats training-time
+binarisation. RoBERTa and MPNet have no such retrieval
+pre-training; for them, training-time binarisation is on the
+frontier (especially at 32$\times$) while no post-hoc method
+reaches it.
 
-\paragraph{RQ2: Gradient surrogate and annealing schedule.}
-The choice of gradient surrogate has a measurable, backbone-dependent
-effect on binarisation-aware training quality.  In the standalone
-setting, BAT outperforms annealed tanh for BGE and MPNet by 1.0 and 0.8
-percentage points respectively, while annealed tanh outperforms BAT for
-RoBERTa by 1.5 percentage points.  The annealing rate $\gamma$ for
-annealed tanh shows a monotonic relationship with RoBERTa quality
-across the tested range $\gamma \in \{0.05, 0.10, 0.20\}$, with the
-fastest schedule consistently best (Section~\ref{subsec:ste_atanh}).
-A separate effect emerges in stacked training: annealed tanh is
-considerably more compatible with MRL than BAT, outperforming
-MRL$+$BAT on every backbone by 2.7 to 3.9 percentage points and
-matching or exceeding MRL$+$post-hoc binary for RoBERTa and MPNet
-(Section~\ref{sec:cross_axis}).
+\paragraph{STE versus annealed tanh for binary embedding training.}
+For training-time binarisation, the choice of gradient surrogate
+also matters and is itself backbone-dependent. In standalone
+training, STE is better on BGE and MPNet, while annealed tanh is
+better on RoBERTa. In stacked training, annealed tanh combines
+with MRL much more cleanly than STE, beating MRL$+$BAT$-$STE on
+every backbone and matching or exceeding MRL$+$post-hoc binary on
+RoBERTa and MPNet.
 
-\paragraph{RQ3: Stacking complementary compression techniques.}
-Stacking dimensional reduction (MRL truncation) with precision
-reduction extends the compression frontier substantially beyond what
-either method achieves alone.  For BGE, MRL$+$PQ Pareto-dominates the
-standalone PQ frontier in the 48$\times$ to 96$\times$ range, and the
-MRL$+$TurboQuant envelope reaches 0.614 MRR@10 at 96$\times$
-compression (32 bytes per vector).  Not all stacked combinations are
-better than the sum of their parts, however.  Joint MRL$+$BAT training
-underperforms the sequential MRL$\rightarrow$post-hoc binary strategy
-for BGE and MPNet, a reversal traced in
-Section~\ref{sec:cross_axis} to gradient incompatibility between MRL's
-float32 magnitude requirement and the straight-through binarisation
-gradient.  The annealed tanh surrogate avoids this conflict and
-recovers the joint training advantage on the general-purpose backbones.
+\paragraph{Stacking complementary methods.}
+Stacking dimensional reduction with precision reduction pushes the
+frontier well past what either method reaches alone. On BGE,
+MRL$+$PQ dominates standalone PQ in the 48$\times$ to 96$\times$
+range, and MRL$+$TurboQuant stays usable through 96$\times$. Not
+every combination helps: joint MRL$+$BAT training is worse than
+the sequential MRL$\rightarrow$post-hoc binary path on BGE and
+MPNet. A likely cause is a gradient conflict: MRL needs the
+leading dimensions to carry informative float32 magnitudes, but
+the straight-through gradient discards those magnitudes. Annealed
+tanh avoids the conflict and restores the joint-training gain on
+the general-purpose backbones.
 
-\paragraph{RQ4: Cross-architecture generalisability.}
-Findings transfer across architectures unevenly.  Up to 8$\times$
-compression, method effects are backbone-agnostic in both magnitude and
-direction: INT8 and TurboQuant at 4-bit precision are effectively
-lossless for all three backbones, and method rank orderings are
-preserved.  At 32$\times$, backbone identity becomes the dominant
-factor.  Rank orderings within post-hoc methods remain stable across
-backbones (PQ $>$ TurboQuant-1bit $>$ post-hoc binary), but the
-ordering between training-time and post-hoc methods reverses, and the
-direction of training-time effects flips: BAT reduces BGE quality below
-float32 but raises RoBERTa quality above float32 by 3.5 percentage
-points.  Conclusions drawn on a single retrieval-specialised backbone
-therefore do not transfer to general-purpose backbones at high
-compression ratios (Section~\ref{sec:cross_backbone}).
+\paragraph{Cross-backbone generalisability.}
+These findings transfer unevenly across backbones. Below
+8$\times$, the backbone barely matters: INT8 and 4-bit TurboQuant
+are near-lossless on all three, and when methods are ranked by
+quality the order is the same on every backbone. At 32$\times$,
+the backbone takes over. The order among post-hoc methods stays
+the same (PQ $>$ TurboQuant-1bit $>$ post-hoc binary), but
+training-time methods switch position relative to post-hoc
+methods, and their effect flips sign: BAT pulls BGE below float32
+while pushing RoBERTa above it. A study run only on a
+retrieval-specialised backbone therefore does not generalise to
+general-purpose backbones at high compression
+(Section~\ref{sec:cross_backbone}).
+
+Taken together, the results in this thesis establish that no
+single compression strategy dominates across backbones or
+compression budgets. The right method depends on two things:
+whether the encoder has been pre-trained for retrieval, and the
+target memory budget. Controlled cross-backbone evaluation, of the
+kind conducted here, is a prerequisite for principled method
+selection in dense retrieval deployments.
 
 %----------------------------------------------------------------------------------------
-\section{Practical Recommendations}
-\label{sec:recommendations}
-
-The findings above translate into a small number of practical
-recommendations, distilled from the Pareto analysis in
-Section~\ref{subsec:pareto_frontiers}.
-
-\paragraph{Up to 8$\times$.}
-INT8 at 4$\times$ and TurboQuant at 4-bit (8$\times$) are
-near-lossless for all three backbones and require neither retraining
-nor corpus calibration beyond TurboQuant's lightweight rotation fit.
-These methods are the default choice when float32 storage is no longer
-acceptable but quality preservation is the dominant constraint.
-
-\paragraph{At 32$\times$.}
-Method selection becomes backbone-dependent.  For retrieval-specialised
-backbones (BGE), PQ-$m$96-$n$8 is the strongest option and avoids the
-cost of retraining.  For general-purpose backbones (RoBERTa, MPNet),
-binarisation-aware training is necessary: annealed tanh
-($\gamma{=}0.2$) for RoBERTa and BAT for MPNet.  Practitioners with
-access only to a retrieval-specialised checkpoint can therefore deploy
-post-hoc compression; those starting from general-purpose backbones
-must invest in fine-tuning with the appropriate binarisation surrogate.
-
-\paragraph{Beyond 32$\times$.}
-Stacked combinations are the only route to the frontier.  For BGE,
-MRL$+$PQ at the 48$\times$ to 96$\times$ range provides the best
-quality-per-byte; MRL$+$TurboQuant extends usefully to 96$\times$ and
-beyond.  For RoBERTa and MPNet, MRL$+$annealed tanh is preferred to
-both MRL$+$BAT and MRL$+$post-hoc binary, providing a single
-training-time recipe that combines well with MRL and degrades
-gracefully as the truncation budget shrinks.
-
-\paragraph{Surrogate gradient selection.}
-When binarisation-aware training is appropriate, the surrogate
-gradient should be chosen jointly with the rest of the compression
-pipeline.  BAT is competitive or best in the standalone setting for
-backbones with a retrieval prior.  Annealed tanh is preferred whenever
-the training-time binarisation is combined with MRL, because the
-gradual $\beta$ schedule avoids the gradient conflict that traps the
-straight-through estimator under joint training.
-
-%----------------------------------------------------------------------------------------
-\section{Limitations and Future Work}
+\section{Future Work}
 \label{sec:future_work}
 
-Several limitations constrain the scope of the conclusions drawn in
-this thesis; each delineates a direction for future work.
+Several limitations constrain the scope of these conclusions and
+point to natural next steps.
 
 \paragraph{Scale.}
-NanoBEIR enables rapid comparison across a large number of compression
-configurations but its corpus sizes (2{,}000 to 6{,}000 passages per
-subset) are one to two orders of magnitude smaller than production
-retrieval indices.  Codebook quality for PQ in particular is sensitive
-to corpus scale, and the relative ranking of methods at larger scale
-remains an open question.  A follow-on evaluation on full BEIR or on
-production-scale corpora would establish whether the conclusions drawn
-here at 56{,}000 passages transfer to indices of $10^7$ to $10^9$
-passages.
+NanoBEIR enabled rapid sweeps but its subsets hold only 2{,}000 to
+6{,}000 passages each, and PQ codebook quality in particular is
+sensitive to corpus size. A follow-on evaluation on full BEIR or
+MTEB would test whether the conclusions transfer. The fine-tuning
+mixture is also fixed at a moderate size; a larger, more diverse
+mixture may change the gain from binarisation-aware training,
+especially on backbones without a retrieval prior. Every model is
+trained for a single epoch, and longer schedules, especially when
+paired with annealed tanh, may push the training-time frontier
+further.
 
-\paragraph{PQ codebook overhead.}
-PQ codebook storage is not counted in the per-vector memory budget
-reported throughout this thesis, which understates the total memory
-cost of PQ relative to simpler methods at small corpus scales. A
-fuller accounting that amortises codebook size over corpus size would
-sharpen the Pareto position of PQ at the lower end of the scale axis.
+\paragraph{MRL with recurrent binarisation.}
+The stacked combinations evaluated here pair MRL with a single
+precision-reduction method (PQ, TurboQuant, or binary). A natural
+extension is to stack MRL with the recurrent residual binarisation
+scheme deployed at Tencent~\cite{gan2023binary}, which encodes
+embeddings as a chain of binary stages and reaches a user-specified
+bit depth. Because the bit depth is chosen after training rather
+than baked in, the resulting pipeline gives post-hoc control over
+both the truncation dimension and the bit depth, a finer-grained
+quality$-$compression knob than any combination evaluated here.
 
-\paragraph{Backbone family.}
-Three encoder backbones span a meaningful range of retrieval
-specialisation but do not exhaust the design space.  Extension to
-larger encoders (BGE-large, mxbai-embed-large), to multilingual
-backbones, and to decoder-based or cross-encoder retrievers would test
-whether the geometry hypothesis advanced in
-Section~\ref{sec:discussion} generalises beyond the BERT-family
-bi-encoders studied here.
-
-\paragraph{Multilingual and cross-lingual evaluation.}
-All evaluations in this thesis are on English-language datasets.
-Whether the geometry hypothesis and the backbone-conditioned method
-rankings extend to multilingual or cross-lingual retrieval remains an
-open question, and is a natural follow-up given the rapid adoption of
-multilingual retrieval encoders in production systems.
-
-\paragraph{Annealing schedule.}
-The annealing sweep for annealed tanh covers only three values
-($\gamma \in \{0.05, 0.10, 0.20\}$).  The monotonic improvement
-observed for RoBERTa across this range suggests that the optimum may
-lie at faster schedules; a denser sweep, particularly for the backbones
-that responded most strongly to atanh (RoBERTa, MPNet), would identify
-the practical limit of the gradual-annealing strategy.
-
-\paragraph{Beyond binary.}
-This thesis restricts training-time precision reduction to one bit per
-dimension.  Intermediate precisions (two to four bits per dimension)
-trained end-to-end with annealed surrogates remain unexplored and may
-offer a finer-grained quality$-$compression trade-off than either INT8
-post-hoc or one-bit training-time methods provide.
-
-\paragraph{Online and streaming corpora.}
-PQ and TurboQuant codebooks are fit once on a static corpus.  In
-practice, retrieval indices grow incrementally and codebook drift can
-degrade quality over time.  Streaming or online variants of
-corpus-fitted quantisation, particularly under the geometry conditions
-that favour post-hoc methods for retrieval-specialised backbones,
-would extend the practical applicability of the methods evaluated here.
-
-\medskip
-\noindent
-Taken together, the results in this thesis establish that no single
-compression strategy dominates across backbones or compression
-budgets.  The choice of method is governed by the retrieval geometry
-of the underlying encoder and by the target memory budget, and
-controlled cross-backbone evaluation, of the kind conducted here, is a
-prerequisite for principled method selection in dense retrieval
-deployments.
+\paragraph{Why BAT helps RoBERTa more than BGE.}
+BAT raises RoBERTa above its float32 baseline at 32$\times$ but
+drops BGE below its own. One hypothesis is that BGE's float32
+magnitudes already carry useful retrieval signal, so collapsing
+them to signs destroys information; RoBERTa's magnitudes are
+noisier, so the same collapse loses less. A direct test would add
+controlled noise to BGE's embeddings before binarisation and sweep
+the noise magnitude. If the hypothesis holds, BAT's relative
+quality on BGE should improve as the noise grows. A complementary
+analysis would compare the mean-pooled embeddings of BGE and
+RoBERTa before the sign() step, to identify the feature of BGE
+that binarisation removes.

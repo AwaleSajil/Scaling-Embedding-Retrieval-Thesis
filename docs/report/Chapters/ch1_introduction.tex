@@ -120,9 +120,11 @@ This thesis is organized around four research questions:
     Does training-time compression yield better retrieval quality than
     post-hoc compression at equivalent memory budgets?
 
-    \item \textbf{Gradient approximation strategy for binary embeddings.}
-    Does the choice of gradient surrogate used during binarization training
-    affect retrieval quality ?
+    \item \textbf{STE versus annealed tanh for binary embedding training.}
+    Training binary embeddings needs a surrogate gradient to backpropagate
+    through the non-differentiable sign function. Does the choice between
+    the Straight-Through Estimator (STE) and annealed tanh affect retrieval
+    quality?
 
     \item \textbf{Stacking complementary compression techniques.}
     Does combining multiple complementary compression techniques yield better
@@ -151,9 +153,9 @@ This thesis makes the following contributions to the field of efficient dense te
     fair comparison.
 
     \item \textbf{Binarization training strategy comparison.}
-    Two gradient approximation strategies, the Straight-Through Estimator
-    and Annealed Tanh, for training with a binarization objective are
-    compared directly for the first time under identical
+    Two gradient approximation strategies, STE and annealed tanh, for
+    training with a binarization objective are compared directly for
+    the first time under identical
     conditions~\cite{bengio2013estimating, yamada2021efficient}.
 
     \item \textbf{Stacking complementary compression techniques.}

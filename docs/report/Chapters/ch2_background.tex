@@ -68,17 +68,7 @@ The three backbones span a range of retrieval starting quality. BGE arrives alre
 \section{Contrastive Learning for Dense Retrieval}
 \label{sec:contrastive}
 
-\subsection{The InfoNCE Objective}
-
-Contrastive learning trains a model to embed semantically related items close together and unrelated items far apart~\cite{oord2018representation}. The Information Noise-Contrastive Estimation loss (InfoNCE) formalizes this as an $N$-way classification task: given a query $q$ paired with a positive passage $p^{+}$ and $N-1$ negative passages $\{p_i^{-}\}$, the model must identify the one correct passage among all candidates. The model is trained to assign the highest similarity score to the positive pair:
-%
-\begin{equation}
-  \mathcal{L}_{\text{InfoNCE}} = -\log \frac{\exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p^+}) / \tau\right)}{\exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p^+}) / \tau\right) + \sum_{i=1}^{N-1} \exp\!\left(\text{sim}(\mathbf{e}_q, \mathbf{e}_{p_i^-}) / \tau\right)},
-\end{equation}
-%
-where $\tau > 0$ is a temperature hyperparameter that controls how peaked the softmax distribution is: smaller $\tau$ sharpens the distribution toward the highest-scoring passage, while larger $\tau$ flattens it across all candidates.
-
-\subsection{Multiple Negatives Ranking Loss}
+Contrastive learning trains a model to embed semantically related items close together and unrelated items far apart~\cite{oord2018representation}. The Information Noise-Contrastive Estimation (InfoNCE) loss formalizes this as an $N$-way classification task: given a query paired with one positive passage and $N{-}1$ negatives, the model must assign the highest similarity score to the positive pair.
 
 \begin{figure}[!h]
   \centering
@@ -87,14 +77,14 @@ where $\tau > 0$ is a temperature hyperparameter that controls how peaked the so
   \label{fig:mnrl}
 \end{figure}
 
-Multiple Negatives Ranking Loss (MNRL) applies InfoNCE in the sentence-transformers training framework~\cite{reimers2019sbert}. Figure~\ref{fig:mnrl} illustrates the in-batch negative construction and the resulting similarity matrix. In MNRL, negatives are obtained for free from the other examples in the same training batch: for a batch of $N$ query-positive pairs $\{(q_i, p_i^+)\}_{i=1}^{N}$, the positive passage of every other pair in the batch serves as a negative for query $q_i$. The loss for the full batch is:
+The Multiple Negatives Ranking Loss (MNRL) used throughout this thesis is the in-batch instantiation of InfoNCE adopted by the sentence-transformers framework~\cite{reimers2019sbert}. Negatives are obtained for free from the other examples in the same training batch: for a batch of $N$ query-positive pairs $\{(q_i, p_i^+)\}_{i=1}^{N}$, the positive passage of every other pair serves as a negative for query $q_i$ (Figure~\ref{fig:mnrl}). The loss for the full batch is:
 %
 \begin{equation}
-  \mathcal{L}_{\text{MNRL}} = -\frac{1}{N} \sum_{i=1}^{N} \log \frac{\exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_i^+}) / \tau\right)}{\sum_{j=1}^{N} \exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_j^+}) / \tau\right)}.
+  \mathcal{L}_{\text{MNRL}} = -\frac{1}{N} \sum_{i=1}^{N} \log \frac{\exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_i^+}) / \tau\right)}{\sum_{j=1}^{N} \exp\!\left(\text{sim}(\mathbf{e}_{q_i}, \mathbf{e}_{p_j^+}) / \tau\right)},
   \label{eq:mnrl}
 \end{equation}
 %
-In-batch negatives are effective because large batch sizes expose each query to many diverse negatives simultaneously, and because batch-mates are often topically related to the query, providing challenging but informative negatives without any explicit negative mining~\cite{karpukhin2020dense}. When training data includes explicit triplets (i.e., mined hard negatives), MNRL extends naturally by appending them to the denominator alongside the in-batch negatives.
+where $\tau > 0$ is a temperature hyperparameter that controls how peaked the softmax distribution is. In-batch negatives are effective because large batch sizes expose each query to many diverse negatives simultaneously, and because batch-mates are often topically related to the query, providing challenging but informative negatives without any explicit negative mining~\cite{karpukhin2020dense}. When training data includes explicit triplets (i.e., mined hard negatives), MNRL extends naturally by appending them to the denominator alongside the in-batch negatives.
 
 \section{Embedding Compression Methods}
 \label{sec:compression_bg}
@@ -327,15 +317,7 @@ Recall@$k$ is bounded above by $\min(k, |\mathcal{R}|) / |\mathcal{R}|$ and
 equals 1 only when all relevant documents are retrieved within the top $k$
 positions.
 
-\textbf{Accuracy@$k$} (also called hit rate) is a binary metric indicating
-whether at least one relevant document appears in the top $k$ results:
-%
-\begin{equation}
-  \text{Accuracy}@k = \mathbf{1}\!\left[\exists\, i \leq k : \text{doc}_i \in \mathcal{R}\right].
-  \label{eq:acc}
-\end{equation}
-
-All four metrics are computed at $k \in \{1, 3, 5, 10\}$, averaged over all
+All three metrics are computed at $k \in \{1, 3, 5, 10\}$, averaged over all
 queries in a NanoBEIR subset, and macro-averaged across the 13 subsets.
 
 \subsection{Statistical Significance Testing}

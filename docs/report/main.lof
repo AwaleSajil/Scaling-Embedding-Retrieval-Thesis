@@ -1,0 +1,15 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Mean MRR@10 vs compression ratio for TurboQuant across bit-widths and backbones.}}{56}{figure.caption.19}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Mean MRR@10 at 32$\times $ compression for all post-hoc methods across backbones. Float32 fine-tuned scores shown as dashed reference lines.}}{57}{figure.caption.20}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Mean MRR@10 at 32$\times $ compression for post-hoc binary, BAT, and annealed tanh ($\gamma {=}0.2$) across backbones.}}{59}{figure.caption.23}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Mean MRR@10 as a function of MRL truncation dimension $d$ for all three backbones. The float32 768-dim baseline is shown as a dashed reference line for each backbone.}}{61}{figure.caption.24}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Mean MRR@10 vs compression ratio for MRL+TQ and MRL+PQ stacked combinations. Standalone TQ and PQ results are shown as dashed reference curves.}}{64}{figure.caption.27}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Quality--compression Pareto frontiers for BGE, RoBERTa, and MPNet. Compression ratio is shown on a log scale. Filled markers indicate Pareto-optimal configurations; hollow markers are dominated.}}{65}{figure.caption.28}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces Quality retention (compressed MRR@10 / float32 MRR@10) for all evaluated methods across backbones. Values above 1.0 indicate the compressed model exceeds its float32 baseline.}}{69}{figure.caption.31}%
+\addvspace {10\p@ }

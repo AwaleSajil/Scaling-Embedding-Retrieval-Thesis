@@ -1,0 +1,26 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {1.1}{\ignorespaces Float32 index size and monthly instance cost by embedding dimension}}{2}{table.caption.8}%
+\contentsline {table}{\numberline {1.2}{\ignorespaces Organization of embedding compression methods studied in this thesis}}{4}{table.caption.9}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces Training dataset summary.}}{31}{table.caption.10}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces NanoBEIR benchmark subsets.}}{36}{table.caption.11}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Summary of training variants and applicable post-hoc transforms.}}{38}{table.caption.12}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Training hyperparameters.}}{40}{table.caption.13}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces NanoBEIR subsets used for evaluation.}}{49}{table.caption.14}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Mean MRR@10 (macro-averaged over 13 NanoBEIR subsets) for pre-trained and fine-tuned float32 embeddings. $\Delta $ is the absolute change due to fine-tuning.}}{52}{table.caption.15}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Mean MRR@10 for INT8 quantisation (4$\times $) compared with the fine-tuned float32 baseline.}}{54}{table.caption.16}%
+\contentsline {table}{\numberline {5.4}{\ignorespaces Mean MRR@10 for post-hoc binary quantisation (32$\times $) compared with the fine-tuned float32 baseline.}}{55}{table.caption.17}%
+\contentsline {table}{\numberline {5.5}{\ignorespaces Mean MRR@10 for PQ configurations (32$\times $) compared with the fine-tuned float32 baseline and post-hoc binary.}}{55}{table.caption.18}%
+\contentsline {table}{\numberline {5.6}{\ignorespaces Mean MRR@10 at 32$\times $ compression. Float32 fine-tuned scores are shown for reference ($r = 1{\times }$).}}{57}{table.caption.21}%
+\contentsline {table}{\numberline {5.7}{\ignorespaces Mean MRR@10 at 32$\times $ compression for binarisation-aware training methods, post-hoc binary, and the float32 baseline.}}{59}{table.caption.22}%
+\contentsline {table}{\numberline {5.8}{\ignorespaces Mean MRR@10 for MRL truncations at 512 and 256 dimensions, with compression ratio and float32 baseline shown for reference.}}{61}{table.caption.25}%
+\contentsline {table}{\numberline {5.9}{\ignorespaces Mean MRR@10 for stacked combinations, with compression ratio and memory footprint per vector. MRL float32 baselines are included for reference.}}{62}{table.caption.26}%
+\contentsline {table}{\numberline {5.10}{\ignorespaces BGE Pareto-optimal configurations, ordered by compression ratio. Method family is indicated for each point.}}{66}{table.caption.29}%
+\contentsline {table}{\numberline {5.11}{\ignorespaces Best-performing method and MRR@10 at four representative compression budgets for each backbone. Ties broken by compression ratio (higher preferred).}}{67}{table.caption.30}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {12}{\ignorespaces $\gamma $ ablation: mean MRR@10 on NanoBEIR}}{82}{table.caption.34}%
