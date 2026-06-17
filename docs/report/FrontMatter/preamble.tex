@@ -6,14 +6,16 @@
 \usepackage{indentfirst} % To allow indentations in the first paragraph.
 \usepackage{amsmath} % For formatting equations properly
 \usepackage{amssymb} % For \mathbb and other math symbols
-\usepackage{natbib} % For formatting the bibliography
+\usepackage[numbers]{natbib} % numerical citations (matches plainnat in numeric mode); enables \citeauthor, \citet, \citep
 \usepackage{chngcntr} % To allow changing how figures, tables, and pages are counted.
 \usepackage{appendix} % To help format the appendix
 %The following loads tocbasic (via nomencl) before caption to avoid a koma-script 3.46+ hook ordering bug.
 \usepackage[intoc]{nomencl}
 \makenomenclature
 \renewcommand{\nomname}{List of Symbols}
-\usepackage[font=small,labelfont=bf]{caption} %This makes caption font small and makes the caption heading bold.
+% Caption format per UAH manual: 10pt (footnotesize in 12pt doc), single-spaced,
+% bold label ("Table 1.1"), period separator between label and title, centered.
+\usepackage[font={footnotesize,singlespacing},labelfont=bf,labelsep=period,justification=centering,singlelinecheck=true]{caption}
 \usepackage{tabularx} %To allow formatting Tables.
 \usepackage{float} %For [H] placement specifier to pin floats in place.
 \usepackage{array} %To allow creating arrays. 

@@ -51,7 +51,8 @@ def parse_args():
     p.add_argument("--cache_dir", default="eval_v2/outputs/cache/",
                    help="Directory for cached raw float32 embeddings.")
     p.add_argument("--html_path", default=None,
-                   help="Path for the HTML dashboard. Defaults to <output_dir>/<dataset>/explorer.html")
+                   help="Path for the HTML dashboard. Defaults to <output_dir>/<dataset>/index.html "
+                        "(named index.html so it can be served directly as a static site, e.g. a HF Space)")
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--chunk_size", type=int, default=1000,
                    help="Encoding chunk size passed to SentenceTransformer.encode().")
@@ -228,7 +229,7 @@ def main():
     dataset_output_dir = os.path.join(args.output_dir, args.dataset)
 
     if args.html_path is None:
-        args.html_path = os.path.join(dataset_output_dir, "explorer.html")
+        args.html_path = os.path.join(dataset_output_dir, "index.html")
 
     store = ResultsStore(dataset_output_dir)
     cache = EmbeddingCache(

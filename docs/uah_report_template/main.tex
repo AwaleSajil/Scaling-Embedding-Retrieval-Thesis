@@ -1,0 +1,226 @@
+% Below is your UAH LaTeX template. This is the main file that compiles your document. You will need to fill out the appropriate sections below. 
+\documentclass[oneside, 12pt]{book} % Document class
+
+\input{FrontMatter/preamble} %To clean up this document, the preamble that includes the packages is located in the preamble.tex file found in the FrontMatter folder.
+
+
+
+
+%********************************************
+%********************************************
+% THE SECTION BELOW MUST BE FILLED OUT 
+%********************************************
+%********************************************
+
+%BASIC INFORMATION
+\newcommand{\thesistitle}{TITLE}
+\newcommand{\studentname}{Your Name}
+\newcommand{\degree}{Your Degree}%e.g., Master of Science in Engineering, Doctor of Philosophy, etc.
+\newcommand{\department}{Your Department}% Do not include the words "The department of." Just write the name of your department.
+\newcommand{\gradyear}{Graduation Year}% complete 4 digit year, e.g., 2022
+\newcommand{\gradmonth}{Graduation Month}% Spell out the month completely, e.g., December
+%\newcommand{\jointuni}{Auburn University} %If this is a joint degree, remove the % sign at the beginning of this line and enter the entire name of the additional universities.
+
+%***********************
+%SPECIFY THESIS OR DISSERTATION
+% Below, if you are earning a master's degree, remove the "%" on the line below that says \newcommand{thesis}. If you are earning a PhD or other doctorate degree, remove the "%" on the line below that says \newcommand{dissertation}.
+
+\newcommand{\thesis}{FOR MASTER'S STUDENTS ONLY}
+%\newcommand{\dissertation}{FOR DOCTORATE DEGREE STUDENTS ONLY}
+
+%*******************************
+%SPECIFY THE PROFESSORS WHO WILL APPROVE YOUR THESIS/DISSERTATION
+%Professor information: Fill out only their first and last name WITH NO PREFIXES OR SUFFIXES. If a line is not applicable, simply add a % sign at the beginning of that line. If there is an applicable line that has a % sign at the beginning, remove this sign and fill in as needed.
+\newcommand{\resadv}{[Research Advisor Name]}
+\newcommand{\comchair}{[Committee Chair Name]}
+%\newcommand{\reschair}{Research Advisor/Committee Chair Name} %If your research advisor and committee chair are the same person, enter his/her name on this line.
+\newcommand{\commema}{[1st Committee Member Name]}
+\newcommand{\commemb}{[2nd Committee Member Name]}
+\newcommand{\commemc}{[3rd Committee Member Name]}
+%\newcommand{\commemd}{[4th Committee Member Name]}
+%\newcommand{\commeme}{[5th Committee Member Name]}
+%\newcommand{\commemf}{[6th Committee Member Name]}
+%\newcommand{\commemg}{[7th Committee Member Name]}
+%\newcommand{\commemh}{[8th Committee Member Name]}
+%\newcommand{\commemi}{[9th Committee Member Name]}
+\newcommand{\depchair}{[Department Chair Name]}
+\newcommand{\colldean}{[College Dean Name]}
+\newcommand{\graddean}{Jon Hakkila}
+
+
+
+%**************
+%INDICATE IF YOU HAVE REGISTERED FOR A COPYRIGHT.
+%**************
+%\newcommand{\copyrightreg}{Yes} %If you registered for a copyright through Proquest, please remove the % sign from the beginning of this line starting with \newcommand{\copyrightreg}{Yes}. If you did not register for a copyright, no action is needed.  
+
+%********************************************
+%********************************************
+% End of Section to Fill Out. 
+%********************************************
+%********************************************
+
+\usepackage[colorlinks=true,linkcolor=black,anchorcolor=black,citecolor=black,filecolor=black,menucolor=black,runcolor=black,urlcolor=black]{hyperref} %This creates hyperlinks for chapter, figure, and table titles in your pdf. It should be the last package before the document begins.
+
+%*********************************************
+%*********************************************
+%Optional List of Symbols/Abbreviations
+%*********************************************
+%*********************************************
+
+%A list of symbols/abbreviations is optional. If you do not want to include one, simply delete this section from your document. You may also delete this section and use a different package as there are multiple packages that can be used to make a List of Symbols, Abbreviations, Nomenclature, Etc. Below uses the \glossaries-extra package. This package is nice if you want to include multiple lists or sections. The following links provide useful information on how to use this package.
+% https://mirrors.mit.edu/CTAN/macros/latex/contrib/glossaries/glossariesbegin.pdf
+% https://mirrors.rit.edu/CTAN/macros/latex/contrib/glossaries/glossaries-user.pdf
+% https://www.overleaf.com/learn/latex/Glossaries
+
+
+\input{FrontMatter/List of Symbols Glossaries} %Go to this page to enter all the symbols you plan to use in the document.
+
+% Scroll down in this file to after the List of Tables section in order to actually add your Lists to your document,.
+
+%**********************************************
+%**********************************************
+% End of Optional List of Symbols/Abbreviations
+%**********************************************
+%**********************************************
+
+
+
+%******************************************
+%******************************************
+% Document Begins Here
+%******************************************
+%******************************************
+
+\begin{document}
+
+\frontmatter % This command creates the front matter environment.
+
+%**********************************
+%**********************************
+%Title Page
+%**********************************
+%**********************************
+\input{FrontMatter/Do Not Edit/Titlepage}%Your title page should self-generate after filling in the required information above.
+\newpage
+
+%This sets the page margins. If you plan to bind and print your thesis, change the left boarder to 1.5 in.
+\newgeometry{left=1.5in, right=1in, bottom=1in, top=1in}
+\setcounter{page}{2} 
+%**********************************
+%**********************************
+%Abstract Page
+%**********************************
+%**********************************
+
+%The below code inserts your Abstract Page. While much of this page fills in automatically, you must go to the AbstractPage.tex file located in the FrontMatter folder and insert the actual text of your abstract. 
+
+\input{FrontMatter/AbstractPage}
+
+%**********************************
+%**********************************
+%Copyright Page
+%**********************************
+%**********************************
+
+% The following code inserts your COPYRIGHT page. If you have registered for a copyright through Proquest, you should have removed the % sign from the \newcommand{copyrightreg} at the end of the section to Fill Out. If you have not registered for a copyright, no action is needed.
+\input{FrontMatter/Do Not Edit/Copyright Page}
+
+%**********************************
+%**********************************
+%Acknowledgements
+%**********************************
+%**********************************
+
+% Your acknowledgements are included here. Similar to the abstract, you must open the Acknowledgements.tex file located in the FrontMatter folder to type your acknowledgements.
+\include{FrontMatter/Acknowledgements}
+
+
+%The code below formats your table of contents, list of figures, list of tables, and list of symbols. If your document does not contain any figures and/or tables, simply delete that section. The list of symbols is optional. Again, delete that section if you do not want to include it in your document.
+
+%*************************
+%Table of Contents Section
+%*************************
+\newgeometry{left=1.75in}%For some reason, I have to set only the Table of Contents to a left margin of 1.75 so that everything lines up correctly.
+{\renewcommand\uppercase[1]{#1} % This creates an environment to NOT put titles in all-caps
+\singlespacing
+\setlength{\cftparskip}{1\baselineskip}% This single-spaces within entries and double-spaces between them.
+\tableofcontents %Command to create the table of contents
+\addcontentsline{toc}{chapter}{Table of Contents} %Changes the name from Contents to Table of Contents
+\newpage %Creates a page break before the next section.
+
+%*************************
+%List of Figures Section
+%*************************
+\newgeometry{left=1.5in}
+\cleardoublepage\phantomsection\addcontentsline{toc}{chapter}{List of Figures} %Adds the List of figures to the Table of contents.
+\singlespacing
+\setlength{\cftparskip}{.5\baselineskip} %This allows single space within entries and double space between them.
+\listoffigures %This command creates the list of figures.
+\newpage %Creates a page break before the next section.
+
+%*************************
+%List of Tables Section
+%*************************
+\newgeometry{left=1.5in}
+\cleardoublepage\phantomsection\addcontentsline{toc}{chapter}{List of Tables} %Adds the List of figures to the Table of contents. The \clear doublepage and \phantomsection make the links work properly.
+\singlespacing
+\setlength{\cftparskip}{.5\baselineskip} %This allows single space within entries and double space between them.
+\listoftables %This command creates the list of tables.
+\newpage
+}
+
+
+%**************************
+%List of Symbols Section
+%**************************
+\singlespacing
+\renewcommand*{\arraystretch}{2}
+\printglossary[title=\centering List of Symbols, toctitle=List of Symbols,style=mystyle,nonumberlist]
+
+
+
+%Include your epigraph here if you have one by removing the % sign on the lines of code below and then typing in the required information on the epigraph page. Go to the epigraphOptional.tex file found in the FrontMatter folder. 
+
+%\clearpage \phantomsection \addcontentsline{toc}{chapter}{Epigraph} \include{FrontMatter/epigraphOptional}
+
+%************************
+%Body of your Thesis Begins
+%************************
+\mainmatter
+
+\newgeometry{left=1.5in}
+\doublespacing
+%The contents of your chapters are located in separate chapter.tex files. This template only contains 3 chapter files (ch1, ch2, and chLast). To edit these files, open the corresponding chapter.tex files. To create new chapters, make a new .tex file for each chapter and then insert them into your document below with the \include{name of your chapter .tex file} command.
+
+\include{Chapters/ch1}
+\include{Chapters/ch2}
+\include{Chapters/Ch3}
+
+%************************
+%Back Matter of your Thesis Begins
+%************************
+\backmatter
+
+%***********************
+%References
+%***********************
+\addcontentsline{toc}{chapter}{References} %This adds the Bibliography/References to your table of contents.
+\bibliographystyle{plain} %This selects your bibliography style. There are many possible bibliography styles you can choose. The following site explains the options. https://www.overleaf.com/learn/latex/Bibtex_bibliography_styles
+
+
+\begingroup %Begins an editable environment to set proper spacing for the bibliography/references page.
+\setlength{\bibsep}{12pt} %This provides 10 pts between reference entries.
+\setstretch{1} %This specifies single-spacing within entries.
+\bibliography{ref} %This inserts your References. You must individually add all references to the ref.bib file. Then, only those references you actually cite in the body of your text will be included.
+\endgroup
+
+%***********************
+%Appendix Section: Optional. If you do not want to include any appendices, simply delete the below commands that create the appendix environment and that input your appendix file(s).
+%**********************
+\appendix %This creates the appendix environment. 
+\input{Back Matter/Appendix A} %This inserts your Appendix file(s). To edit this page, open the Appendix A.tex file. You will need to create a new .tex file for each appendix you want to include.
+
+
+
+\end{document}

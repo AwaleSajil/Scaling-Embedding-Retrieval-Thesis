@@ -250,12 +250,17 @@ def run_ir_eval(
     agg_accumulator: dict[str, list] = {}
 
     for qi, qid in enumerate(query_ids):
-        # Sort heap descending
+        relevant = qrels.get(qid, set())
+        # Queries with no relevant docs have undefined metrics (every helper
+        # returns 0). Including them in the mean biases the aggregate toward 0,
+        # so drop them from both per_query output and the aggregate accumulator.
+        if not relevant:
+            continue
+
         ranked = sorted(heaps[qi], key=lambda x: x[0], reverse=True)
         ranked_scores = [r[0] for r in ranked]
         ranked_ids = [r[1] for r in ranked]
 
-        relevant = qrels.get(qid, set())
         q_metrics = _compute_query_metrics(ranked_ids, relevant, ks)
 
         for k, v in q_metrics.items():

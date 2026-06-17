@@ -21,9 +21,12 @@ def load_base_model(spec: ModelSpec) -> SentenceTransformer:
     Load a plain SentenceTransformer (no compression wrappers).
     Used for cache population: encode raw float32 embeddings once,
     then apply transforms (truncate / binarize / quantize) on load.
+
+    Always encodes at full dim — truncation is a transform applied on load
+    in transforms.py. Encoding at truncate_dim would poison the shared cache
+    for other specs that need full-dim vectors from the same checkpoint.
     """
     kwargs = spec.model_kwargs or {}
-    truncate_dim = spec.truncate_dim
 
     if spec.pooling_mode:
         transformer = s_models.Transformer(spec.path)
@@ -31,7 +34,7 @@ def load_base_model(spec: ModelSpec) -> SentenceTransformer:
             word_embedding_dimension=transformer.get_word_embedding_dimension(),
             pooling_mode=spec.pooling_mode,
         )
-        return SentenceTransformer(modules=[transformer, pooling], truncate_dim=truncate_dim)
+        return SentenceTransformer(modules=[transformer, pooling], truncate_dim=None)
 
     return SentenceTransformer(spec.path, truncate_dim=None, model_kwargs=kwargs)
 

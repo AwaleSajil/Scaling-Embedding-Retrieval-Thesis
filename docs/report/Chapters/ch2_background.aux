@@ -2,97 +2,111 @@
 \providecommand\hyper@newdestlabel[2]{}
 \citation{devlin2019bert}
 \citation{devlin2019bert}
-\@writefile{toc}{\contentsline {chapter}{\numberline {}Chapter 2. Background and Related Work}{10}{chapter.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {}Chapter 2. Background and Related Work}{8}{chapter.2}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {2.1}Dense Retrieval with Bi-Encoders}{10}{section.2.1}\protected@file@percent }
-\newlabel{sec:biencoder}{{2.1}{10}{Dense Retrieval with Bi-Encoders}{section.2.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Transformer Encoders}{10}{subsection.2.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}Dense Retrieval with Bi-Encoders}{8}{section.2.1}\protected@file@percent }
+\newlabel{sec:biencoder}{{2.1}{8}{Dense Retrieval with Bi-Encoders}{section.2.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Transformer Encoders}{8}{subsection.2.1.1}\protected@file@percent }
 \citation{reimers2019sbert,karpukhin2020dense}
 \citation{reimers2019sbert}
 \citation{karpukhin2020dense}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Bi-Encoder Architecture}{11}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Bi-Encoder Architecture}{9}{subsection.2.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces Bi-encoder retrieval architecture.}}{10}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:biencoder}{{2.1}{10}{Bi-encoder retrieval architecture}{figure.caption.9}{}}
 \citation{malkov2018efficient}
 \citation{johnson2021billion}
 \citation{subramanya2019diskann}
 \citation{xiao2023c}
 \citation{muennighoff2022mteb}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.3}Backbone Models}{11}{subsection.2.1.3}\protected@file@percent }
+\citation{xiao2023c}
 \citation{liu2019roberta}
-\citation{wang2018glue}
-\citation{rajpurkar2016squad}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.3}BGE-base-en-v1.5}{13}{subsection.2.1.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.4}RoBERTa-base}{13}{subsection.2.1.4}\protected@file@percent }
 \citation{song2020mpnet}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.5}MPNet-base}{14}{subsection.2.1.5}\protected@file@percent }
+\citation{liu2019roberta}
+\citation{wang2018glue,rajpurkar2016squad}
+\citation{song2020mpnet}
+\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Backbone encoder models used in this thesis}}{12}{table.caption.10}\protected@file@percent }
+\newlabel{tab:backbones}{{2.1}{12}{Backbone encoder models used in this thesis}{table.caption.10}{}}
 \citation{oord2018representation}
-\@writefile{toc}{\contentsline {section}{\numberline {2.2}Contrastive Learning for Dense Retrieval}{15}{section.2.2}\protected@file@percent }
-\newlabel{sec:contrastive}{{2.2}{15}{Contrastive Learning for Dense Retrieval}{section.2.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.1}The InfoNCE Objective}{15}{subsection.2.2.1}\protected@file@percent }
 \citation{reimers2019sbert}
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Contrastive Learning for Dense Retrieval}{13}{section.2.2}\protected@file@percent }
+\newlabel{sec:contrastive}{{2.2}{13}{Contrastive Learning for Dense Retrieval}{section.2.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces Multiple Negatives Ranking Loss (MNRL).}}{14}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:mnrl}{{2.2}{14}{Multiple Negatives Ranking Loss (MNRL)}{figure.caption.11}{}}
+\newlabel{eq:mnrl}{{2.3}{14}{Contrastive Learning for Dense Retrieval}{equation.2.3}{}}
 \citation{karpukhin2020dense}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.2}Multiple Negatives Ranking Loss}{16}{subsection.2.2.2}\protected@file@percent }
-\newlabel{eq:mnrl}{{2.4}{16}{Multiple Negatives Ranking Loss}{equation.2.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.3}Embedding Compression Methods}{16}{section.2.3}\protected@file@percent }
-\newlabel{sec:compression_bg}{{2.3}{16}{Embedding Compression Methods}{section.2.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Embedding Compression Methods}{15}{section.2.3}\protected@file@percent }
+\newlabel{sec:compression_bg}{{2.3}{15}{Embedding Compression Methods}{section.2.3}{}}
 \citation{douze2024faiss}
+\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Organization of embedding compression methods studied in this thesis}}{16}{table.caption.12}\protected@file@percent }
+\newlabel{tab:compression-taxonomy}{{2.2}{16}{Organization of embedding compression methods studied in this thesis}{table.caption.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Post-hoc Methods}{16}{subsection.2.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1.1}Scalar Quantization}{16}{subsubsection.2.3.1.1}\protected@file@percent }
+\newlabel{eq:int8}{{2.4}{16}{Scalar Quantization}{equation.2.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.3}{\ignorespaces Scalar quantization of a single embedding dimension.}}{17}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:scalar_quant}{{2.3}{17}{Scalar quantization of a single embedding dimension}{figure.caption.13}{}}
 \citation{gan2023binary}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Scalar Quantization}{17}{subsection.2.3.1}\protected@file@percent }
-\newlabel{eq:int8}{{2.5}{17}{Scalar Quantization}{equation.2.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Binary Quantization}{17}{subsection.2.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.4}{\ignorespaces Binary quantization via the sign function.}}{18}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:binary_quant}{{2.4}{18}{Binary quantization via the sign function}{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1.2}Binary Quantization}{18}{subsubsection.2.3.1.2}\protected@file@percent }
 \citation{jegou2010product}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1.3}Product Quantization}{19}{subsubsection.2.3.1.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces Product quantization (PQ) encoding pipeline.}}{19}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:pq}{{2.5}{19}{Product quantization (PQ) encoding pipeline}{figure.caption.15}{}}
 \citation{johnson2021billion}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.3}Product Quantization}{18}{subsection.2.3.3}\protected@file@percent }
 \citation{zandieh2025turboquant}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1.4}TurboQuant}{20}{subsubsection.2.3.1.4}\protected@file@percent }
 \citation{bengio2013estimating}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.4}TurboQuant}{19}{subsection.2.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.5}Straight-Through Estimator Binarization}{19}{subsection.2.3.5}\protected@file@percent }
 \citation{bengio2013estimating}
 \citation{cao2017hashnet}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.6}Annealed Tanh Binarization}{20}{subsection.2.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Training-Time Methods}{21}{subsection.2.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2.1}Straight-Through Estimator Binarization}{21}{subsubsection.2.3.2.1}\protected@file@percent }
 \citation{yamada2021efficient}
 \citation{kusupati2022matryoshka}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.7}Matryoshka Representation Learning}{21}{subsection.2.3.7}\protected@file@percent }
-\newlabel{sec:mrl}{{2.3.7}{21}{Matryoshka Representation Learning}{subsection.2.3.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2.2}Annealed Tanh Binarization}{22}{subsubsection.2.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2.3}Matryoshka Representation Learning}{22}{subsubsection.2.3.2.3}\protected@file@percent }
+\newlabel{sec:mrl}{{2.3.2.3}{22}{Matryoshka Representation Learning}{subsubsection.2.3.2.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.6}{\ignorespaces Annealed Tanh binarization surrogate at six training checkpoints.}}{23}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:atanh}{{2.6}{23}{Annealed Tanh binarization surrogate at six training checkpoints}{figure.caption.16}{}}
+\newlabel{eq:mrl}{{2.9}{23}{Matryoshka Representation Learning}{equation.2.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.7}{\ignorespaces Matryoshka Representation Learning (MRL) training.}}{24}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:mrl}{{2.7}{24}{Matryoshka Representation Learning (MRL) training}{figure.caption.17}{}}
 \citation{voorhees1999trec}
-\newlabel{eq:mrl}{{2.10}{22}{Matryoshka Representation Learning}{equation.2.10}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.4}Information Retrieval Evaluation}{22}{section.2.4}\protected@file@percent }
-\newlabel{sec:ir_eval}{{2.4}{22}{Information Retrieval Evaluation}{section.2.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.1}Ranking Metrics}{22}{subsection.2.4.1}\protected@file@percent }
 \citation{jarvelin2002cumulated}
-\newlabel{eq:mrr}{{2.11}{23}{Ranking Metrics}{equation.2.11}{}}
-\newlabel{eq:dcg}{{2.12}{23}{Ranking Metrics}{equation.2.12}{}}
-\newlabel{eq:ndcg}{{2.13}{23}{Ranking Metrics}{equation.2.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}Information Retrieval Evaluation}{25}{section.2.4}\protected@file@percent }
+\newlabel{sec:ir_eval}{{2.4}{25}{Information Retrieval Evaluation}{section.2.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.1}Ranking Metrics}{25}{subsection.2.4.1}\protected@file@percent }
+\newlabel{eq:mrr}{{2.10}{25}{Ranking Metrics}{equation.2.10}{}}
+\newlabel{eq:dcg}{{2.11}{26}{Ranking Metrics}{equation.2.11}{}}
+\newlabel{eq:ndcg}{{2.12}{26}{Ranking Metrics}{equation.2.12}{}}
+\newlabel{eq:recall}{{2.13}{26}{Ranking Metrics}{equation.2.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.2}Statistical Significance Testing}{26}{subsection.2.4.2}\protected@file@percent }
+\newlabel{sec:significance_bg}{{2.4.2}{26}{Statistical Significance Testing}{subsection.2.4.2}{}}
 \citation{shapiro1965analysis}
-\newlabel{eq:recall}{{2.14}{24}{Ranking Metrics}{equation.2.14}{}}
-\newlabel{eq:acc}{{2.15}{24}{Ranking Metrics}{equation.2.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.2}Statistical Significance Testing}{24}{subsection.2.4.2}\protected@file@percent }
-\newlabel{sec:significance_bg}{{2.4.2}{24}{Statistical Significance Testing}{subsection.2.4.2}{}}
 \citation{student1908probable}
 \citation{wilcoxon1945individual}
 \citation{cohen1988statistical}
-\newlabel{eq:cohens_d}{{2.16}{25}{Statistical Significance Testing}{equation.2.16}{}}
-\citation{yamada2021efficient}
-\citation{gan2023binary}
 \citation{shakir2024embedding}
 \citation{bengio2013estimating}
 \citation{courbariaux2016bnn}
+\citation{cao2017hashnet}
+\citation{yang2019quantization}
+\citation{shah2024decoupled}
+\citation{schrodter2025trainable}
+\newlabel{eq:cohens_d}{{2.14}{28}{Statistical Significance Testing}{equation.2.14}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Related Work}{28}{section.2.5}\protected@file@percent }
+\newlabel{sec:related}{{2.5}{28}{Related Work}{section.2.5}{}}
 \citation{yamada2021efficient}
 \citation{gan2023binary}
-\citation{cao2017hashnet}
-\citation{shah2024decoupled}
-\citation{yang2019quantization}
-\citation{schrodter2025trainable}
-\@writefile{toc}{\contentsline {section}{\numberline {2.5}Related Work}{26}{section.2.5}\protected@file@percent }
-\newlabel{sec:related}{{2.5}{26}{Related Work}{section.2.5}{}}
-\citation{kusupati2022matryoshka}
 \citation{muennighoff2022mteb}
 \citation{smec2025}
 \citation{qama2025}
 \citation{correct2025}
 \citation{nanobeir2024,thakur2021beir}
 \@setckpt{Chapters/ch2_background}{
-\setcounter{page}{30}
-\setcounter{equation}{16}
+\setcounter{page}{32}
+\setcounter{equation}{14}
 \setcounter{enumi}{4}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
@@ -106,8 +120,8 @@
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
+\setcounter{figure}{7}
+\setcounter{table}{2}
 \setcounter{parentequation}{0}
 \setcounter{NAT@ctr}{0}
 \setcounter{@pps}{0}
@@ -125,5 +139,5 @@
 \setcounter{section@level}{0}
 \setcounter{Item}{8}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{34}
+\setcounter{bookmark@seq@number}{24}
 }

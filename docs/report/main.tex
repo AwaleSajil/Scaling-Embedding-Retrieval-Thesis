@@ -13,7 +13,7 @@
 %********************************************
 
 %BASIC INFORMATION
-\newcommand{\thesistitle}{Embedding Compression for Dense Retrieval: A Fair Empirical Comparison of Post-Hoc and Training-Time Methods}
+\newcommand{\thesistitle}{Embedding Compression for Dense Retrieval: A Controlled Comparison of Post-hoc, Training-time, and Stacked Methods}
 \newcommand{\studentname}{Sajil Awale}
 \newcommand{\degree}{Master of Science}%e.g., Master of Science in Engineering, Doctor of Philosophy, etc.
 \newcommand{\department}{Computer Science}% Do not include the words "The department of." Just write the name of your department.
@@ -35,15 +35,15 @@
 \newcommand{\comchair}{[Committee Chair Name]}
 \newcommand{\reschair}{Tathagata Mukherjee} %If your research advisor and committee chair are the same person, enter his/her name on this line.
 \newcommand{\commema}{Jacob Hauenstein}
-\newcommand{\commemb}{Manil Maskey}
-\newcommand{\commemc}{[3rd Committee Member Name]}
+\newcommand{\commemb}{Vaidyanath Areyur Shanthakumar}
+%\newcommand{\commemc}{[3rd Committee Member Name]}
 %\newcommand{\commemd}{[4th Committee Member Name]}
 %\newcommand{\commeme}{[5th Committee Member Name]}
 %\newcommand{\commemf}{[6th Committee Member Name]}
 %\newcommand{\commemg}{[7th Committee Member Name]}
 %\newcommand{\commemh}{[8th Committee Member Name]}
 %\newcommand{\commemi}{[9th Committee Member Name]}
-\newcommand{\depchair}{[Department Chair Name]}
+\newcommand{\depchair}{Huaming Zhang}
 \newcommand{\colldean}{Rainer Steinwandt}
 \newcommand{\graddean}{Jon Hakkila}
 
@@ -62,29 +62,15 @@
 
 \usepackage{multirow}
 \usepackage{booktabs}
-\usepackage[colorlinks=true,linkcolor=black,anchorcolor=black,citecolor=black,filecolor=black,menucolor=black,runcolor=black,urlcolor=black]{hyperref} %This creates hyperlinks for chapter, figure, and table titles in your pdf. It should be the last package before the document begins.
+% Hyperlink colors: WCAG 2.1 AA requires that links be visually distinguishable from
+% surrounding text. Internal cross-references and citations use a dark blue; external
+% URLs use a slightly different blue so the reader can tell them apart at a glance.
+\usepackage{xcolor}
+\definecolor{linknavy}{RGB}{0,0,128}
+\definecolor{urlblue}{RGB}{0,90,156}
+\usepackage[colorlinks=true,allcolors=black]{hyperref} %Links stay clickable but render in black. It should be the last package before the document begins.
 
-%*********************************************
-%*********************************************
-%Optional List of Symbols/Abbreviations
-%*********************************************
-%*********************************************
-
-%A list of symbols/abbreviations is optional. If you do not want to include one, simply delete this section from your document. You may also delete this section and use a different package as there are multiple packages that can be used to make a List of Symbols, Abbreviations, Nomenclature, Etc. Below uses the \glossaries-extra package. This package is nice if you want to include multiple lists or sections. The following links provide useful information on how to use this package.
-% https://mirrors.mit.edu/CTAN/macros/latex/contrib/glossaries/glossariesbegin.pdf
-% https://mirrors.rit.edu/CTAN/macros/latex/contrib/glossaries/glossaries-user.pdf
-% https://www.overleaf.com/learn/latex/Glossaries
-
-
-\input{FrontMatter/List of Symbols Glossaries} %Go to this page to enter all the symbols you plan to use in the document.
-
-% Scroll down in this file to after the List of Tables section in order to actually add your Lists to your document,.
-
-%**********************************************
-%**********************************************
-% End of Optional List of Symbols/Abbreviations
-%**********************************************
-%**********************************************
+% List of Symbols is optional (per UAH manual) and omitted from this thesis.
 
 
 
@@ -121,12 +107,17 @@
 
 %**********************************
 %**********************************
-%Copyright Page
+%Rights and Responsibilities Page (Required)
 %**********************************
 %**********************************
 
-% The following code inserts your COPYRIGHT page. If you have registered for a copyright through Proquest, you should have removed the % sign from the \newcommand{copyrightreg} at the end of the section to Fill Out. If you have not registered for a copyright, no action is needed.
-\input{FrontMatter/Do Not Edit/Copyright Page}
+% Per the UAH Graduate School manual, this page contains two sections:
+%   Section 1 (required): generative AI disclosure statement.
+%   Section 2 (optional): copyright notice (rendered only if \copyrightreg is defined
+%   in the section above). This replaces the standalone Copyright Page from the
+%   older template.
+% The page has no heading and is intentionally NOT added to the Table of Contents.
+\input{FrontMatter/RightsAndResponsibilities}
 
 %**********************************
 %**********************************
@@ -173,16 +164,7 @@
 }
 
 
-%**************************
-%List of Symbols Section
-%**************************
-\singlespacing
-\renewcommand*{\arraystretch}{2}
-\printglossary[title=\centering List of Symbols, toctitle=List of Symbols,style=mystyle,nonumberlist]
-
-
-
-%Include your epigraph here if you have one by removing the % sign on the lines of code below and then typing in the required information on the epigraph page. Go to the epigraphOptional.tex file found in the FrontMatter folder. 
+%Include your epigraph here if you have one by removing the % sign on the lines of code below and then typing in the required information on the epigraph page. Go to the epigraphOptional.tex file found in the FrontMatter folder.
 
 %\clearpage \phantomsection \addcontentsline{toc}{chapter}{Epigraph} \include{FrontMatter/epigraphOptional}
 
@@ -211,7 +193,7 @@
 %References
 %***********************
 \addcontentsline{toc}{chapter}{References} %This adds the Bibliography/References to your table of contents.
-\bibliographystyle{plain} %This selects your bibliography style. There are many possible bibliography styles you can choose. The following site explains the options. https://www.overleaf.com/learn/latex/Bibtex_bibliography_styles
+\bibliographystyle{plainnat} %natbib-compatible version of `plain`; needed for \citeauthor/\citet/\citep to work.
 
 
 \begingroup %Begins an editable environment to set proper spacing for the bibliography/references page.

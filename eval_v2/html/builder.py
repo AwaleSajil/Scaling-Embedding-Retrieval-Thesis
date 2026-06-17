@@ -65,6 +65,7 @@ def _models_meta(models: dict[str, ModelSpec]) -> dict:
             "marker": spec.marker,
             "hatch": spec.hatch,
             "plotly_pattern": _HATCH_TO_PLOTLY.get(spec.hatch, ""),
+            "n_step": spec.n_step,
         }
         for key, spec in models.items()
     }

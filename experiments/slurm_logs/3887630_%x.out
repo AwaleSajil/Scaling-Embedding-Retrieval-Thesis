@@ -1,0 +1,49 @@
+===== SLURM ENVIRONMENT =====
+Job ID:    3887630
+Node List: matrix101
+CPUs:      8
+MASTER_ADDR:PORT = matrix101:37699
+GPUS_PER_NODE = 1
+
+===== ACTIVATING CONDA ENV =====
+Python: /rhome/sawale/miniconda3/envs/thesis/bin/python
+Python 3.12.11
+
+===== TORCH GPU TEST =====
+CUDA available: True
+Number of GPUs: 1
+  GPU 0: NVIDIA A100 80GB PCIe
+
+===== STARTING TRAINING =====
+--- e1 baseline (FacebookAI/roberta-base) ---
+RANK: 0; LOCAL_RANK: 0.
+RANK:0;▶ Processing: msmacro_triplet
+RANK:0;▶ Processing: s2orc_title_abstract
+RANK:0;▶ Processing: quora_dup_triplet
+RANK:0;▶ Processing: nli_for_simcse_triplet
+RANK:0;▶ Processing: natural_questions
+RANK:0;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: hotpotqa
+RANK:0;Total rows: 700
+Cache directory is set to: ../data/cache_v1/NROWS_100_evaluator/validation/max_per_split_20
+Transforming dataset source for Evaluation: msmacro_triplet
+Loading processed data for 'msmacro_triplet' from cache.
+Transforming dataset source for Evaluation: s2orc_title_abstract
+Loading processed data for 's2orc_title_abstract' from cache.
+Transforming dataset source for Evaluation: quora_dup_triplet
+Loading processed data for 'quora_dup_triplet' from cache.
+Transforming dataset source for Evaluation: nli_for_simcse_triplet
+Loading processed data for 'nli_for_simcse_triplet' from cache.
+Transforming dataset source for Evaluation: natural_questions
+Loading processed data for 'natural_questions' from cache.
+Transforming dataset source for Evaluation: trivia_qa_triplet
+Loading processed data for 'trivia_qa_triplet' from cache.
+Transforming dataset source for Evaluation: hotpotqa
+Loading processed data for 'hotpotqa' from cache.
+Prepared SequentialEvaluator with: ['ir_evaluator', 'triplet_evaluator', 'mnr_loss']
+RANK:0;Starting training...
+{'train_runtime': '30.37', 'train_samples_per_second': '43.79', 'train_steps_per_second': '0.198', 'train_loss': '4.507', 'epoch': '1.889'}
+RANK:0;Finished training...
+RANK: 0; Elapsed time: 46.13 seconds
+--- e1 baseline (roberta) done ---
+===== TRAINING DONE =====

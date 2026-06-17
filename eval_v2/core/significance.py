@@ -150,12 +150,20 @@ def compute_significance(
             if not common_qids or len(common_qids) < min_queries:
                 continue
             common_qids = sorted(common_qids)
-            for model_key in model_keys:
-                subset_data = per_query.get(model_key, {}).get(subset, {})
-                scores = [subset_data.get(qid, {}).get(metric, float("nan")) for qid in common_qids]
-                if any(np.isnan(s) for s in scores):
+
+            # Collect each model's scores in qid-aligned order, then drop any
+            # qid where *any* model has NaN. Skipping per-model would desync
+            # the pooled lists and break the paired tests downstream.
+            subset_scores = {
+                mk: [per_query.get(mk, {}).get(subset, {}).get(qid, {}).get(metric, float("nan"))
+                     for qid in common_qids]
+                for mk in model_keys
+            }
+            for i in range(len(common_qids)):
+                if any(np.isnan(subset_scores[mk][i]) for mk in model_keys):
                     continue
-                pooled[model_key].extend(scores)
+                for mk in model_keys:
+                    pooled[mk].append(subset_scores[mk][i])
 
         n_pooled = len(next(iter(pooled.values()), []))
         if n_pooled < min_queries:

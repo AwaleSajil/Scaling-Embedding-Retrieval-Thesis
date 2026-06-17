@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH --mail-user=sa0812@uah.edu
-#SBATCH --job-name=e5_gamma_sweep_mpnet
+#SBATCH --job-name=e2_roberta_bat_ste
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
@@ -50,25 +50,20 @@ echo "===== STARTING TRAINING ====="
 
 cd /rhome/sawale/thesis/experiments
 
-echo "--- e5 gamma=0.05 (microsoft/mpnet-base) ---"
+echo "--- e2 BAT-STE (FacebookAI/roberta-base) ---"
 srun --mem=0 torchrun \
     --nproc_per_node=$GPUS_PER_NODE \
     --nnodes=$SLURM_NNODES \
     --rdzv_id="$SLURM_JOB_ID" \
     --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
     --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 32 --expirement_number e5 --annealed_tanh_gamma 0.05 --model_name microsoft/mpnet-base
-echo "--- e5 gamma=0.05 (mpnet) done ---"
-
-MASTER_PORT=$(( RANDOM % (50000 - 30000 + 1 ) + 30000 ))
-echo "--- e5 gamma=0.2 (microsoft/mpnet-base) ---"
-srun --mem=0 torchrun \
-    --nproc_per_node=$GPUS_PER_NODE \
-    --nnodes=$SLURM_NNODES \
-    --rdzv_id="$SLURM_JOB_ID" \
-    --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
-    --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 32 --expirement_number e5 --annealed_tanh_gamma 0.2 --model_name microsoft/mpnet-base
-echo "--- e5 gamma=0.2 (mpnet) done ---"
+    ../src/train.py \
+        --expirement_number e2 \
+        --model_name FacebookAI/roberta-base \
+        --batch_size 16 \
+        --gradient_accumulation_steps 32 \
+        --num_train_epochs 2 \
+        --eval_and_save_steps 2000
+echo "--- e2 BAT-STE (roberta) done ---"
 
 echo "===== TRAINING DONE ====="

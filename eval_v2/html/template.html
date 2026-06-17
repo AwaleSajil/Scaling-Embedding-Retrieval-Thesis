@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Eval Explorer v2</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<!-- Fallback to a co-located plotly.min.js if the CDN is unreachable (synchronous, runs during parse before init()). -->
+<script>window.Plotly || document.write('<script src="plotly.min.js" charset="utf-8"><\/script>');</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
@@ -280,11 +282,11 @@
   <div id="sidebar">
     <div class="sidebar-section">
       <h3>Subset</h3>
-      <select id="ctrl-subset" onchange="refreshAll()"></select>
+      <select id="ctrl-subset" onchange="onMainCtrlChange()"></select>
     </div>
     <div class="sidebar-section">
       <h3>Metric</h3>
-      <select id="ctrl-metric" onchange="refreshAll()">
+      <select id="ctrl-metric" onchange="onMainCtrlChange()">
         <option value="ndcg">NDCG</option>
         <option value="mrr" selected>MRR</option>
         <option value="accuracy">Accuracy</option>
@@ -293,7 +295,7 @@
     </div>
     <div class="sidebar-section">
       <h3>K</h3>
-      <select id="ctrl-k" onchange="refreshAll()">
+      <select id="ctrl-k" onchange="onMainCtrlChange()">
         <option>1</option><option>3</option><option selected>10</option>
       </select>
     </div>
@@ -328,6 +330,7 @@
       <button class="tab-btn" onclick="showTab('query')">Query Browser</button>
       <button class="tab-btn" onclick="showTab('significance')">Significance</button>
       <button class="tab-btn" onclick="showTab('line')">Metric@K Trend</button>
+      <button class="tab-btn" onclick="showTab('traj')">Training Trajectory</button>
     </div>
 
     <!-- ── Bar chart ── -->
@@ -342,7 +345,7 @@
       <div class="plot-card" style="flex:1">
         <div style="display:flex; gap:16px; align-items:center; padding:6px 2px 10px 2px; flex-wrap:wrap;">
           <label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#41486d;">
-            <input type="checkbox" id="scatter-use-compression" checked onchange="renderScatter()">
+            <input type="checkbox" id="scatter-use-compression" checked onchange="onScatterAxisChange()">
             Show as compression ratio
           </label>
         </div>
@@ -402,8 +405,8 @@
     <div id="tab-significance" class="tab-panel">
       <div class="plot-card" style="flex:none; padding:14px 16px;">
         <div class="sig-controls">
-          <label>Subset <select id="sig-subset" onchange="renderSignificance()"></select></label>
-          <label>Metric <select id="sig-metric" onchange="renderSignificance()"></select></label>
+          <label>Subset <select id="sig-subset" onchange="onSigCtrlChange()"></select></label>
+          <label>Metric <select id="sig-metric" onchange="onSigCtrlChange()"></select></label>
           <div class="test-toggle">
             <button class="test-btn active" id="btn-wilcoxon" onclick="selectTest('wilcoxon')">Wilcoxon</button>
             <button class="test-btn" id="btn-ttest" onclick="selectTest('ttest')">Paired t-test</button>
@@ -447,16 +450,38 @@
     <div id="tab-line" class="tab-panel">
       <div class="plot-card" style="flex:none; padding:14px 16px;">
         <div class="line-controls">
-          <label>Metric <select id="line-metric" onchange="renderLine()">
+          <label>Metric <select id="line-metric" onchange="onLineCtrlChange()">
             <option value="ndcg">NDCG</option>
             <option value="mrr" selected>MRR</option>
             <option value="accuracy">Accuracy</option>
           </select></label>
-          <label>Subset <select id="line-subset" onchange="renderLine()"></select></label>
+          <label>Subset <select id="line-subset" onchange="onLineCtrlChange()"></select></label>
         </div>
       </div>
       <div class="plot-card" style="flex:1">
         <div id="line-chart" style="height:calc(100vh - 240px); min-height:700px"></div>
+      </div>
+    </div>
+
+    <div id="tab-traj" class="tab-panel">
+      <div class="plot-card" style="flex:none; padding:14px 16px;">
+        <div class="line-controls">
+          <label>Metric <select id="traj-metric" onchange="onTrajCtrlChange()">
+            <option value="ndcg">NDCG</option>
+            <option value="mrr" selected>MRR</option>
+            <option value="accuracy">Accuracy</option>
+          </select></label>
+          <label>@K <select id="traj-k" onchange="onTrajCtrlChange()">
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+          </select></label>
+          <label>Subset <select id="traj-subset" onchange="onTrajCtrlChange()"></select></label>
+        </div>
+      </div>
+      <div class="plot-card" style="flex:1">
+        <div id="traj-chart" style="height:calc(100vh - 240px); min-height:700px"></div>
       </div>
     </div>
 
@@ -484,6 +509,7 @@ const PLOTLY_READY = typeof Plotly !== 'undefined' && !window.__PLOTLY_MISSING__
 // ═══════════════════════════════════════════════════════════════════
 let activeTab = 'bar';
 let _allQueryItems = [];  // [{qid, text, el}] for search filtering
+let _selectedQuery = null;  // {subset, qid, idx} of the currently open query, for re-render on filter change
 let _metricStatsCache = new Map();
 let _tableSelectedMetrics = new Set();
 let _tableSelectedKs = new Set();
@@ -496,6 +522,51 @@ let _normPair = null; // {modelA, modelB, subset, metric}
 // Lazy-load caches: track which shards have already been fetched
 const _sigLoaded = new Set();   // "subset|||metric" keys already merged into DATA.significance
 const _pqLoaded  = new Set();   // subset keys already merged into DATA.per_query
+
+// ── Zoom-state preservation ─────────────────────────────────────────
+// Plotly.react re-applies whatever range / categoryorder is in the layout
+// we hand it, so anything that causes a re-render (responsive resize,
+// automargin reflow, or other render functions firing) wipes the user's
+// box-zoom. We listen for plotly_relayout, stash the zoomed range, and
+// merge it back into the layout on every render so the zoom survives.
+const _chartZoom = {};   // chartId → { xrange?, yrange? }
+
+function _bindZoomCapture(chartId) {
+  const el = document.getElementById(chartId);
+  if (!el || el._zoomBound || typeof el.on !== 'function') return;
+  el._zoomBound = true;
+  el.on('plotly_relayout', (ev) => {
+    if (!ev) return;
+    const z = _chartZoom[chartId] || (_chartZoom[chartId] = {});
+    if (ev['xaxis.range[0]'] !== undefined && ev['xaxis.range[1]'] !== undefined) {
+      z.xrange = [ev['xaxis.range[0]'], ev['xaxis.range[1]']];
+    } else if (ev['xaxis.autorange']) {
+      delete z.xrange;
+    }
+    if (ev['yaxis.range[0]'] !== undefined && ev['yaxis.range[1]'] !== undefined) {
+      z.yrange = [ev['yaxis.range[0]'], ev['yaxis.range[1]']];
+    } else if (ev['yaxis.autorange']) {
+      delete z.yrange;
+    }
+    if (!z.xrange && !z.yrange) delete _chartZoom[chartId];
+  });
+}
+
+function _applyZoom(chartId, layout) {
+  const z = _chartZoom[chartId];
+  if (!z) return layout;
+  if (z.xrange) {
+    layout.xaxis = { ...(layout.xaxis || {}), range: z.xrange.slice() };
+    delete layout.xaxis.autorange;
+  }
+  if (z.yrange) {
+    layout.yaxis = { ...(layout.yaxis || {}), range: z.yrange.slice() };
+    delete layout.yaxis.autorange;
+  }
+  return layout;
+}
+
+function _clearZoom(chartId) { delete _chartZoom[chartId]; }
 
 // ═══════════════════════════════════════════════════════════════════
 // Helpers
@@ -817,7 +888,7 @@ function initTableControls() {
 // ═══════════════════════════════════════════════════════════════════
 function init() {
   const subsets = DATA.subsets || [];
-  ['ctrl-subset','line-subset','query-subset-sel'].forEach(id => setSelectOptions(id, subsets));
+  ['ctrl-subset','line-subset','traj-subset','query-subset-sel'].forEach(id => setSelectOptions(id, subsets));
 
   // sig-subset: use all subsets (significance is lazy-loaded, keys not available at init)
   setSelectOptions('sig-subset', subsets);
@@ -827,8 +898,9 @@ function init() {
     document.getElementById('ctrl-subset').value = 'mean';
     document.getElementById('sig-subset').value = 'mean';
     document.getElementById('line-subset').value = firstRealSubset;
+    document.getElementById('traj-subset').value = 'mean';
   } else if (firstRealSubset) {
-    ['ctrl-subset', 'line-subset', 'query-subset-sel'].forEach(id => {
+    ['ctrl-subset', 'line-subset', 'traj-subset', 'query-subset-sel'].forEach(id => {
       document.getElementById(id).value = firstRealSubset;
     });
     if (document.getElementById('sig-subset'))
@@ -994,7 +1066,7 @@ function init() {
 function showTab(name) {
   activeTab = name;
   document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    const tabs = ['bar','scatter','table','query','significance','line'];
+    const tabs = ['bar','scatter','table','query','significance','line','traj'];
     btn.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1016,14 +1088,30 @@ function refreshAll() {
   if (activeTab === 'scatter') renderScatter();
   renderMetricsTable();
   if (activeTab === 'line') renderLine();
+  if (activeTab === 'traj') renderTraj();
   if (activeTab === 'significance') renderSignificance();
+  if (activeTab === 'query' && _selectedQuery)
+    selectQuery(_selectedQuery.subset, _selectedQuery.qid, _selectedQuery.idx);
 }
+
+// Wrappers used by controls whose changes invalidate prior zoom (different
+// subset / metric / axis type means saved ranges are no longer meaningful).
+function onMainCtrlChange() {
+  _clearZoom('bar-chart');
+  _clearZoom('scatter-chart');
+  refreshAll();
+}
+function onScatterAxisChange() { _clearZoom('scatter-chart'); renderScatter(); }
+function onSigCtrlChange()    { _clearZoom('sig-chart');     renderSignificance(); }
+function onLineCtrlChange()   { _clearZoom('line-chart');    renderLine(); }
+function onTrajCtrlChange()   { _clearZoom('traj-chart');    renderTraj(); }
 
 function refreshActive() {
   if (activeTab === 'bar') renderBar();
   else if (activeTab === 'scatter') renderScatter();
   else if (activeTab === 'table') renderMetricsTable();
   else if (activeTab === 'line') renderLine();
+  else if (activeTab === 'traj') renderTraj();
   else if (activeTab === 'significance') renderSignificance();
 }
 
@@ -1126,7 +1214,9 @@ function renderBar() {
     paper_bgcolor: 'white',
   };
 
+  _applyZoom('bar-chart', layout);
   Plotly.react('bar-chart', showStd ? [barTrace, ...errTraces] : [barTrace], layout, { responsive: true });
+  _bindZoomCapture('bar-chart');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1241,7 +1331,9 @@ function renderScatter() {
     }] : [],
   };
 
+  _applyZoom('scatter-chart', layout);
   Plotly.react('scatter-chart', traces, layout, { responsive: true, displayModeBar: true });
+  _bindZoomCapture('scatter-chart');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1413,6 +1505,7 @@ function loadQueryList() {
   const countEl = document.getElementById('query-count');
   document.getElementById('query-search').value = '';
   _allQueryItems = [];
+  _selectedQuery = null;  // changing subset invalidates any open query
 
   if (!subset) {
     ql.innerHTML = '<div class="query-item">No subset selected.</div>';
@@ -1465,6 +1558,7 @@ function filterQueries() {
 }
 
 function selectQuery(subset, qid, idx) {
+  _selectedQuery = { subset, qid, idx };
   document.querySelectorAll('.query-item').forEach(el => el.classList.remove('active'));
   document.getElementById(`qi-${idx}`)?.classList.add('active');
 
@@ -1925,7 +2019,9 @@ function renderSignificance() {
     paper_bgcolor: '#fff',
   };
 
+  _applyZoom('sig-chart', layout);
   Plotly.react('sig-chart', [trace], layout, { responsive: true, displayModeBar: true });
+  _bindZoomCapture('sig-chart');
 
   // Attach click handler to open normality check
   const chartEl = document.getElementById('sig-chart');
@@ -1993,7 +2089,78 @@ function renderLine() {
     paper_bgcolor: '#fff',
   };
 
+  _applyZoom('line-chart', layout);
   Plotly.react('line-chart', traces, layout, { responsive: true, displayModeBar: true });
+  _bindZoomCapture('line-chart');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TRAINING TRAJECTORY  (metric vs training step, one line per method group)
+// Only models with a defined n_step appear here.
+// ═══════════════════════════════════════════════════════════════════
+function renderTraj() {
+  if (!PLOTLY_READY) { renderPlotlyUnavailable('traj-chart'); return; }
+  const subset = document.getElementById('traj-subset').value;
+  if (!subset) { Plotly.purge('traj-chart'); return; }
+  const metric = document.getElementById('traj-metric').value;
+  const k = Number(document.getElementById('traj-k').value);
+
+  // Group n_step models by their method group, preserving registry order.
+  // Respect the sidebar base-model + checkbox selection so trajectories for an
+  // unselected base model (or unchecked groups) don't leak into the chart.
+  const visible = new Set(visibleModels());
+  const byGroup = {};
+  (DATA.model_keys || []).forEach(mKey => {
+    if (!visible.has(mKey)) return;
+    const meta = DATA.models_meta[mKey] || {};
+    if (meta.n_step === undefined || meta.n_step === null) return;
+    (byGroup[meta.group] = byGroup[meta.group] || []).push(mKey);
+  });
+
+  const traces = Object.entries(byGroup).map(([group, keys]) => {
+    keys.sort((a, b) => DATA.models_meta[a].n_step - DATA.models_meta[b].n_step);
+    const xs = [], ys = [], colors = [];
+    keys.forEach(mKey => {
+      const v = getAggValue(mKey, subset, metric, k);
+      if (v === null) return;
+      xs.push(DATA.models_meta[mKey].n_step);
+      ys.push(v);
+      colors.push(DATA.models_meta[mKey].color || '#888');
+    });
+    if (!xs.length) return null;
+    const lineColor = colors[colors.length - 1] || '#888';
+    const sym = DATA.models_meta[keys[0]].marker || 'circle';
+    return {
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: group,
+      x: xs,
+      y: ys,
+      line: { color: lineColor, width: 2 },
+      marker: { color: colors, size: 10, symbol: sym, line: { width: 1, color: '#444' } },
+      hovertemplate: `<b>${group}</b><br>step %{x}<br>${metric}@${k}: %{y:.4f}<extra></extra>`,
+    };
+  }).filter(Boolean);
+
+  if (!traces.length) {
+    renderChartMessage('traj-chart',
+      'No trajectory data yet. Evaluate the per-step checkpoints (models with n_step set) first.');
+    return;
+  }
+
+  const layout = {
+    title: { text: `${metric.toUpperCase()}@${k} vs training step — ${subset}`, font: { size: 14 } },
+    xaxis: { title: 'training step' },
+    yaxis: { title: `${metric.toUpperCase()}@${k}`, range: [0, 1] },
+    legend: { orientation: 'v', x: 1.01, y: 1, font: { size: 11 } },
+    margin: { t: 50, b: 60, l: 70, r: 160 },
+    plot_bgcolor: '#fafbff',
+    paper_bgcolor: '#fff',
+  };
+
+  _applyZoom('traj-chart', layout);
+  Plotly.react('traj-chart', traces, layout, { responsive: true, displayModeBar: true });
+  _bindZoomCapture('traj-chart');
 }
 
 // ═══════════════════════════════════════════════════════════════════

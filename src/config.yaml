@@ -16,14 +16,14 @@ resume_config:
   resume_run_id: null
 
 trainer_config:
-  num_train_epochs: 1
+  num_train_epochs: 2
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 16
   warmup_ratio: 0.1
   eval_strategy: "steps"
-  eval_and_save_steps: 500
+  eval_and_save_steps: 2000
   save_strategy: "steps"
-  save_total_limit: 3
+  save_total_limit: 12
   gradient_accumulation_steps: 8
   learning_rate: 2.0e-5
   lr_scheduler_type: "linear"

@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import inspect
+import json
 import math
 import os
 import random
@@ -553,6 +554,17 @@ def main(local_rank, rank):
          if isinstance(m, (AnnealedTanhBinarizationLayer, MultiBitAnnealedSigmoidLayer))), None
     )
     callbacks = [BetaAnnealCallback(anneal_layer)] if anneal_layer is not None else []
+
+    # On resume, the HF Trainer restores weights/optimizer/global_step but NOT
+    # the annealing layer's plain-int `_step` (it is not in the state_dict). Without
+    # this, beta would reset to 1 and re-climb from scratch instead of continuing
+    # from where it left off (e.g. ~28 at step 8189). Restore `_step` from the
+    # resumed checkpoint's global_step (== number of optimizer steps == anneal steps).
+    if config["resume_config"]["resume_checkpoint_path"] is not None and anneal_layer is not None:
+        with open(os.path.join(config["resume_config"]["resume_checkpoint_path"], "trainer_state.json")) as f:
+            anneal_layer._step = json.load(f).get("global_step", 0)
+        if distributed.is_main_process():
+            print(f"[anneal] resumed _step={anneal_layer._step}, beta={anneal_layer.beta:.3f}")
 
     trainer = CustomSentenceTransformerTrainer(
         model=model,

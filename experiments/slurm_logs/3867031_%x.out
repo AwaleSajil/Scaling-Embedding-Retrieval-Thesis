@@ -1,0 +1,255 @@
+===== SLURM ENVIRONMENT =====
+Job ID:    3867031
+Node List: matrix101
+CPUs:      8
+MASTER_ADDR:PORT = matrix101:30112
+GPUS_PER_NODE = 2
+
+===== ACTIVATING CONDA ENV =====
+Python: /rhome/sawale/miniconda3/envs/thesis/bin/python
+Python 3.12.11
+
+===== TORCH GPU TEST =====
+CUDA available: True
+Number of GPUs: 2
+  GPU 0: NVIDIA A100 80GB PCIe
+  GPU 1: NVIDIA A100 80GB PCIe
+
+===== STARTING TRAINING =====
+--- e5 gamma=0.05 (BAAI/bge-base-en-v1.5) ---
+RANK: 0; LOCAL_RANK: 0.
+RANK: 1; LOCAL_RANK: 1.
+RANK:0;▶ Processing: msmacro_triplet
+RANK:1;▶ Processing: msmacro_triplet
+RANK:0;▶ Processing: s2orc_title_abstract
+RANK:1;▶ Processing: s2orc_title_abstract
+RANK:0;▶ Processing: quora_dup_triplet
+RANK:1;▶ Processing: quora_dup_triplet
+RANK:0;▶ Processing: nli_for_simcse_triplet
+RANK:1;▶ Processing: nli_for_simcse_triplet
+RANK:0;▶ Processing: natural_questions
+RANK:1;▶ Processing: natural_questions
+RANK:1;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: hotpotqa
+RANK:1;▶ Processing: hotpotqa
+RANK:1;Total rows: 58726452
+RANK:0;Total rows: 58726452
+Cache directory is set to: ../data/cache_v1/NROWS_None_evaluator/validation/max_per_split_20
+Transforming dataset source for Evaluation: msmacro_triplet
+Loading processed data for 'msmacro_triplet' from cache.
+Transforming dataset source for Evaluation: s2orc_title_abstract
+Loading processed data for 's2orc_title_abstract' from cache.
+Transforming dataset source for Evaluation: quora_dup_triplet
+Loading processed data for 'quora_dup_triplet' from cache.
+Transforming dataset source for Evaluation: nli_for_simcse_triplet
+Loading processed data for 'nli_for_simcse_triplet' from cache.
+Transforming dataset source for Evaluation: natural_questions
+Loading processed data for 'natural_questions' from cache.
+Transforming dataset source for Evaluation: trivia_qa_triplet
+Loading processed data for 'trivia_qa_triplet' from cache.
+Transforming dataset source for Evaluation: hotpotqa
+Loading processed data for 'hotpotqa' from cache.
+Prepared SequentialEvaluator with: ['ir_evaluator', 'triplet_evaluator', 'mnr_loss']
+RANK:1;Starting training...
+RANK:0;Starting training...
+{'loss': '0.1338', 'grad_norm': '1.023', 'learning_rate': '1.951e-05', 'epoch': '0.1221'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.96', 'eval_mnr_loss/avg': '0.02284', 'eval_mnr_loss/sum': '0.2056', 'eval_sequential_score': '0.02284', 'eval_runtime': '1.056', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.1221'}
+{'loss': '0.1071', 'grad_norm': '0.8757', 'learning_rate': '1.68e-05', 'epoch': '0.2442'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.02764', 'eval_mnr_loss/sum': '0.2487', 'eval_sequential_score': '0.02764', 'eval_runtime': '1.263', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.2442'}
+{'loss': '0.09634', 'grad_norm': '0.8894', 'learning_rate': '1.408e-05', 'epoch': '0.3664'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.01626', 'eval_mnr_loss/sum': '0.1463', 'eval_sequential_score': '0.01626', 'eval_runtime': '1.242', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.3664'}
+{'loss': '0.08854', 'grad_norm': '0.9606', 'learning_rate': '1.137e-05', 'epoch': '0.4885'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.96', 'eval_mnr_loss/avg': '0.01663', 'eval_mnr_loss/sum': '0.1497', 'eval_sequential_score': '0.01663', 'eval_runtime': '1.177', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.4885'}
+{'loss': '0.0831', 'grad_norm': '0.9419', 'learning_rate': '8.657e-06', 'epoch': '0.6106'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.96', 'eval_mnr_loss/avg': '0.01948', 'eval_mnr_loss/sum': '0.1753', 'eval_sequential_score': '0.01948', 'eval_runtime': '1.327', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.6106'}
+{'loss': '0.07846', 'grad_norm': '0.8117', 'learning_rate': '5.943e-06', 'epoch': '0.7327'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.01772', 'eval_mnr_loss/sum': '0.1595', 'eval_sequential_score': '0.01772', 'eval_runtime': '0.9877', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.7327'}
+{'loss': '0.07601', 'grad_norm': '0.6715', 'learning_rate': '3.229e-06', 'epoch': '0.8548'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.01532', 'eval_mnr_loss/sum': '0.1379', 'eval_sequential_score': '0.01532', 'eval_runtime': '1.266', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.8548'}
+{'loss': '0.07509', 'grad_norm': '0.9025', 'learning_rate': '5.156e-07', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.0164', 'eval_mnr_loss/sum': '0.1476', 'eval_sequential_score': '0.0164', 'eval_runtime': '1.275', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.01655', 'eval_mnr_loss/sum': '0.149', 'eval_sequential_score': '0.01655', 'eval_runtime': '0.9332', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '1'}
+RANK:1;Finished training...
+{'train_runtime': '2.094e+04', 'train_samples_per_second': '2664', 'train_steps_per_second': '0.391', 'train_loss': '0.09192', 'epoch': '1'}
+RANK:0;Finished training...
+RANK: 0; Elapsed time: 21120.21 seconds
+--- e5 gamma=0.05 (bge) done ---
+--- e5 gamma=0.2 (BAAI/bge-base-en-v1.5) ---
+RANK: 0; LOCAL_RANK: 0.
+RANK: 1; LOCAL_RANK: 1.
+RANK:1;▶ Processing: msmacro_triplet
+RANK:0;▶ Processing: msmacro_triplet
+RANK:1;▶ Processing: s2orc_title_abstract
+RANK:0;▶ Processing: s2orc_title_abstract
+RANK:1;▶ Processing: quora_dup_triplet
+RANK:1;▶ Processing: nli_for_simcse_triplet
+RANK:1;▶ Processing: natural_questions
+RANK:1;▶ Processing: trivia_qa_triplet
+RANK:1;▶ Processing: hotpotqa
+RANK:1;Total rows: 58726452
+RANK:0;▶ Processing: quora_dup_triplet
+RANK:0;▶ Processing: nli_for_simcse_triplet
+RANK:0;▶ Processing: natural_questions
+RANK:0;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: hotpotqa
+RANK:0;Total rows: 58726452
+Cache directory is set to: ../data/cache_v1/NROWS_None_evaluator/validation/max_per_split_20
+Transforming dataset source for Evaluation: msmacro_triplet
+Loading processed data for 'msmacro_triplet' from cache.
+Transforming dataset source for Evaluation: s2orc_title_abstract
+Loading processed data for 's2orc_title_abstract' from cache.
+Transforming dataset source for Evaluation: quora_dup_triplet
+Loading processed data for 'quora_dup_triplet' from cache.
+Transforming dataset source for Evaluation: nli_for_simcse_triplet
+Loading processed data for 'nli_for_simcse_triplet' from cache.
+Transforming dataset source for Evaluation: natural_questions
+Loading processed data for 'natural_questions' from cache.
+Transforming dataset source for Evaluation: trivia_qa_triplet
+Loading processed data for 'trivia_qa_triplet' from cache.
+Transforming dataset source for Evaluation: hotpotqa
+Loading processed data for 'hotpotqa' from cache.
+Prepared SequentialEvaluator with: ['ir_evaluator', 'triplet_evaluator', 'mnr_loss']
+RANK:1;Starting training...
+RANK:0;Starting training...
+{'loss': '0.1456', 'grad_norm': '1.412', 'learning_rate': '1.951e-05', 'epoch': '0.1221'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.96', 'eval_mnr_loss/avg': '0.01656', 'eval_mnr_loss/sum': '0.149', 'eval_sequential_score': '0.01656', 'eval_runtime': '0.9754', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.1221'}
+{'loss': '0.12', 'grad_norm': '1.222', 'learning_rate': '1.68e-05', 'epoch': '0.2442'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.96', 'eval_mnr_loss/avg': '0.01932', 'eval_mnr_loss/sum': '0.1739', 'eval_sequential_score': '0.01932', 'eval_runtime': '1.098', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.2442'}
+{'loss': '0.1106', 'grad_norm': '1.387', 'learning_rate': '1.408e-05', 'epoch': '0.3664'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.01674', 'eval_mnr_loss/sum': '0.1507', 'eval_sequential_score': '0.01674', 'eval_runtime': '0.8856', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.3664'}
+{'loss': '0.1037', 'grad_norm': '1.34', 'learning_rate': '1.137e-05', 'epoch': '0.4885'}
+{'eval_ir_evaluator_cosine_accuracy@1': '1', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '1', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '1', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '1', 'eval_ir_evaluator_cosine_ndcg@5': '1', 'eval_ir_evaluator_cosine_ndcg@10': '1', 'eval_ir_evaluator_cosine_mrr@1': '1', 'eval_ir_evaluator_cosine_mrr@5': '1', 'eval_ir_evaluator_cosine_mrr@10': '1', 'eval_ir_evaluator_cosine_map@1': '1', 'eval_ir_evaluator_cosine_map@5': '1', 'eval_ir_evaluator_cosine_map@10': '1', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.01564', 'eval_mnr_loss/sum': '0.1407', 'eval_sequential_score': '0.01564', 'eval_runtime': '0.8852', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.4885'}
+{'loss': '0.09837', 'grad_norm': '1.236', 'learning_rate': '8.657e-06', 'epoch': '0.6106'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.01925', 'eval_mnr_loss/sum': '0.1732', 'eval_sequential_score': '0.01925', 'eval_runtime': '1.243', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.6106'}
+{'loss': '0.09343', 'grad_norm': '1.225', 'learning_rate': '5.943e-06', 'epoch': '0.7327'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.025', 'eval_mnr_loss/sum': '0.225', 'eval_sequential_score': '0.025', 'eval_runtime': '1.226', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.7327'}
+{'loss': '0.09145', 'grad_norm': '1.018', 'learning_rate': '3.229e-06', 'epoch': '0.8548'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.01697', 'eval_mnr_loss/sum': '0.1527', 'eval_sequential_score': '0.01697', 'eval_runtime': '1.275', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.8548'}
+{'loss': '0.08883', 'grad_norm': '1.182', 'learning_rate': '5.156e-07', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.02097', 'eval_mnr_loss/sum': '0.1888', 'eval_sequential_score': '0.02097', 'eval_runtime': '1.169', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.01818', 'eval_mnr_loss/sum': '0.1637', 'eval_sequential_score': '0.01818', 'eval_runtime': '1.22', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '1'}
+RANK:1;Finished training...
+{'train_runtime': '2.12e+04', 'train_samples_per_second': '2632', 'train_steps_per_second': '0.386', 'train_loss': '0.1061', 'epoch': '1'}
+RANK:0;Finished training...
+RANK: 0; Elapsed time: 21240.54 seconds
+--- e5 gamma=0.2 (bge) done ---
+--- e5 gamma=0.05 (FacebookAI/roberta-base) ---
+RANK: 0; LOCAL_RANK: 0.
+RANK: 1; LOCAL_RANK: 1.
+RANK:0;▶ Processing: msmacro_triplet
+RANK:1;▶ Processing: msmacro_triplet
+RANK:1;▶ Processing: s2orc_title_abstract
+RANK:0;▶ Processing: s2orc_title_abstract
+RANK:1;▶ Processing: quora_dup_triplet
+RANK:1;▶ Processing: nli_for_simcse_triplet
+RANK:1;▶ Processing: natural_questions
+RANK:1;▶ Processing: trivia_qa_triplet
+RANK:1;▶ Processing: hotpotqa
+RANK:1;Total rows: 58726452
+RANK:0;▶ Processing: quora_dup_triplet
+RANK:0;▶ Processing: nli_for_simcse_triplet
+RANK:0;▶ Processing: natural_questions
+RANK:0;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: hotpotqa
+RANK:0;Total rows: 58726452
+Cache directory is set to: ../data/cache_v1/NROWS_None_evaluator/validation/max_per_split_20
+Transforming dataset source for Evaluation: msmacro_triplet
+Loading processed data for 'msmacro_triplet' from cache.
+Transforming dataset source for Evaluation: s2orc_title_abstract
+Loading processed data for 's2orc_title_abstract' from cache.
+Transforming dataset source for Evaluation: quora_dup_triplet
+Loading processed data for 'quora_dup_triplet' from cache.
+Transforming dataset source for Evaluation: nli_for_simcse_triplet
+Loading processed data for 'nli_for_simcse_triplet' from cache.
+Transforming dataset source for Evaluation: natural_questions
+Loading processed data for 'natural_questions' from cache.
+Transforming dataset source for Evaluation: trivia_qa_triplet
+Loading processed data for 'trivia_qa_triplet' from cache.
+Transforming dataset source for Evaluation: hotpotqa
+Loading processed data for 'hotpotqa' from cache.
+Prepared SequentialEvaluator with: ['ir_evaluator', 'triplet_evaluator', 'mnr_loss']
+RANK:1;Starting training...
+RANK:0;Starting training...
+{'loss': '0.3485', 'grad_norm': '3.151', 'learning_rate': '1.951e-05', 'epoch': '0.1221'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9786', 'eval_ir_evaluator_cosine_accuracy@5': '0.9929', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9786', 'eval_ir_evaluator_cosine_precision@5': '0.1986', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9786', 'eval_ir_evaluator_cosine_recall@5': '0.9929', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9786', 'eval_ir_evaluator_cosine_ndcg@5': '0.9876', 'eval_ir_evaluator_cosine_ndcg@10': '0.9901', 'eval_ir_evaluator_cosine_mrr@1': '0.9786', 'eval_ir_evaluator_cosine_mrr@5': '0.9857', 'eval_ir_evaluator_cosine_mrr@10': '0.9869', 'eval_ir_evaluator_cosine_map@1': '0.9786', 'eval_ir_evaluator_cosine_map@5': '0.9857', 'eval_ir_evaluator_cosine_map@10': '0.9869', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.06107', 'eval_mnr_loss/sum': '0.5496', 'eval_sequential_score': '0.06107', 'eval_runtime': '1.007', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.1221'}
+{'loss': '0.1983', 'grad_norm': '2.832', 'learning_rate': '1.68e-05', 'epoch': '0.2442'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9857', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9857', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9857', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9857', 'eval_ir_evaluator_cosine_ndcg@5': '0.9933', 'eval_ir_evaluator_cosine_ndcg@10': '0.9933', 'eval_ir_evaluator_cosine_mrr@1': '0.9857', 'eval_ir_evaluator_cosine_mrr@5': '0.9911', 'eval_ir_evaluator_cosine_mrr@10': '0.9911', 'eval_ir_evaluator_cosine_map@1': '0.9857', 'eval_ir_evaluator_cosine_map@5': '0.9911', 'eval_ir_evaluator_cosine_map@10': '0.9911', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.04503', 'eval_mnr_loss/sum': '0.4053', 'eval_sequential_score': '0.04503', 'eval_runtime': '1.201', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.2442'}
+{'loss': '0.1696', 'grad_norm': '2.586', 'learning_rate': '1.408e-05', 'epoch': '0.3664'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9786', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9786', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9786', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9786', 'eval_ir_evaluator_cosine_ndcg@5': '0.9912', 'eval_ir_evaluator_cosine_ndcg@10': '0.9912', 'eval_ir_evaluator_cosine_mrr@1': '0.9786', 'eval_ir_evaluator_cosine_mrr@5': '0.9881', 'eval_ir_evaluator_cosine_mrr@10': '0.9881', 'eval_ir_evaluator_cosine_map@1': '0.9786', 'eval_ir_evaluator_cosine_map@5': '0.9881', 'eval_ir_evaluator_cosine_map@10': '0.9881', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.04463', 'eval_mnr_loss/sum': '0.4016', 'eval_sequential_score': '0.04463', 'eval_runtime': '0.9183', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.3664'}
+{'loss': '0.151', 'grad_norm': '2.33', 'learning_rate': '1.137e-05', 'epoch': '0.4885'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9786', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9786', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9786', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9786', 'eval_ir_evaluator_cosine_ndcg@5': '0.9897', 'eval_ir_evaluator_cosine_ndcg@10': '0.9897', 'eval_ir_evaluator_cosine_mrr@1': '0.9786', 'eval_ir_evaluator_cosine_mrr@5': '0.9863', 'eval_ir_evaluator_cosine_mrr@10': '0.9863', 'eval_ir_evaluator_cosine_map@1': '0.9786', 'eval_ir_evaluator_cosine_map@5': '0.9863', 'eval_ir_evaluator_cosine_map@10': '0.9863', 'eval_triplet_evaluator_cosine_accuracy': '0.99', 'eval_mnr_loss/avg': '0.04042', 'eval_mnr_loss/sum': '0.3638', 'eval_sequential_score': '0.04042', 'eval_runtime': '1.103', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.4885'}
+{'loss': '0.1391', 'grad_norm': '2.497', 'learning_rate': '8.657e-06', 'epoch': '0.6106'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '0.9929', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.1986', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '0.9929', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9929', 'eval_ir_evaluator_cosine_ndcg@10': '0.9954', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9929', 'eval_ir_evaluator_cosine_mrr@10': '0.994', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9929', 'eval_ir_evaluator_cosine_map@10': '0.994', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.03734', 'eval_mnr_loss/sum': '0.3361', 'eval_sequential_score': '0.03734', 'eval_runtime': '0.9061', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.6106'}
+{'loss': '0.13', 'grad_norm': '3.334', 'learning_rate': '5.943e-06', 'epoch': '0.7327'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.03188', 'eval_mnr_loss/sum': '0.2869', 'eval_sequential_score': '0.03188', 'eval_runtime': '1.134', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.7327'}
+{'loss': '0.1238', 'grad_norm': '2.251', 'learning_rate': '3.229e-06', 'epoch': '0.8548'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.99', 'eval_mnr_loss/avg': '0.0274', 'eval_mnr_loss/sum': '0.2466', 'eval_sequential_score': '0.0274', 'eval_runtime': '1.068', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.8548'}
+{'loss': '0.1191', 'grad_norm': '2.311', 'learning_rate': '5.156e-07', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9964', 'eval_ir_evaluator_cosine_ndcg@10': '0.9964', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9952', 'eval_ir_evaluator_cosine_mrr@10': '0.9952', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9952', 'eval_ir_evaluator_cosine_map@10': '0.9952', 'eval_triplet_evaluator_cosine_accuracy': '0.99', 'eval_mnr_loss/avg': '0.0303', 'eval_mnr_loss/sum': '0.2727', 'eval_sequential_score': '0.0303', 'eval_runtime': '1.206', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9964', 'eval_ir_evaluator_cosine_ndcg@10': '0.9964', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9952', 'eval_ir_evaluator_cosine_mrr@10': '0.9952', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9952', 'eval_ir_evaluator_cosine_map@10': '0.9952', 'eval_triplet_evaluator_cosine_accuracy': '0.99', 'eval_mnr_loss/avg': '0.03332', 'eval_mnr_loss/sum': '0.2999', 'eval_sequential_score': '0.03332', 'eval_runtime': '0.957', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '1'}
+{'train_runtime': '2.139e+04', 'train_samples_per_second': '2609', 'train_steps_per_second': '0.383', 'train_loss': '0.1711', 'epoch': '1'}
+RANK:1;Finished training...
+RANK:0;Finished training...
+RANK: 0; Elapsed time: 21440.92 seconds
+--- e5 gamma=0.05 (roberta) done ---
+--- e5 gamma=0.2 (FacebookAI/roberta-base) ---
+RANK: 0; LOCAL_RANK: 0.
+RANK: 1; LOCAL_RANK: 1.
+RANK:0;▶ Processing: msmacro_triplet
+RANK:1;▶ Processing: msmacro_triplet
+RANK:0;▶ Processing: s2orc_title_abstract
+RANK:1;▶ Processing: s2orc_title_abstract
+RANK:0;▶ Processing: quora_dup_triplet
+RANK:1;▶ Processing: quora_dup_triplet
+RANK:0;▶ Processing: nli_for_simcse_triplet
+RANK:1;▶ Processing: nli_for_simcse_triplet
+RANK:1;▶ Processing: natural_questions
+RANK:0;▶ Processing: natural_questions
+RANK:1;▶ Processing: trivia_qa_triplet
+RANK:0;▶ Processing: trivia_qa_triplet
+RANK:1;▶ Processing: hotpotqa
+RANK:0;▶ Processing: hotpotqa
+RANK:1;Total rows: 58726452
+RANK:0;Total rows: 58726452
+Cache directory is set to: ../data/cache_v1/NROWS_None_evaluator/validation/max_per_split_20
+Transforming dataset source for Evaluation: msmacro_triplet
+Loading processed data for 'msmacro_triplet' from cache.
+Transforming dataset source for Evaluation: s2orc_title_abstract
+Loading processed data for 's2orc_title_abstract' from cache.
+Transforming dataset source for Evaluation: quora_dup_triplet
+Loading processed data for 'quora_dup_triplet' from cache.
+Transforming dataset source for Evaluation: nli_for_simcse_triplet
+Loading processed data for 'nli_for_simcse_triplet' from cache.
+Transforming dataset source for Evaluation: natural_questions
+Loading processed data for 'natural_questions' from cache.
+Transforming dataset source for Evaluation: trivia_qa_triplet
+Loading processed data for 'trivia_qa_triplet' from cache.
+Transforming dataset source for Evaluation: hotpotqa
+Loading processed data for 'hotpotqa' from cache.
+Prepared SequentialEvaluator with: ['ir_evaluator', 'triplet_evaluator', 'mnr_loss']
+RANK:0;Starting training...
+RANK:1;Starting training...
+{'loss': '0.3481', 'grad_norm': '3.109', 'learning_rate': '1.951e-05', 'epoch': '0.1221'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9714', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9714', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9714', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9714', 'eval_ir_evaluator_cosine_ndcg@5': '0.9871', 'eval_ir_evaluator_cosine_ndcg@10': '0.9871', 'eval_ir_evaluator_cosine_mrr@1': '0.9714', 'eval_ir_evaluator_cosine_mrr@5': '0.9827', 'eval_ir_evaluator_cosine_mrr@10': '0.9827', 'eval_ir_evaluator_cosine_map@1': '0.9714', 'eval_ir_evaluator_cosine_map@5': '0.9827', 'eval_ir_evaluator_cosine_map@10': '0.9827', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.05717', 'eval_mnr_loss/sum': '0.5146', 'eval_sequential_score': '0.05717', 'eval_runtime': '1.045', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.1221'}
+{'loss': '0.2056', 'grad_norm': '2.984', 'learning_rate': '1.68e-05', 'epoch': '0.2442'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '0.9929', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.1986', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '0.9929', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9929', 'eval_ir_evaluator_cosine_ndcg@10': '0.9954', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9929', 'eval_ir_evaluator_cosine_mrr@10': '0.994', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9929', 'eval_ir_evaluator_cosine_map@10': '0.994', 'eval_triplet_evaluator_cosine_accuracy': '0.99', 'eval_mnr_loss/avg': '0.05335', 'eval_mnr_loss/sum': '0.4802', 'eval_sequential_score': '0.05335', 'eval_runtime': '1.088', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.2442'}
+{'loss': '0.1753', 'grad_norm': '2.497', 'learning_rate': '1.408e-05', 'epoch': '0.3664'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9857', 'eval_ir_evaluator_cosine_accuracy@5': '0.9929', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9857', 'eval_ir_evaluator_cosine_precision@5': '0.1986', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9857', 'eval_ir_evaluator_cosine_recall@5': '0.9929', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9857', 'eval_ir_evaluator_cosine_ndcg@5': '0.9902', 'eval_ir_evaluator_cosine_ndcg@10': '0.9928', 'eval_ir_evaluator_cosine_mrr@1': '0.9857', 'eval_ir_evaluator_cosine_mrr@5': '0.9893', 'eval_ir_evaluator_cosine_mrr@10': '0.9905', 'eval_ir_evaluator_cosine_map@1': '0.9857', 'eval_ir_evaluator_cosine_map@5': '0.9893', 'eval_ir_evaluator_cosine_map@10': '0.9905', 'eval_triplet_evaluator_cosine_accuracy': '0.95', 'eval_mnr_loss/avg': '0.04558', 'eval_mnr_loss/sum': '0.4102', 'eval_sequential_score': '0.04558', 'eval_runtime': '1.037', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.3664'}
+{'loss': '0.1559', 'grad_norm': '2.355', 'learning_rate': '1.137e-05', 'epoch': '0.4885'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9857', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9857', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9857', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9857', 'eval_ir_evaluator_cosine_ndcg@5': '0.9933', 'eval_ir_evaluator_cosine_ndcg@10': '0.9933', 'eval_ir_evaluator_cosine_mrr@1': '0.9857', 'eval_ir_evaluator_cosine_mrr@5': '0.9911', 'eval_ir_evaluator_cosine_mrr@10': '0.9911', 'eval_ir_evaluator_cosine_map@1': '0.9857', 'eval_ir_evaluator_cosine_map@5': '0.9911', 'eval_ir_evaluator_cosine_map@10': '0.9911', 'eval_triplet_evaluator_cosine_accuracy': '0.95', 'eval_mnr_loss/avg': '0.03996', 'eval_mnr_loss/sum': '0.3596', 'eval_sequential_score': '0.03996', 'eval_runtime': '1.197', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.4885'}
+{'loss': '0.1445', 'grad_norm': '2.344', 'learning_rate': '8.657e-06', 'epoch': '0.6106'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9857', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9857', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9857', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9857', 'eval_ir_evaluator_cosine_ndcg@5': '0.9947', 'eval_ir_evaluator_cosine_ndcg@10': '0.9947', 'eval_ir_evaluator_cosine_mrr@1': '0.9857', 'eval_ir_evaluator_cosine_mrr@5': '0.9929', 'eval_ir_evaluator_cosine_mrr@10': '0.9929', 'eval_ir_evaluator_cosine_map@1': '0.9857', 'eval_ir_evaluator_cosine_map@5': '0.9929', 'eval_ir_evaluator_cosine_map@10': '0.9929', 'eval_triplet_evaluator_cosine_accuracy': '0.97', 'eval_mnr_loss/avg': '0.03717', 'eval_mnr_loss/sum': '0.3345', 'eval_sequential_score': '0.03717', 'eval_runtime': '1.124', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.6106'}
+{'loss': '0.1346', 'grad_norm': '2.384', 'learning_rate': '5.943e-06', 'epoch': '0.7327'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9964', 'eval_ir_evaluator_cosine_ndcg@10': '0.9964', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9952', 'eval_ir_evaluator_cosine_mrr@10': '0.9952', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9952', 'eval_ir_evaluator_cosine_map@10': '0.9952', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.03807', 'eval_mnr_loss/sum': '0.3426', 'eval_sequential_score': '0.03807', 'eval_runtime': '1.008', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.7327'}
+{'loss': '0.1284', 'grad_norm': '2.666', 'learning_rate': '3.229e-06', 'epoch': '0.8548'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.0387', 'eval_mnr_loss/sum': '0.3483', 'eval_sequential_score': '0.0387', 'eval_runtime': '1.077', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.8548'}
+{'loss': '0.123', 'grad_norm': '2.146', 'learning_rate': '5.156e-07', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.031', 'eval_mnr_loss/sum': '0.279', 'eval_sequential_score': '0.031', 'eval_runtime': '0.9464', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '0.9769'}
+{'eval_ir_evaluator_cosine_accuracy@1': '0.9929', 'eval_ir_evaluator_cosine_accuracy@5': '1', 'eval_ir_evaluator_cosine_accuracy@10': '1', 'eval_ir_evaluator_cosine_precision@1': '0.9929', 'eval_ir_evaluator_cosine_precision@5': '0.2', 'eval_ir_evaluator_cosine_precision@10': '0.1', 'eval_ir_evaluator_cosine_recall@1': '0.9929', 'eval_ir_evaluator_cosine_recall@5': '1', 'eval_ir_evaluator_cosine_recall@10': '1', 'eval_ir_evaluator_cosine_ndcg@1': '0.9929', 'eval_ir_evaluator_cosine_ndcg@5': '0.9974', 'eval_ir_evaluator_cosine_ndcg@10': '0.9974', 'eval_ir_evaluator_cosine_mrr@1': '0.9929', 'eval_ir_evaluator_cosine_mrr@5': '0.9964', 'eval_ir_evaluator_cosine_mrr@10': '0.9964', 'eval_ir_evaluator_cosine_map@1': '0.9929', 'eval_ir_evaluator_cosine_map@5': '0.9964', 'eval_ir_evaluator_cosine_map@10': '0.9964', 'eval_triplet_evaluator_cosine_accuracy': '0.98', 'eval_mnr_loss/avg': '0.03026', 'eval_mnr_loss/sum': '0.2724', 'eval_sequential_score': '0.03026', 'eval_runtime': '1.06', 'eval_samples_per_second': '0', 'eval_steps_per_second': '0', 'epoch': '1'}
+RANK:1;Finished training...
+{'train_runtime': '2.098e+04', 'train_samples_per_second': '2659', 'train_steps_per_second': '0.39', 'train_loss': '0.1757', 'epoch': '1'}
+RANK:0;Finished training...
+RANK: 0; Elapsed time: 21023.56 seconds
+--- e5 gamma=0.2 (roberta) done ---
+===== TRAINING DONE =====

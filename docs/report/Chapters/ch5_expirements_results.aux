@@ -1,104 +1,78 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\citation{nanobeir2024}
-\citation{thakur2021beir}
-\@writefile{toc}{\contentsline {chapter}{\numberline {}Experiments and Results}{49}{chapter.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {}Chapter 5. Results and Analysis}{50}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:experiments}{{5}{49}{Experiments and Results}{chapter.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Evaluation Setup}{49}{section.5.1}\protected@file@percent }
-\newlabel{sec:eval_setup}{{5.1}{49}{Evaluation Setup}{section.5.1}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.1}Benchmark.}{49}{paragraph.5.1.0.0.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces NanoBEIR subsets used for evaluation.}}{49}{table.caption.14}\protected@file@percent }
-\newlabel{tab:nanobeir_subsets}{{5.1}{49}{NanoBEIR subsets used for evaluation}{table.caption.14}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.2}Encoder backbones.}{49}{paragraph.5.1.0.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.3}Compression methods.}{50}{paragraph.5.1.0.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.4}Compression ratio.}{50}{paragraph.5.1.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.5}Evaluation metrics.}{51}{paragraph.5.1.0.0.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.6}Similarity functions.}{51}{paragraph.5.1.0.0.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.1.0.0.7}Statistical significance.}{51}{paragraph.5.1.0.0.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}Float32 Baselines}{51}{section.5.2}\protected@file@percent }
-\newlabel{sec:float32_baselines}{{5.2}{51}{Float32 Baselines}{section.5.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Mean MRR@10 (macro-averaged over 13 NanoBEIR subsets) for pre-trained and fine-tuned float32 embeddings. $\Delta $ is the absolute change due to fine-tuning.}}{52}{table.caption.15}\protected@file@percent }
-\newlabel{tab:float32_baselines}{{5.2}{52}{Mean MRR@10 (macro-averaged over 13 NanoBEIR subsets) for pre-trained and fine-tuned float32 embeddings. $\Delta $ is the absolute change due to fine-tuning}{table.caption.15}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.2.0.0.1}Effect of fine-tuning.}{52}{paragraph.5.2.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.2.0.0.2}Cross-backbone gap.}{53}{paragraph.5.2.0.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5.3}Post-Hoc Compression}{53}{section.5.3}\protected@file@percent }
-\newlabel{sec:posthoc_compression}{{5.3}{53}{Post-Hoc Compression}{section.5.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.1}INT8 Scalar Quantisation}{54}{subsection.5.3.1}\protected@file@percent }
-\newlabel{subsec:int8}{{5.3.1}{54}{INT8 Scalar Quantisation}{subsection.5.3.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces Mean MRR@10 for INT8 quantisation (4$\times $) compared with the fine-tuned float32 baseline.}}{54}{table.caption.16}\protected@file@percent }
-\newlabel{tab:int8}{{5.3}{54}{Mean MRR@10 for INT8 quantisation (4$\times $) compared with the fine-tuned float32 baseline}{table.caption.16}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.2}Binary Quantisation}{54}{subsection.5.3.2}\protected@file@percent }
-\newlabel{subsec:binary}{{5.3.2}{54}{Binary Quantisation}{subsection.5.3.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.4}{\ignorespaces Mean MRR@10 for post-hoc binary quantisation (32$\times $) compared with the fine-tuned float32 baseline.}}{55}{table.caption.17}\protected@file@percent }
-\newlabel{tab:binary}{{5.4}{55}{Mean MRR@10 for post-hoc binary quantisation (32$\times $) compared with the fine-tuned float32 baseline}{table.caption.17}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.3}Product Quantisation}{55}{subsection.5.3.3}\protected@file@percent }
-\newlabel{subsec:pq}{{5.3.3}{55}{Product Quantisation}{subsection.5.3.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.5}{\ignorespaces Mean MRR@10 for PQ configurations (32$\times $) compared with the fine-tuned float32 baseline and post-hoc binary.}}{55}{table.caption.18}\protected@file@percent }
-\newlabel{tab:pq}{{5.5}{55}{Mean MRR@10 for PQ configurations (32$\times $) compared with the fine-tuned float32 baseline and post-hoc binary}{table.caption.18}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.4}TurboQuant}{56}{subsection.5.3.4}\protected@file@percent }
-\newlabel{subsec:tq}{{5.3.4}{56}{TurboQuant}{subsection.5.3.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Mean MRR@10 vs compression ratio for TurboQuant across bit-widths and backbones.}}{56}{figure.caption.19}\protected@file@percent }
-\newlabel{fig:tq_curve}{{5.1}{56}{Mean MRR@10 vs compression ratio for TurboQuant across bit-widths and backbones}{figure.caption.19}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.5}Cross-Method Comparison at 32$\times $}{57}{subsection.5.3.5}\protected@file@percent }
-\newlabel{subsec:cross_method}{{5.3.5}{57}{Cross-Method Comparison at 32$\times $}{subsection.5.3.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Mean MRR@10 at 32$\times $ compression for all post-hoc methods across backbones. Float32 fine-tuned scores shown as dashed reference lines.}}{57}{figure.caption.20}\protected@file@percent }
-\newlabel{fig:cross_method_32x}{{5.2}{57}{Mean MRR@10 at 32$\times $ compression for all post-hoc methods across backbones. Float32 fine-tuned scores shown as dashed reference lines}{figure.caption.20}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.6}{\ignorespaces Mean MRR@10 at 32$\times $ compression. Float32 fine-tuned scores are shown for reference ($r = 1{\times }$).}}{57}{table.caption.21}\protected@file@percent }
-\newlabel{tab:cross_method_32x}{{5.6}{57}{Mean MRR@10 at 32$\times $ compression. Float32 fine-tuned scores are shown for reference ($r = 1{\times }$)}{table.caption.21}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.4}Training-Time Compression}{58}{section.5.4}\protected@file@percent }
-\newlabel{sec:training_compression}{{5.4}{58}{Training-Time Compression}{section.5.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.1}Binarisation-Aware Training: STE and Annealed Tanh}{59}{subsection.5.4.1}\protected@file@percent }
-\newlabel{subsec:ste_atanh}{{5.4.1}{59}{Binarisation-Aware Training: STE and Annealed Tanh}{subsection.5.4.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.7}{\ignorespaces Mean MRR@10 at 32$\times $ compression for binarisation-aware training methods, post-hoc binary, and the float32 baseline.}}{59}{table.caption.22}\protected@file@percent }
-\newlabel{tab:ste_atanh}{{5.7}{59}{Mean MRR@10 at 32$\times $ compression for binarisation-aware training methods, post-hoc binary, and the float32 baseline}{table.caption.22}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Mean MRR@10 at 32$\times $ compression for post-hoc binary, BAT, and annealed tanh ($\gamma {=}0.2$) across backbones.}}{59}{figure.caption.23}\protected@file@percent }
-\newlabel{fig:ste_atanh}{{5.3}{59}{Mean MRR@10 at 32$\times $ compression for post-hoc binary, BAT, and annealed tanh ($\gamma {=}0.2$) across backbones}{figure.caption.23}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.2}Matryoshka Representation Learning}{61}{subsection.5.4.2}\protected@file@percent }
-\newlabel{subsec:mrl}{{5.4.2}{61}{Matryoshka Representation Learning}{subsection.5.4.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces Mean MRR@10 as a function of MRL truncation dimension $d$ for all three backbones. The float32 768-dim baseline is shown as a dashed reference line for each backbone.}}{61}{figure.caption.24}\protected@file@percent }
-\newlabel{fig:mrl_curve}{{5.4}{61}{Mean MRR@10 as a function of MRL truncation dimension $d$ for all three backbones. The float32 768-dim baseline is shown as a dashed reference line for each backbone}{figure.caption.24}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.8}{\ignorespaces Mean MRR@10 for MRL truncations at 512 and 256 dimensions, with compression ratio and float32 baseline shown for reference.}}{61}{table.caption.25}\protected@file@percent }
-\newlabel{tab:mrl}{{5.8}{61}{Mean MRR@10 for MRL truncations at 512 and 256 dimensions, with compression ratio and float32 baseline shown for reference}{table.caption.25}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.5}Stacked Combinations}{62}{section.5.5}\protected@file@percent }
-\newlabel{sec:cross_axis}{{5.5}{62}{Stacked Combinations}{section.5.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.9}{\ignorespaces Mean MRR@10 for stacked combinations, with compression ratio and memory footprint per vector. MRL float32 baselines are included for reference.}}{62}{table.caption.26}\protected@file@percent }
-\newlabel{tab:cross_axis}{{5.9}{62}{Mean MRR@10 for stacked combinations, with compression ratio and memory footprint per vector. MRL float32 baselines are included for reference}{table.caption.26}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.5.0.0.1}MRL+post-hoc binary versus MRL+BAT.}{62}{paragraph.5.5.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.5.0.0.2}MRL+TQ versus MRL+PQ.}{63}{paragraph.5.5.0.0.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5.5}{\ignorespaces Mean MRR@10 vs compression ratio for MRL+TQ and MRL+PQ stacked combinations. Standalone TQ and PQ results are shown as dashed reference curves.}}{64}{figure.caption.27}\protected@file@percent }
-\newlabel{fig:mrl_cross_axis}{{5.5}{64}{Mean MRR@10 vs compression ratio for MRL+TQ and MRL+PQ stacked combinations. Standalone TQ and PQ results are shown as dashed reference curves}{figure.caption.27}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.6}Pareto Analysis}{65}{section.5.6}\protected@file@percent }
-\newlabel{sec:pareto}{{5.6}{65}{Pareto Analysis}{section.5.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.1}Pareto Frontiers}{65}{subsection.5.6.1}\protected@file@percent }
-\newlabel{subsec:pareto_frontiers}{{5.6.1}{65}{Pareto Frontiers}{subsection.5.6.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.6}{\ignorespaces Quality--compression Pareto frontiers for BGE, RoBERTa, and MPNet. Compression ratio is shown on a log scale. Filled markers indicate Pareto-optimal configurations; hollow markers are dominated.}}{65}{figure.caption.28}\protected@file@percent }
-\newlabel{fig:pareto}{{5.6}{65}{Quality--compression Pareto frontiers for BGE, RoBERTa, and MPNet. Compression ratio is shown on a log scale. Filled markers indicate Pareto-optimal configurations; hollow markers are dominated}{figure.caption.28}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.10}{\ignorespaces BGE Pareto-optimal configurations, ordered by compression ratio. Method family is indicated for each point.}}{66}{table.caption.29}\protected@file@percent }
-\newlabel{tab:pareto_bge}{{5.10}{66}{BGE Pareto-optimal configurations, ordered by compression ratio. Method family is indicated for each point}{table.caption.29}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.11}{\ignorespaces Best-performing method and MRR@10 at four representative compression budgets for each backbone. Ties broken by compression ratio (higher preferred).}}{67}{table.caption.30}\protected@file@percent }
-\newlabel{tab:best_at_budget}{{5.11}{67}{Best-performing method and MRR@10 at four representative compression budgets for each backbone. Ties broken by compression ratio (higher preferred)}{table.caption.30}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.2}Best Method at Each Compression Budget}{67}{subsection.5.6.2}\protected@file@percent }
-\newlabel{subsec:best_at_budget}{{5.6.2}{67}{Best Method at Each Compression Budget}{subsection.5.6.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.3}Training-Time versus Post-Hoc Methods on the Frontier}{68}{subsection.5.6.3}\protected@file@percent }
-\newlabel{subsec:train_vs_posthoc}{{5.6.3}{68}{Training-Time versus Post-Hoc Methods on the Frontier}{subsection.5.6.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.7}Cross-Backbone Generalisability}{69}{section.5.7}\protected@file@percent }
-\newlabel{sec:cross_backbone}{{5.7}{69}{Cross-Backbone Generalisability}{section.5.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.7}{\ignorespaces Quality retention (compressed MRR@10 / float32 MRR@10) for all evaluated methods across backbones. Values above 1.0 indicate the compressed model exceeds its float32 baseline.}}{69}{figure.caption.31}\protected@file@percent }
-\newlabel{fig:cross_backbone}{{5.7}{69}{Quality retention (compressed MRR@10 / float32 MRR@10) for all evaluated methods across backbones. Values above 1.0 indicate the compressed model exceeds its float32 baseline}{figure.caption.31}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.7.0.0.1}Low-compression regime (up to 8$\times $).}{69}{paragraph.5.7.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.7.0.0.2}High-compression regime (32$\times $).}{70}{paragraph.5.7.0.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.7.0.0.3}Rank-ordering stability.}{71}{paragraph.5.7.0.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.7.0.0.4}Backbone-independent observations.}{71}{paragraph.5.7.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5.8}Discussion}{72}{section.5.8}\protected@file@percent }
-\newlabel{sec:discussion}{{5.8}{72}{Discussion}{section.5.8}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.8.0.0.1}Embedding geometry as the central explanatory variable.}{72}{paragraph.5.8.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.8.0.0.2}Post-hoc corpus fitting as a substitute for geometry adaptation.}{73}{paragraph.5.8.0.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.8.0.0.3}Limits of joint optimisation in stacked compression.}{73}{paragraph.5.8.0.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {5.8.0.0.4}Limitations.}{74}{paragraph.5.8.0.0.4}\protected@file@percent }
+\newlabel{ch:results}{{5}{50}{Chapter 5. Results and Analysis}{chapter.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Float32 Baselines}{50}{section.5.1}\protected@file@percent }
+\newlabel{sec:float32_baselines}{{5.1}{50}{Float32 Baselines}{section.5.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Float32 baselines: pre-trained vs fine-tuned.}}{50}{table.caption.23}\protected@file@percent }
+\newlabel{tab:float32_baselines}{{5.1}{50}{Float32 baselines: pre-trained vs fine-tuned}{table.caption.23}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Post-Hoc Compression}{51}{section.5.2}\protected@file@percent }
+\newlabel{sec:posthoc_compression}{{5.2}{51}{Post-Hoc Compression}{section.5.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.1}INT8 Scalar Quantisation}{52}{subsection.5.2.1}\protected@file@percent }
+\newlabel{subsec:int8}{{5.2.1}{52}{INT8 Scalar Quantisation}{subsection.5.2.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Float32 vs INT8 ($4\times $ compression).}}{52}{table.caption.24}\protected@file@percent }
+\newlabel{tab:int8}{{5.2}{52}{Float32 vs INT8 ($4\times $ compression)}{table.caption.24}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.2}Binary Quantisation}{52}{subsection.5.2.2}\protected@file@percent }
+\newlabel{subsec:binary}{{5.2.2}{52}{Binary Quantisation}{subsection.5.2.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces Post-hoc binary quantisation ($32\times $) vs float32 baseline.}}{52}{table.caption.25}\protected@file@percent }
+\newlabel{tab:binary}{{5.3}{52}{Post-hoc binary quantisation ($32\times $) vs float32 baseline}{table.caption.25}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.3}Product Quantisation}{53}{subsection.5.2.3}\protected@file@percent }
+\newlabel{subsec:pq}{{5.2.3}{53}{Product Quantisation}{subsection.5.2.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Product Quantisation: MRR@10 vs compression ratio per backbone.}}{53}{figure.caption.26}\protected@file@percent }
+\newlabel{fig:pq_quality_vs_ratio}{{5.1}{53}{Product Quantisation: MRR@10 vs compression ratio per backbone}{figure.caption.26}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.4}TurboQuant}{54}{subsection.5.2.4}\protected@file@percent }
+\newlabel{subsec:tq}{{5.2.4}{54}{TurboQuant}{subsection.5.2.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces TurboQuant: MRR@10 vs compression ratio per backbone.}}{54}{figure.caption.27}\protected@file@percent }
+\newlabel{fig:tq_quality_vs_ratio}{{5.2}{54}{TurboQuant: MRR@10 vs compression ratio per backbone}{figure.caption.27}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.4}{\ignorespaces TurboQuant across five bit-widths vs float32 baseline.}}{55}{table.caption.28}\protected@file@percent }
+\newlabel{tab:tq}{{5.4}{55}{TurboQuant across five bit-widths vs float32 baseline}{table.caption.28}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.5}Cross-Method Comparison at 32$\times $}{56}{subsection.5.2.5}\protected@file@percent }
+\newlabel{subsec:cross_method}{{5.2.5}{56}{Cross-Method Comparison at 32$\times $}{subsection.5.2.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Cross-method comparison of post-hoc methods at $32\times $.}}{56}{figure.caption.29}\protected@file@percent }
+\newlabel{fig:cross_method_32x}{{5.3}{56}{Cross-method comparison of post-hoc methods at $32\times $}{figure.caption.29}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.5}{\ignorespaces Four post-hoc methods at $32\times $ vs float32 baseline.}}{57}{table.caption.30}\protected@file@percent }
+\newlabel{tab:cross_method_32x}{{5.5}{57}{Four post-hoc methods at $32\times $ vs float32 baseline}{table.caption.30}{}}
+\citation{yamada2021efficient}
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}Training-Time Compression}{58}{section.5.3}\protected@file@percent }
+\newlabel{sec:training_compression}{{5.3}{58}{Training-Time Compression}{section.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.1}Binarisation-Aware Training: STE and Annealed Tanh}{58}{subsection.5.3.1}\protected@file@percent }
+\newlabel{subsec:ste_atanh}{{5.3.1}{58}{Binarisation-Aware Training: STE and Annealed Tanh}{subsection.5.3.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.6}{\ignorespaces Binarisation-aware training vs post-hoc binary at $32\times $.}}{59}{table.caption.31}\protected@file@percent }
+\newlabel{tab:ste_atanh}{{5.6}{59}{Binarisation-aware training vs post-hoc binary at $32\times $}{table.caption.31}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces BAT-STE and BAT-atanh vs post-hoc binary at $32\times $.}}{59}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:ste_atanh}{{5.4}{59}{BAT-STE and BAT-atanh vs post-hoc binary at $32\times $}{figure.caption.32}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.2}Matryoshka Representation Learning}{60}{subsection.5.3.2}\protected@file@percent }
+\newlabel{subsec:mrl}{{5.3.2}{60}{Matryoshka Representation Learning}{subsection.5.3.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.5}{\ignorespaces MRR@10 vs MRL truncation dimension across backbones.}}{61}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:mrl_curve}{{5.5}{61}{MRR@10 vs MRL truncation dimension across backbones}{figure.caption.33}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.7}{\ignorespaces MRL truncations across five dimensions vs float32 baseline.}}{62}{table.caption.34}\protected@file@percent }
+\newlabel{tab:mrl}{{5.7}{62}{MRL truncations across five dimensions vs float32 baseline}{table.caption.34}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}Stacked Combinations}{63}{section.5.4}\protected@file@percent }
+\newlabel{sec:cross_axis}{{5.4}{63}{Stacked Combinations}{section.5.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.6}{\ignorespaces Stacked compression combinations: MRR@10 vs compression ratio.}}{63}{figure.caption.35}\protected@file@percent }
+\newlabel{fig:stacked_combinations}{{5.6}{63}{Stacked compression combinations: MRR@10 vs compression ratio}{figure.caption.35}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.4.0.0.1}MRL+PQ dominates the high-compression regime.}{64}{paragraph.5.4.0.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.4.0.0.2}MRL+BAT-atanh exceeds the float32 baseline for RoBERTa.}{64}{paragraph.5.4.0.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.4.0.0.3}MRL+BAT-atanh strictly dominates MRL+BAT-STE.}{64}{paragraph.5.4.0.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.4.0.0.4}Stacking pushes the quality--compression frontier outward.}{65}{paragraph.5.4.0.0.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.5}Pareto Analysis}{65}{section.5.5}\protected@file@percent }
+\newlabel{sec:pareto}{{5.5}{65}{Pareto Analysis}{section.5.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.1}Pareto Frontiers}{65}{subsection.5.5.1}\protected@file@percent }
+\newlabel{subsec:pareto_frontiers}{{5.5.1}{65}{Pareto Frontiers}{subsection.5.5.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.5.1.0.1}BGE frontier.}{65}{paragraph.5.5.1.0.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.7}{\ignorespaces Quality vs compression Pareto frontiers for BGE, RoBERTa, and MPNet.}}{66}{figure.caption.36}\protected@file@percent }
+\newlabel{fig:pareto}{{5.7}{66}{Quality vs compression Pareto frontiers for BGE, RoBERTa, and MPNet}{figure.caption.36}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.8}{\ignorespaces BGE Pareto-optimal configurations.}}{67}{table.caption.37}\protected@file@percent }
+\newlabel{tab:pareto_bge}{{5.8}{67}{BGE Pareto-optimal configurations}{table.caption.37}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {5.5.1.0.2}RoBERTa and MPNet frontiers.}{68}{paragraph.5.5.1.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.6}Cross-Backbone Generalisability}{68}{section.5.6}\protected@file@percent }
+\newlabel{sec:cross_backbone}{{5.6}{68}{Cross-Backbone Generalisability}{section.5.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.8}{\ignorespaces Quality retention and cross-backbone std across configurations.}}{70}{figure.caption.38}\protected@file@percent }
+\newlabel{fig:cross_backbone}{{5.8}{70}{Quality retention and cross-backbone std across configurations}{figure.caption.38}{}}
 \@setckpt{Chapters/ch5_expirements_results}{
-\setcounter{page}{76}
+\setcounter{page}{71}
 \setcounter{equation}{0}
 \setcounter{enumi}{5}
 \setcounter{enumii}{0}
@@ -108,13 +82,13 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{0}
 \setcounter{chapter}{5}
-\setcounter{section}{8}
+\setcounter{section}{6}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
-\setcounter{paragraph}{4}
+\setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{7}
-\setcounter{table}{11}
+\setcounter{figure}{8}
+\setcounter{table}{8}
 \setcounter{parentequation}{0}
 \setcounter{NAT@ctr}{0}
 \setcounter{@pps}{0}
@@ -132,5 +106,5 @@
 \setcounter{section@level}{0}
 \setcounter{Item}{13}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{83}
+\setcounter{bookmark@seq@number}{65}
 }

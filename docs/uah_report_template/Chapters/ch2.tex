@@ -1,0 +1,24 @@
+\chapter{Chapter 2. Adding New Chapter, Creating Sections or Subsections, and Formatting Equations}
+
+\section{Adding New Chapters}
+You may use the chapter.tex files already contained in this template for chapters 1, 2, and your concluding chapter. However, any additional chapters will need to be created in a separate .tex file and then inserted to your main.tex file with the include command. This template includes examples of how to properly format content, but feel free to delete all the content in these chapter.tex files in order to add your own content. 
+
+\section{Creating Sections or Subsections}
+When adding sections or subsections, simply use the section or subsection command. LaTeX will format the title of the section and/or subsection correctly automatically. Also, if you use Overleaf as the editor, it automatically has a spelling check with is very convenient. 
+\subsection{Formatting Equations}
+Latex automatically assigns equations numbers based on their location in the document. However, if you want to reference specific equations throughout your work, you will need to manually provide an internal label. Below is an example equation with a created label followed with a reference to this equation.
+
+\begin{equation}
+  \label{example}
+  \begin{split}
+   \nabla \cdot \nabla \psi &= \frac{\partial^2 \psi}{\partial x^2} + \frac{\partial^2 \psi}{\partial y^2} + \frac{\partial^2 \psi}{\partial z^2} \\
+   &= \frac{1}{r^2 \sin\theta} \left[ \sin\theta \left( r^2 \frac{\partial \psi}{\partial r} \right) + \frac{\partial}{\partial \theta} \left( \sin \theta  \frac{\partial \psi}{\partial r} \right) + \frac{1}{\sin \theta} \frac{\partial^2 \psi}{\partial \varphi^2}  \right] 
+     \end{split}
+\end{equation}
+Equation \ref{example} will hopefully help you understand how to properly format and reference equations in your document.
+
+\subsection{Citations}
+When you make your citations, you will need to first add them to the ref.bib file. Then, use the citation command followed by the name of the citation.\cite{Example:1} LaTeX allows you to control the style of your citations.\cite{Example:2} On the main.tex file, set your bibliography style to the one you prefer. 
+
+
+

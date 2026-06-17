@@ -3,112 +3,46 @@
 
 \section{Motivation}
 
-Dense vector retrieval has become a core dependency of modern AI systems. Every
-retrieval-augmented generation (RAG) pipeline~\cite{lewis2020retrieval}, enterprise search
-engine, and question-answering service relies on the ability to find semantically relevant
-content in large corpora at query time. Unlike sparse methods such as TF-IDF or BM25,
-dense retrieval encodes queries and passages as continuous vector embeddings using bi-encoder
-architectures~\cite{reimers2019sbert, karpukhin2020dense}, and measures semantic similarity
-by cosine or dot-product distance. This enables retrieval that generalizes well beyond exact
-keyword matching, which has driven rapid adoption across search, recommendation, and
-generative AI applications.
+Dense vector retrieval has found many applications in modern AI systems, such as Retrieval Augmented Generation (RAG)~\cite{lewis2020retrieval}, recommendation systems, question answering services, and more. All of these applications depend on its ability to find semantically relevant documents. Unlike sparse retrieval methods like TF-IDF or BM25, which are based on exact keyword matching, it works by encoding queries and corpus documents into continuous vector embeddings using bi-encoder architectures~\cite{reimers2019sbert, karpukhin2020dense}. Similarity between texts is computed using cosine similarity.
 
-As retrieval corpora scale to tens of millions or billions of passages, the memory footprint
-of stored embeddings becomes a critical infrastructure bottleneck. A standard model such as
-BGE-base-en-v1.5~\cite{xiao2023c} produces 768-dimensional float32 vectors, consuming
-3,072~bytes per passage. Indexing one hundred million passages therefore requires
-approximately 286~GB; at one billion passages this grows to approximately 2.9~TB.
+When scaling such systems, memory becomes one of the primary bottlenecks. Consider using a dense retrieval model like BGE-base-en-v1.5~\cite{xiao2023c}, which produces a 768-dimensional float32 vector per passage. Each vector would take 3,072 bytes. For a billion passages, the embeddings alone would grow to approximately 2.9 TB.
 
-Dense retrieval systems built on libraries such as FAISS~\cite{johnson2021billion} typically
-require the embedding index to reside in random-access memory (RAM) for interactive query
-latencies: DRAM access is on the order of 100~ns, roughly three orders of magnitude faster
-than NVMe SSD random reads. Serving these in-memory indices requires memory-optimized cloud
-instances; the AWS x2gd family, for example, costs approximately \$3.80 per GB per
-month~\cite{aws2024pricing}. Table~\ref{tab:index-cost-intro} shows how this cost scales
-with embedding dimension and corpus size across widely-used models.
+Usually, dense retrieval systems, such as those built with libraries like FAISS~\cite{johnson2021billion}, require all the embedding indices of corpus documents to live in Random Access Memory (RAM). This in-memory requirement is essential for low-latency systems. For random read access, an NVMe SSD takes about 100 microseconds, which is a thousand times slower than DRAM. To serve such a dense retrieval system in the cloud, it is practical to choose memory-optimized cloud compute instances like the AWS x2gd family. An AWS x2gd instance costs about \$3.80 per GB per month~\cite{aws2024pricing}. Table~\ref{tab:index-cost-intro} shows how this cost would scale with different embedding dimensions and corpus sizes for the commonly used models.
 
-\begin{table}[ht]
-\caption[Float32 index size and monthly instance cost by embedding dimension]{Float32
-embedding index size and estimated monthly cost on memory-optimized AWS x2gd instances
-(\$3.80/GB/month) at two corpus scales~\cite{shakir2024embedding, aws2024pricing}.
-Sizes are reported in GB (SI).}
-\label{tab:index-cost-intro}
-\begin{center}
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{| c | c | c | c |}
-\hline
-\textbf{Dim} & \textbf{Example Models} & \textbf{100M Passages} & \textbf{1B Passages} \\ [0.5ex]
-\hline
-384  & all-MiniLM-L6-v2, bge-small-en-v1.5          & 143 GB / \$543/mo    & 1,431 GB / \$5,435/mo  \\
-\hline
-768  & bge-base-en-v1.5, nomic-embed-text-v1         & 286 GB / \$1,087/mo  & 2,861 GB / \$10,871/mo \\
-\hline
-1024 & bge-large-en-v1.5, mxbai-embed-large-v1       & 381 GB / \$1,449/mo  & 3,815 GB / \$14,495/mo \\
-\hline
-1536 & text-embedding-3-small                        & 572 GB / \$2,174/mo  & 5,722 GB / \$21,743/mo \\
-\hline
-3072 & text-embedding-3-large                        & 1,144 GB / \$4,348/mo & 11,444 GB / \$43,487/mo \\
-\hline
-\end{tabular}
-}
-\end{center}
+\begin{table}[H]
+  \centering
+  \caption[Float32 index size and monthly instance cost by embedding dimension]{Float32
+  embedding index size and estimated monthly cost on memory-optimized AWS x2gd instances
+  (\$3.80/GB/month) at two corpus scales~\cite{shakir2024embedding, aws2024pricing}.
+  Sizes are reported in GB (SI).}
+  \label{tab:index-cost-intro}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{| c | l | r | r |}
+    \hline
+    \textbf{Dim} & \textbf{Example Models} & \textbf{100M Passages} & \textbf{1B Passages} \\ [0.5ex] \hline
+    384  & all-MiniLM-L6-v2, bge-small-en-v1.5      & 143 GB / \$543/mo     & 1,431 GB / \$5,435/mo   \\ \hline
+    768  & bge-base-en-v1.5, nomic-embed-text-v1    & 286 GB / \$1,087/mo   & 2,861 GB / \$10,871/mo  \\ \hline
+    1024 & bge-large-en-v1.5, mxbai-embed-large-v1  & 381 GB / \$1,449/mo   & 3,815 GB / \$14,495/mo  \\ \hline
+    1536 & text-embedding-3-small                   & 572 GB / \$2,174/mo   & 5,722 GB / \$21,743/mo  \\ \hline
+    3072 & text-embedding-3-large                   & 1,144 GB / \$4,348/mo & 11,444 GB / \$43,487/mo \\ \hline
+  \end{tabular}}
 \end{table}
 
-As Table~\ref{tab:index-cost-intro} shows, a billion-passage index at 768 dimensions already
-exceeds \$10,800 per month, and the cost more than quadruples when moving to 3,072-dimensional
-models. These figures represent the minimum viable infrastructure: the memory requirement
-dictates the instance size, and therefore the total cost, including compute. The problem is
-growing worse as the field trends toward higher-dimensional embeddings (models such as
-text-embedding-3-large at 3,072 dimensions are increasingly common) and as RAG-based
-applications push corpus sizes into the billions of passages.
+For our previous example, a billion passages using an encoder producing a 768-dimensional vector would cost \$10,800 monthly. But better models tend to produce higher-dimensional vectors, which worsens the problem. For instance, State of the Art (SOTA) encoder models from OpenAI, like text-embedding-3-large, produce 3072-dimensional vectors, which would cost \$43,487 per month.
 
-Beyond cost, larger embeddings also hurt speed: every query must read each document vector
-from memory, so the bigger the vectors, the fewer queries the system can serve per second. For resource-constrained
-environments such as on-device or edge deployments, multi-terabyte indices are simply
-infeasible regardless of budget. Embedding compression is therefore not merely a storage
-optimization; it is a prerequisite for deploying dense retrieval at scale.
+Apart from the cost factor, larger embedding sizes invite more problems. Every query vector should be compared against each passage vector from memory. So, a bigger vector means our retrieval system can serve fewer queries per second. Furthermore, for resource-constrained environments such as on-device or edge deployment, having multiple terabytes of memory wouldn't be feasible regardless of the budget. Therefore, embedding compression is a necessity for deploying dense retrieval at scale.
 
-Even simple compression approaches already show real promise: replacing each 32-bit float
-with a single bit (binary quantization) shrinks the index by $32\times$ and retains much of
-the retrieval quality when applied to a strong pre-trained model~\cite{shakir2024embedding}.
-Compression can be pushed further by stacking multiple techniques. The open questions are how far compression can go before retrieval
-quality degrades substantially, and whether incorporating compression
-directly into fine-tuning (\textbf{training-time compression}) produces
-better representations than compression applied to a pre-trained model
-without retraining (\textbf{post-hoc compression}). This thesis
-investigates both.
+Even simple compression techniques already show real promise. Transforming the embedding with binary quantization (mapping negative values to 0 and positive values to 1) replaces each float32 value with a single bit. Surprisingly, this aggressive compression retains most of the original retrieval quality~\cite{shakir2024embedding}. There are many studies on embedding compression, which are discussed in Chapter 2. Compression can be stacked to achieve even better compression ratios. But how far can these embeddings be compressed before the retrieval quality degrades substantially? And does incorporating fine-tuning (training-time compression) of the models result in better representations than compression applied to a pre-trained model without retraining (post-hoc compression)? This thesis investigates these questions.
 
 \section{Problem Statement}
 
-The fundamental tension in embedding compression is between compression
-depth and retrieval quality. Every compression approach trades information
-for a smaller memory footprint, and the shape of this trade-off varies
-across methods and compression levels.
+There is a fundamental conflict between compression ratio and retrieval quality. Information is exchanged for a lower memory footprint in every compression technique, and the nature of this trade-off varies depending on the method and compression level.
 
-Recent work has begun to map this trade-off systematically.
-\citep{correct2025} systematically evaluate
-retrieval performance across multiple post-hoc compression techniques
-at various compression ratios. However, no existing study extends this
-comparison to training-time compression. In most prior
-work~\cite{yamada2021efficient, gan2023binary, shakir2024embedding,
-qama2025}, each method is evaluated on a different base model, training
-corpus, and benchmark. A method that appears to win may therefore reflect
-a better starting point rather than a genuinely better compression
-strategy.
+This trade-off has started to be systematically mapped in recent work. \citet{correct2025} systematically evaluate retrieval performance at different compression ratios using a variety of post-hoc compression techniques. Nevertheless, this comparison has not yet been extended to training-time compression. In most prior work~\cite{yamada2021efficient, gan2023binary, shakir2024embedding, qama2025}, each approach is evaluated using different base models, training corpus, and benchmark. Therefore, a strategy that seems to succeed may be due to a better starting point rather than to a better compression strategy.
 
-A secondary gap concerns stacking. Combinations of multiple complementary
-compression techniques, such as dimensionality reduction combined with
-quantization, remain largely unstudied. Chapter~2 surveys the prior work
-that establishes both gaps.
+Furthermore, stacking is an additional gap. Combinations of several complementary compression methods, such as dimensionality reduction with quantization, remain largely unexplored. The previous research that identifies both gaps is reviewed in Chapter~2.
 
-This thesis addresses both gaps through a controlled empirical study.
-Results are reported as Pareto frontiers on the NanoBEIR
-benchmark~\cite{thakur2021beir}. A Pareto frontier is the set of
-configurations where no alternative achieves both higher retrieval
-quality and higher compression. This directly answers the
-practitioner's question: given a memory budget, which approach should
-you use? The contributions are detailed in
-Section~\ref{sec:contributions}.
+This thesis uses controlled empirical experimentation to fill in both gaps. Results are reported as Pareto frontiers on the NanoBEIR benchmark~\cite{thakur2021beir}. A Pareto frontier is the set of configurations where no alternative achieves both higher retrieval quality and higher compression. This directly answers the question: which strategy should you use given a memory budget? Section~\ref{sec:contributions} goes into detail on the contributions.
 
 \section{Research Questions}
 
@@ -117,23 +51,16 @@ This thesis is organized around four research questions:
 \begin{enumerate}
 
     \item \textbf{Post-hoc versus training-time compression.}
-    Does training-time compression yield better retrieval quality than
-    post-hoc compression at equivalent memory budgets?
+    Does training-time compression lead to better retrieval performance than post-hoc compression at equivalent memory budget?
 
-    \item \textbf{STE versus annealed tanh for binary embedding training.}
-    Training binary embeddings needs a surrogate gradient to backpropagate
-    through the non-differentiable sign function. Does the choice between
-    the Straight-Through Estimator (STE) and annealed tanh affect retrieval
-    quality?
+    \item \textbf{Straight Through Estimator (STE) vs annealed tanh for binary embedding training.}
+    To backpropagate through the non-differentiable sign function when training binary embeddings, you need a surrogate gradient. Does the choice between the Straight Through Estimator (STE) and annealed tanh affect retrieval quality?
 
     \item \textbf{Stacking complementary compression techniques.}
-    Does combining multiple complementary compression techniques yield better
-    retrieval performance to compression ratio trade-offs than either technique
-    applied independently?
+    Does using multiple complementary compression methods produce better retrieval performance than using just a single technique individually, in terms of compression ratio trade-offs?
 
-    \item \textbf{Cross-architecture generalizability.}
-    Do the above findings hold consistently across encoder architectures
-    of different retrieval starting quality, or are they model-specific?
+    \item \textbf{Cross-model generalizability.}
+    Given that the encoder models have different starting retrieval quality, are the findings of compression the same, or are they different from one model to another?
 
 \end{enumerate}
 
@@ -145,48 +72,23 @@ This thesis makes the following contributions to the field of efficient dense te
 \begin{enumerate}
 
     \item \textbf{Systematic cross-method comparison.}
-    Post-hoc and training-time compression are evaluated side by side
-    under identical training data and benchmark, across three encoder
-    architectures. Both single methods and stacked combinations are
-    covered at multiple compression ratios. Prior work evaluates each
-    method under different setups; this study provides the direct,
-    fair comparison.
+    Post-hoc and training-time compression are evaluated under identical training data and benchmarks.  Both single and stacked combinations were evaluated at various compression ratios. Previous work evaluated their methods in distinct setups that are difficult to compare against each other. This study provides a direct and fair comparison.
 
     \item \textbf{Binarization training strategy comparison.}
-    Two gradient approximation strategies, STE and annealed tanh, for
-    training with a binarization objective are compared directly for
-    the first time under identical
-    conditions~\cite{bengio2013estimating, yamada2021efficient}.
+    We compare two gradient estimate methods, STE and annealed tanh, for the first time directly under the same conditions~\cite{bengio2013estimating, yamada2021efficient}.
 
     \item \textbf{Stacking complementary compression techniques.}
-    Dimensionality reduction is systematically combined with five
-    quantization techniques, covering both post-hoc and training-time
-    variants. Results establish which combinations achieve the best
-    retrieval quality to memory trade-offs, and whether stacking
-    outperforms applying each technique independently.
+    Matryoshka Representation Learning (MRL), a dimensionality reduction, is combined with five quantization methods and evaluated systematically. These techniques include both post-hoc and training-time methods.
 
     \item \textbf{Reproducible experimental pipeline.}
-    We released the training codebase for training-time compression,
-    supporting multi-GPU training across seven heterogeneous retrieval
-    datasets with domain-weighted batch sampling. We also released the
-    evaluation codebase that encodes embeddings once and applies any
-    compression transform at evaluation time, avoiding redundant
-    re-encoding. All results are viewable through an interactive
-    dashboard with pairwise statistical significance testing across all
-    model pairs.
+    The training code base for training-time compression was made public. It supports multi-GPU training across multiple retrieval datasets with source-weighted batch sampling. We also released the evaluation codebase, which caches the embeddings and performs any compression transform at evaluation time. All results are viewable through an interactive dashboard.
 
 \end{enumerate}
 
 \section{Thesis Organization}
 
-The remainder of this thesis is organized as follows. Chapter 2 provides background on dense
-retrieval, contrastive learning objectives, and the embedding compression methods compared in
-this work. Chapter 3 describes the training and evaluation datasets, including the multi-source
-training corpus construction and the NanoBEIR benchmark. Chapter 4 sets out the methodology:
-the training setup and fine-tuned float32 baseline, the training-time and post-hoc compression
-methods (including the Annealed Tanh Binarization approach and its relationship to the
-STE-based BAT baseline), the stacked combinations, and the evaluation framework.
-Chapter 5 reports the results and analysis, including per-method comparisons across three
-encoder backbones, Pareto frontier analysis, and a cross-backbone generalisability study.
-Chapter 6 concludes with a summary of findings, practical guidance on method selection at
-given memory budgets, and directions for future work.
+The rest of this paper is organized as follows. Chapter 2 gives the background and related works. It covers bi-encoder dense retrieval, contrastive learning objectives, the embedding compression methods studied in this thesis, and Information Retrieval (IR) evaluation metrics. Then it reviews what has already been done and finds the gaps that lead to the research questions. Chapter 3 describes the datasets. It shows the construction of the multi-source training corpus and NanoBEIR benchmark.
+
+Chapter 4 sets out the methodology. It presents the experimental design, the shared training setup and float32 baseline, the training-time and post-hoc compression methods, the stacking combinations of compression, and the framework for evaluating the results.
+
+Chapter 5 reports the findings and their analysis. It compares post-hoc, training-time, and stacked methods across three encoder backbones. It also presents Pareto frontier analysis. Finally, in Chapter 6, it reviews the results against the initial set of research questions and provides directions for future work.

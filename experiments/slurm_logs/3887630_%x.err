@@ -1,0 +1,32 @@
+/nas/rhome/sawale/thesis/experiments/../src/train.py:22: DeprecationWarning: Importing from 'sentence_transformers.models' is deprecated and will be removed in a future version. Please use 'sentence_transformers.sentence_transformer.modules' instead.
+  from sentence_transformers import (
+/nas/rhome/sawale/thesis/experiments/../src/train.py:28: DeprecationWarning: Importing from 'sentence_transformers.evaluation' is deprecated and will be removed in a future version. Please use 'sentence_transformers.sentence_transformer.evaluation' instead.
+  from sentence_transformers.evaluation import (
+/nas/rhome/sawale/thesis/experiments/../src/train.py:33: DeprecationWarning: Importing from 'sentence_transformers.losses' is deprecated and will be removed in a future version. Please use 'sentence_transformers.sentence_transformer.losses' instead.
+  from sentence_transformers.losses import MultipleNegativesRankingLoss, MatryoshkaLoss
+/nas/rhome/sawale/thesis/experiments/../src/train.py:39: DeprecationWarning: Importing from 'sentence_transformers.training_args' is deprecated and will be removed in a future version. Please use 'sentence_transformers.sentence_transformer.training_args' instead.
+  from sentence_transformers.training_args import (
+wandb: Appending key for api.wandb.ai to your netrc file: /rhome/sawale/.netrc
+wandb: Currently logged in as: sajil-awale (sajil-awale-nasa-impact-uah) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+The `tokenizer_kwargs` argument was renamed and is now deprecated. Please use `processor_kwargs` instead.
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights:   3%|▎         | 5/197 [00:00<00:04, 43.41it/s]Loading weights:   7%|▋         | 14/197 [00:00<00:02, 64.33it/s]Loading weights:  17%|█▋        | 33/197 [00:00<00:01, 115.01it/s]Loading weights: 100%|██████████| 197/197 [00:00<00:00, 455.09it/s]
+[transformers] [1mRobertaModel LOAD REPORT[0m from: FacebookAI/roberta-base
+Key                       | Status     | 
+--------------------------+------------+-
+lm_head.layer_norm.bias   | UNEXPECTED | 
+lm_head.dense.weight      | UNEXPECTED | 
+lm_head.layer_norm.weight | UNEXPECTED | 
+lm_head.bias              | UNEXPECTED | 
+lm_head.dense.bias        | UNEXPECTED | 
+pooler.dense.bias         | MISSING    | 
+pooler.dense.weight       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+The `warmup_ratio` argument is deprecated in Transformers v5+, and will also be removed from Sentence Transformers once support for Transformers v4 is dropped. Since you're using Transformers v5+, please use `warmup_steps` (as a float) to specify the warmup ratio instead.
+When using DistributedDataParallel (DDP), it is recommended to set `dataloader_drop_last=True` to avoid hanging issues with an uneven last batch. Setting `dataloader_drop_last=True`.
+[RANK 0] Detected kernel version 3.10.0, which is below the recommended minimum of 5.5.0; this can cause the process to hang. It is recommended to upgrade the kernel to the minimum version or higher.
+Computing widget examples:   0%|          | 0/4 [00:00<?, ?example/s]                                                                       0%|          | 0/6 [00:00<?, ?it/s] 17%|█▋        | 1/6 [00:14<01:12, 14.45s/it] 33%|███▎      | 2/6 [00:19<00:36,  9.08s/it] 50%|█████     | 3/6 [00:24<00:21,  7.08s/it] 67%|██████▋   | 4/6 [00:29<00:12,  6.27s/it]                                              67%|██████▋   | 4/6 [00:30<00:12,  6.27s/it] 67%|██████▋   | 4/6 [00:30<00:15,  7.59s/it]
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.39it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.39it/s]
+wandb: Adding directory to artifact (../models/nrows_100__nsrc_None/timestamp_20260606_11-09-04/roberta-base/final_model)... Done. 1.0s

@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 #SBATCH --mail-user=sa0812@uah.edu
-#SBATCH --job-name=e7_all_models
+#SBATCH --job-name=e1_roberta_baseline
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:a100:2
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --output=slurm_logs/%j_%x.out
@@ -12,7 +12,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mail-type=END,FAIL
 
-export GPUS_PER_NODE=2
+# Single-GPU run. Effective batch = per_device(16) * grad_accum(32) * gpus(1) = 512.
+export GPUS_PER_NODE=1
 export OMP_NUM_THREADS=1
 export HF_HUB_DISABLE_XET=1
 
@@ -50,25 +51,20 @@ echo "===== STARTING TRAINING ====="
 
 cd /rhome/sawale/thesis/experiments
 
-echo "--- e7 (FacebookAI/roberta-base) ---"
+echo "--- e1 baseline (FacebookAI/roberta-base) ---"
 srun --mem=0 torchrun \
     --nproc_per_node=$GPUS_PER_NODE \
     --nnodes=$SLURM_NNODES \
     --rdzv_id="$SLURM_JOB_ID" \
     --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
     --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e7 --model_name FacebookAI/roberta-base
-echo "--- e7 (roberta) done ---"
-
-MASTER_PORT=$(( RANDOM % (50000 - 30000 + 1 ) + 30000 ))
-echo "--- e7 (microsoft/mpnet-base) ---"
-srun --mem=0 torchrun \
-    --nproc_per_node=$GPUS_PER_NODE \
-    --nnodes=$SLURM_NNODES \
-    --rdzv_id="$SLURM_JOB_ID" \
-    --rdzv_endpoint="$MASTER_ADDR":"$MASTER_PORT" \
-    --rdzv_backend=c10d \
-    ../src/train.py --gradient_accumulation_steps 16 --expirement_number e7 --model_name microsoft/mpnet-base
-echo "--- e7 (mpnet) done ---"
+    ../src/train.py \
+        --expirement_number e1 \
+        --model_name FacebookAI/roberta-base \
+        --batch_size 16 \
+        --gradient_accumulation_steps 32 \
+        --num_train_epochs 2 \
+        --eval_and_save_steps 2000
+echo "--- e1 baseline (roberta) done ---"
 
 echo "===== TRAINING DONE ====="

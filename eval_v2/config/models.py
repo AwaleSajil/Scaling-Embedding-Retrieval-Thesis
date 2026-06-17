@@ -20,6 +20,7 @@ class ModelSpec:
     pooling_mode: Optional[str] = None
     atanh_gamma: Optional[float] = None
     asigmoid_bits: Optional[int] = None    # e6: 2, 3, or 4
+    n_step: Optional[int] = None           # training step of this checkpoint (for the trajectory tab); None = not a trajectory run
     model_kwargs: dict = field(default_factory=dict)
     # Future H-EQAT / Unified Framework fields (uncomment when needed):
     # quant_levels: Optional[list[int]] = None   # e.g. [32, 8, 4, 1] bits per level
@@ -495,7 +496,7 @@ MODELS: dict[str, ModelSpec] = {
         group="PQ",
         base_model="BAAI/bge-base-en-v1.5",
         color="#ff758f",
-        hatch="++",
+        hatch="..",
         marker="star",
         pq_M=16,
         pq_nbits=4,
@@ -513,7 +514,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-bge-base-en-v1.5-pq-m32-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M32, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=32, pq_nbits=4,
     ),
     "finetuned-bge-base-en-v1.5-pq-m48-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
@@ -523,7 +524,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-bge-base-en-v1.5-pq-m48-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M48, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=48, pq_nbits=4,
     ),
 
     "finetuned-bge-base-en-v1.5-pq-m64-n8": ModelSpec(
@@ -534,12 +535,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-bge-base-en-v1.5-pq-m64-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M64, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=64, pq_nbits=4,
     ),
     "finetuned-bge-base-en-v1.5-pq-m96-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M96, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=96, pq_nbits=4,
     ),
     "finetuned-bge-base-en-v1.5-pq-m96-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
@@ -549,12 +550,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-bge-base-en-v1.5-pq-m128-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M128, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=128, pq_nbits=4,
     ),
     "finetuned-bge-base-en-v1.5-pq-m192-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20251213_13-26-29/bge-base-en-v1.5/final_model",
         display_name="PQ (M192, b4)", group="PQ", base_model="BAAI/bge-base-en-v1.5",
-        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=192, pq_nbits=4,
     ),
     # --- PQ only for roberta-base ---
     "finetuned-roberta-base-pq-m16-n8": ModelSpec(
@@ -574,7 +575,7 @@ MODELS: dict[str, ModelSpec] = {
         group="PQ",
         base_model="FacebookAI/roberta-base",
         color="#ff758f",
-        hatch="++",
+        hatch="..",
         marker="star",
         pq_M=16,
         pq_nbits=4,
@@ -592,7 +593,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-roberta-base-pq-m32-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M32, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=32, pq_nbits=4,
     ),
     "finetuned-roberta-base-pq-m48-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
@@ -602,7 +603,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-roberta-base-pq-m48-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M48, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=48, pq_nbits=4,
     ),
 
     "finetuned-roberta-base-pq-m64-n8": ModelSpec(
@@ -613,12 +614,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-roberta-base-pq-m64-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M64, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=64, pq_nbits=4,
     ),
     "finetuned-roberta-base-pq-m96-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M96, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=96, pq_nbits=4,
     ),
     "finetuned-roberta-base-pq-m96-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
@@ -628,12 +629,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-roberta-base-pq-m128-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M128, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=128, pq_nbits=4,
     ),
     "finetuned-roberta-base-pq-m192-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260505_02-52-31/roberta-base/final_model",
         display_name="PQ (M192, b4)", group="PQ", base_model="FacebookAI/roberta-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=192, pq_nbits=4,
     ),
     # --- PQ only for mpnet-base ---
     "finetuned-mpnet-base-pq-m16-n8": ModelSpec(
@@ -648,7 +649,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="PQ (M16, b4)",
         group="PQ",
         base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=16, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=16, pq_nbits=4,
     ),
     "finetuned-mpnet-base-pq-m24-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
@@ -663,7 +664,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-mpnet-base-pq-m32-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M32, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=32, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=32, pq_nbits=4,
     ),
     "finetuned-mpnet-base-pq-m48-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
@@ -673,7 +674,7 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-mpnet-base-pq-m48-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M48, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=48, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=48, pq_nbits=4,
     ),
 
     "finetuned-mpnet-base-pq-m64-n8": ModelSpec(
@@ -684,12 +685,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-mpnet-base-pq-m64-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M64, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=64, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=64, pq_nbits=4,
     ),
     "finetuned-mpnet-base-pq-m96-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M96, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=96, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=96, pq_nbits=4,
     ),
     "finetuned-mpnet-base-pq-m96-n8": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
@@ -699,12 +700,12 @@ MODELS: dict[str, ModelSpec] = {
     "finetuned-mpnet-base-pq-m128-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M128, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=128, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=128, pq_nbits=4,
     ),
     "finetuned-mpnet-base-pq-m192-n4": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="PQ (M192, b4)", group="PQ", base_model="microsoft/mpnet-base",
-        color="#ff758f", hatch="++", marker="star", pq_M=192, pq_nbits=4,
+        color="#ff758f", hatch="..", marker="star", pq_M=192, pq_nbits=4,
     ),
 
 
@@ -1604,7 +1605,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-4b",
         group="TurboQuant",
         base_model="BAAI/bge-base-en-v1.5",
-        color="#d4a017",
+        color="#a87a0c",
         hatch="OO",
         marker="pentagon",
         tq_bits=4,
@@ -1614,7 +1615,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-3b",
         group="TurboQuant",
         base_model="BAAI/bge-base-en-v1.5",
-        color="#f0c040",
+        color="#d4a017",
         hatch="OO",
         marker="pentagon",
         tq_bits=3,
@@ -1624,7 +1625,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-2b",
         group="TurboQuant",
         base_model="BAAI/bge-base-en-v1.5",
-        color="#fce48a",
+        color="#f0c040",
         hatch="OO",
         marker="pentagon",
         tq_bits=2,
@@ -1634,7 +1635,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-1b",
         group="TurboQuant",
         base_model="BAAI/bge-base-en-v1.5",
-        color="#fff5cc",
+        color="#fce48a",
         hatch="OO",
         marker="pentagon",
         tq_bits=1,
@@ -1655,7 +1656,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-4b",
         group="TurboQuant",
         base_model="FacebookAI/roberta-base",
-        color="#d4a017",
+        color="#a87a0c",
         hatch="OO",
         marker="pentagon",
         tq_bits=4,
@@ -1665,7 +1666,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-3b",
         group="TurboQuant",
         base_model="FacebookAI/roberta-base",
-        color="#f0c040",
+        color="#d4a017",
         hatch="OO",
         marker="pentagon",
         tq_bits=3,
@@ -1675,7 +1676,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-2b",
         group="TurboQuant",
         base_model="FacebookAI/roberta-base",
-        color="#fce48a",
+        color="#f0c040",
         hatch="OO",
         marker="pentagon",
         tq_bits=2,
@@ -1685,7 +1686,7 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-1b",
         group="TurboQuant",
         base_model="FacebookAI/roberta-base",
-        color="#fff5cc",
+        color="#fce48a",
         hatch="OO",
         marker="pentagon",
         tq_bits=1,
@@ -1704,28 +1705,28 @@ MODELS: dict[str, ModelSpec] = {
         display_name="FT + TQ-4b",
         group="TurboQuant",
         base_model="microsoft/mpnet-base",
-        color="#d4a017", hatch="OO", marker="pentagon", tq_bits=4,
+        color="#a87a0c", hatch="OO", marker="pentagon", tq_bits=4,
     ),
     "finetuned-mpnet-base-tq-3bit": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="FT + TQ-3b",
         group="TurboQuant",
         base_model="microsoft/mpnet-base",
-        color="#f0c040", hatch="OO", marker="pentagon", tq_bits=3,
+        color="#d4a017", hatch="OO", marker="pentagon", tq_bits=3,
     ),
     "finetuned-mpnet-base-tq-2bit": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="FT + TQ-2b",
         group="TurboQuant",
         base_model="microsoft/mpnet-base",
-        color="#fce48a", hatch="OO", marker="pentagon", tq_bits=2,
+        color="#f0c040", hatch="OO", marker="pentagon", tq_bits=2,
     ),
     "finetuned-mpnet-base-tq-1bit": ModelSpec(
         path="/rhome/sawale/thesis/models/nrows_None__nsrc_None/timestamp_20260509_14-40-29/mpnet-base/final_model",
         display_name="FT + TQ-1b",
         group="TurboQuant",
         base_model="microsoft/mpnet-base",
-        color="#fff5cc", hatch="OO", marker="pentagon", tq_bits=1,
+        color="#fce48a", hatch="OO", marker="pentagon", tq_bits=1,
     ),
 
     # --- MRL + TurboQuant for bge (amber gradient by dim, hatch: |O, marker: triangle-left) ---
@@ -2056,6 +2057,63 @@ MODELS: dict[str, ModelSpec] = {
         asigmoid_bits=2,
     ),
 }
+
+# ---------------------------------------------------------------------------
+# Per-step trajectory runs (2-epoch RoBERTa retrain).
+# One ModelSpec per checkpoint so the dashboard "Training Trajectory" tab can
+# plot metric vs training step. step 0 == the pretrained backbone (no training).
+# Colour ramps light -> dark as the step increases, within each method's family.
+# ---------------------------------------------------------------------------
+_TRAJ_STEPS = [2000, 4000, 6000, 8000, 
+               10000, 12000, 14000, 
+               16000
+               ]
+
+
+def _lerp_hex(c0: str, c1: str, t: float) -> str:
+    """Linearly interpolate between two #rrggbb colours (t in [0, 1])."""
+    a = tuple(int(c0[i:i + 2], 16) for i in (1, 3, 5))
+    b = tuple(int(c1[i:i + 2], 16) for i in (1, 3, 5))
+    return "#" + "".join(f"{round(a[j] + (b[j] - a[j]) * t):02x}" for j in range(3))
+
+
+_TRAJ_VARIANTS = {
+    "finetuned-roberta-base-nstep": dict(
+        ts="20260606_11-12-30", disp="FT", group="Baseline",
+        c0="#c6dbef", c1="#08306b", hatch="//", marker="circle",
+        similarity="cosine", atanh_gamma=None,
+    ),
+    "finetuned-roberta-base-bat-nstep": dict(
+        ts="20260606_11-15-44", disp="BAT", group="BAT",
+        c0="#d8b9b2", c1="#5c2e26", hatch="--", marker="diamond",
+        similarity="hamming", atanh_gamma=None,
+    ),
+    "finetuned-roberta-base-atanh-gamma0.1-nstep": dict(
+        ts="20260606_11-17-10", disp="AnnTanh (γ=0.1)", group="AnnealedTanh",
+        c0="#c2d6a4", c1="#33491a", hatch="+-", marker="bowtie",
+        similarity="hamming", atanh_gamma=0.1,
+    ),
+}
+
+for _key_prefix, _v in _TRAJ_VARIANTS.items():
+    _n = len(_TRAJ_STEPS)
+    for _i, _step in enumerate(_TRAJ_STEPS):
+        _path = (
+            f"/rhome/sawale/thesis/models/nrows_None__nsrc_None/"
+            f"timestamp_{_v['ts']}/roberta-base/checkpoints/checkpoint-{_step}"
+        )
+        MODELS[f"{_key_prefix}-{_step}"] = ModelSpec(
+            path=_path,
+            display_name=f"{_v['disp']}-{_step}",
+            group=_v["group"],
+            base_model="FacebookAI/roberta-base",
+            color=_lerp_hex(_v["c0"], _v["c1"], _i / (_n - 1)),
+            hatch=_v["hatch"],
+            marker=_v["marker"],
+            similarity=_v["similarity"],
+            atanh_gamma=_v["atanh_gamma"],
+            n_step=_step,
+        )
 
 # Ordered list of all model keys (preserves insertion order for display)
 MODEL_KEYS: list[str] = list(MODELS.keys())
