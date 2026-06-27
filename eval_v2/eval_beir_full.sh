@@ -50,10 +50,10 @@ echo
 
 echo "===== ACTIVATING CONDA ENV ====="
 eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
-conda activate thesis
-# If the conda env lacks the eval deps (faiss, turboquant, scipy, datasets),
-# use the uv env instead: comment the two lines above and uncomment below.
-#   cd /rhome/sawale/thesis && uv sync && source .venv/bin/activate
+conda activate thesis_eval
+# thesis_eval = clone of the training env + eval-only deps (faiss-cpu, scipy,
+# turboquant). See eval_v2/SETUP.md to create it. To run against the plain
+# training env instead, change this to "conda activate thesis".
 echo "Python: $(which python)"
 python --version
 echo
