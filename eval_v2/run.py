@@ -114,6 +114,55 @@ def load_nanobeir_subset(subset_name: str, hf_token: str | None = None):
     return corpus_ids, corpus_texts, query_ids, query_texts, qrels
 
 
+def load_beir_subset(subset_name: str, hf_token: str | None = None):
+    """
+    Load corpus, queries, qrels for one full BEIR subset from HuggingFace.
+
+    Two BEIR-specific gotchas that the NanoBEIR loader does not have:
+      * qrels live in a SEPARATE repo ``BeIR/<subset>-qrels`` (not a config of
+        the main repo) with splits train/validation/test — we use ``test``.
+      * qrels ``query-id`` / ``corpus-id`` are stored as ints, whereas corpus /
+        query ``_id`` are strings. Both sides are cast to str or nothing matches
+        and every metric silently computes as 0.
+
+    Returns the same 5-tuple shape as ``load_nanobeir_subset``.
+    """
+    from datasets import load_dataset
+
+    kw = dict(token=hf_token) if hf_token else {}
+
+    corpus_ds = load_dataset(f"BeIR/{subset_name}", "corpus", split="corpus", **kw)
+    queries_ds = load_dataset(f"BeIR/{subset_name}", "queries", split="queries", **kw)
+    qrels_ds = load_dataset(f"BeIR/{subset_name}-qrels", split="test", **kw)
+
+    corpus_ids, corpus_texts = [], []
+    for row in corpus_ds:
+        text = ((row.get("title") or "") + " " + (row.get("text") or "")).strip()
+        if text:
+            corpus_ids.append(str(row["_id"]))
+            corpus_texts.append(text)
+
+    qrels: dict[str, set[str]] = {}
+    for row in qrels_ds:
+        if int(row["score"]) > 0:
+            qid = str(row["query-id"])
+            qrels.setdefault(qid, set()).add(str(row["corpus-id"]))
+
+    # BEIR's `queries` config bundles train/dev/test queries together, but only
+    # the test-split qrels are judged here. Encoding + scoring the unjudged
+    # queries is pure waste (90-95% on fiqa/fever) and the evaluator drops them
+    # from the aggregate anyway, so keep only queries that have test qrels.
+    judged = set(qrels)
+    query_ids, query_texts = [], []
+    for row in queries_ds:
+        qid = str(row["_id"])
+        if qid in judged and (row.get("text") or "").strip():
+            query_ids.append(qid)
+            query_texts.append(row["text"])
+
+    return corpus_ids, corpus_texts, query_ids, query_texts, qrels
+
+
 # ---------------------------------------------------------------------------
 # Main evaluation loop
 # ---------------------------------------------------------------------------
@@ -218,6 +267,105 @@ def evaluate_nanobeir(args, store: ResultsStore, cache: EmbeddingCache):
         store.save_mean_metrics(mkey, subsets)
 
 
+def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
+    """Full BEIR evaluation. Identical pipeline to evaluate_nanobeir, only the
+    per-subset loader differs (load_beir_subset instead of load_nanobeir_subset)."""
+    spec = DATASETS[args.dataset]
+    subsets = args.subsets or spec.subsets
+
+    model_keys = args.models or list(MODELS.keys())
+    models_to_run = {k: MODELS[k] for k in model_keys if k in MODELS}
+
+    hf_token = args.hf_token or os.environ.get("HUGGINGFACE_TOKEN")
+
+    for subset in subsets:
+        print(f"\n{'='*60}")
+        print(f"  Subset: {subset}")
+        print(f"{'='*60}")
+
+        corpus_ids, corpus_texts, query_ids, query_texts, qrels = \
+            load_beir_subset(subset, hf_token)
+
+        print(f"  Corpus: {len(corpus_ids)}  Queries: {len(query_ids)}")
+
+        # --- Cache embeddings per unique model path ---
+        path_to_keys: dict[str, list[str]] = {}
+        for mkey, mspec in models_to_run.items():
+            path_to_keys.setdefault(mspec.path, []).append(mkey)
+
+        for model_path, mkeys in path_to_keys.items():
+            print(f"\n  [Encode] {model_path}")
+            any_spec = models_to_run[mkeys[0]]
+
+            cache.get_or_compute(
+                model_path=model_path,
+                texts=corpus_texts,
+                dataset=args.dataset,
+                subset=subset,
+                split="corpus",
+                spec=any_spec,
+            )
+            cache.get_or_compute(
+                model_path=model_path,
+                texts=query_texts,
+                dataset=args.dataset,
+                subset=subset,
+                split="queries",
+                spec=any_spec,
+            )
+
+        # --- Evaluate each model ---
+        for mkey, mspec in models_to_run.items():
+            if store.already_evaluated(mkey, subset):
+                print(f"  [Skip] {mkey} / {subset} already done")
+                continue
+
+            print(f"\n  [Eval] {mkey}")
+
+            corpus_embs_raw = cache.get_or_compute(
+                model_path=mspec.path,
+                texts=corpus_texts,
+                dataset=args.dataset,
+                subset=subset,
+                split="corpus",
+                spec=mspec,
+            )
+            query_embs_raw = cache.get_or_compute(
+                model_path=mspec.path,
+                texts=query_texts,
+                dataset=args.dataset,
+                subset=subset,
+                split="queries",
+                spec=mspec,
+            )
+
+            result = run_ir_eval(
+                dataset=args.dataset,
+                subset=subset,
+                corpus_ids=corpus_ids,
+                corpus_embs_raw=corpus_embs_raw,
+                query_ids=query_ids,
+                query_texts=query_texts,
+                query_embs_raw=query_embs_raw,
+                qrels=qrels,
+                spec=mspec,
+                ks=args.ks,
+            )
+
+            store.save_subset_result(mkey, result)
+            agg_str = "  ".join(
+                f"{m}={v:.4f}"
+                for m, v in sorted(result.aggregate.items())
+                if "@10" in m
+            )
+            print(f"    {agg_str}")
+
+    # --- Mean across subsets ---
+    print("\n[Mean] Computing mean metrics across subsets ...")
+    for mkey in models_to_run:
+        store.save_mean_metrics(mkey, subsets)
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -241,6 +389,8 @@ def main():
     if not args.just_html:
         if args.dataset == "nanobeir":
             evaluate_nanobeir(args, store, cache)
+        elif args.dataset == "beir":
+            evaluate_beir(args, store, cache)
         else:
             raise NotImplementedError(
                 f"Dataset '{args.dataset}' loader not yet implemented in eval_v2. "
