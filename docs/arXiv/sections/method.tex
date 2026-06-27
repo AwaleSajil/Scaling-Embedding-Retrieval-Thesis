@@ -1,0 +1,71 @@
+\section{Experimental Design}
+\label{sec:method}
+
+Our design is built to isolate the effect of the compression method. We hold the
+training data, schedule, and benchmark fixed, and we vary only two things: the
+encoder backbone and the compression method. Any difference we report is
+therefore attributable to one of those two factors, not to a confound of data or
+tuning.
+
+\subsection{Backbones}
+\label{subsec:backbones}
+We choose three 768-dimensional encoders that differ in how much retrieval prior
+they carry. BGE-base-en-v1.5~\citep{xiao2023c} is pre-trained at scale with a
+contrastive retrieval objective and has the strongest prior. RoBERTa-base~\citep{liu2019roberta}
+is pre-trained with masked language modeling alone and has the weakest retrieval
+geometry. MPNet-base~\citep{song2020mpnet} sits between the two. All three are
+fine-tuned as bi-encoders~\citep{reimers2019sbert} with mean pooling and cosine
+similarity, so the only prior difference is the one we want to study.
+
+\subsection{Training}
+\label{subsec:training}
+Each backbone is fine-tuned with a Multiple Negatives Ranking Loss
+(MNRL)~\citep{oord2018representation}, which pulls a query toward its positive
+passage and pushes it away from the in-batch negatives. The training mixture
+combines seven public retrieval sources~\citep{bajaj2016ms, lo2020s2orc,
+kwiatkowski2019natural, joshi2017triviaqa, yang2018hotpotqa, gao2021simcse},
+sampled with weights that rebalance the mixture so no single source dominates.
+Crucially, every backbone and every training-time variant uses the same
+hyperparameter configuration (Appendix~\ref{app:hyperparams}), so no result is an
+artifact of per-method tuning. Training is data-parallel across four GPUs.
+
+\subsection{Compression methods}
+\label{subsec:methods}
+We evaluate four post-hoc methods, two training-time binarization variants, MRL,
+and stacked combinations of the two axes.
+
+\paragraph{Post-hoc.}
+We apply INT8 scalar quantization at $4\times$; binary quantization with Hamming
+search at $32\times$; PQ~\citep{jegou2010product} over a grid of subspace counts
+$M$ and code widths $n \in \{4,8\}$, spanning $32\times$ to $384\times$; and
+TurboQuant~\citep{zandieh2025turboquant} at $1$ to $8$ bits per dimension,
+spanning $4\times$ to $32\times$. Because all post-hoc transforms read from a
+single cached float32 encoding per checkpoint, they add no encoding cost.
+
+\paragraph{Training-time.}
+Binarization-aware training (BAT) inserts a binary layer before the loss and
+trains it with one of two gradient surrogates: STE~\citep{bengio2013estimating}
+or annealed tanh at rate $\gamma=0.1$~\citep{yamada2021efficient}. Both produce
+768-bit codes at inference, for $32\times$ compression. MRL~\citep{kusupati2022matryoshka}
+instead trains nested sub-vectors, which we evaluate at
+$d \in \{32,64,128,256,512,768\}$.
+
+\paragraph{Stacked.}
+We then pair MRL truncation with a second compressor along the precision axis.
+This gives pure training-time stacks (MRL$+$BAT-STE, MRL$+$BAT-atanh) and hybrid
+stacks (MRL$+$post-hoc-binary, MRL$+$TurboQuant, MRL$+$PQ), which together reach
+$384\times$ and beyond.
+
+\subsection{Evaluation}
+\label{subsec:eval}
+We evaluate on NanoBEIR~\citep{nanobeir2024}, an efficient proxy for
+BEIR~\citep{thakur2021beir} with 13 subsets, 649 queries, and 57{,}390 corpus
+documents. The primary metric is MRR@10, macro-averaged over the 13 subsets; we
+also report Recall@10 and normalized Discounted Cumulative Gain at 10
+(nDCG@10)~\citep{jarvelin2002cumulated}. Float32 encodings are cached once per
+checkpoint, and every transform is applied at load time, so methods that share a
+checkpoint also share one encoding. To decide whether a gap between two methods
+is real, we use a paired Wilcoxon signed-rank test on per-query
+MRR@10~\citep{wilcoxon1945individual} at $\alpha=0.05$. We report compression as
+the ratio of float32 index bytes to compressed index bytes, and we read off
+Pareto frontiers in the quality-compression plane.

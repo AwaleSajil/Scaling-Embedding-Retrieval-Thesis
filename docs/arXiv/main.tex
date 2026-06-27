@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+
+% ---------------------------------------------------------------------------
+% Embedding Compression for Dense Retrieval -- arXiv preprint
+% Single-column, neutral preprint format. Compiles on TeX Live 2026 (latexmk).
+% ---------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{authblk}
+\usepackage[colorlinks=true,allcolors=blue!60!black]{hyperref}
+
+% --- Title -----------------------------------------------------------------
+% Alternative titles (pick one):
+%  A) When Binarization Beats Full Precision: Effective Dimension and a
+%     Controlled Study of Embedding Compression for Dense Retrieval
+%  B) Compression as Regularization: Effective Dimension Explains When
+%     Training-Time Binarization Helps Dense Retrieval
+%  C) No Universal Winner: A Controlled Study of Embedding Compression
+%     Across Retrieval Backbones
+\title{\bfseries When Binarization Beats Full Precision:\\[2pt]
+Effective Dimension and a Controlled Study of\\ Embedding Compression for Dense Retrieval}
+
+% NOTE: confirm authorship and order with your advisor before posting.
+\author[1]{Sajil Awale}
+\author[1]{Simran KC}
+\author[1]{Tathagata Mukherjee}
+\affil[1]{Department of Computer Science, The University of Alabama in Huntsville (UAH), Huntsville, AL, USA}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Dense retrieval systems store one floating-point embedding per passage.
+At billion-scale these indices dominate serving cost, because they must
+reside in memory for low latency. Embedding compression reduces this cost.
+However, the literature evaluates post-hoc and training-time methods on
+different encoders and benchmarks, so practitioners cannot tell which to
+use. We present a controlled comparison. Three encoders with different
+retrieval priors (BGE, RoBERTa, and MPNet) are fine-tuned under identical
+conditions. Each is compressed with post-hoc methods (INT8, binary,
+Product Quantization (PQ), and TurboQuant), training-time
+binarization-aware training (BAT) with two gradient surrogates
+(Straight-Through Estimator and annealed tanh), Matryoshka Representation
+Learning (MRL), and stacked combinations. All are evaluated on NanoBEIR.
+We find that no method dominates across encoders. For BGE, which is
+pre-trained for retrieval, post-hoc PQ leads the Pareto frontier at every
+compression ratio. For RoBERTa and MPNet, training-time binarization leads
+instead. Most surprisingly, BAT exceeds the full-precision baseline on
+RoBERTa, raising Mean Reciprocal Rank at 10 (MRR@10) from 0.530 to 0.590.
+We trace this to effective dimension. Binarization spreads embedding
+variance across more axes, and the participation ratio rises from 11\% to
+30\%. This improves ranking without changing recall, and the effect is
+structural rather than a result of under-training. We release a
+method-selection guide indexed by encoder and memory budget.\footnote{Code and
+data: \url{https://github.com/AwaleSajil/Scaling-Embedding-Retrieval-Thesis}.
+Interactive evaluation dashboard:
+\url{https://huggingface.co/spaces/SajilAwale/Embedding-Compression-Eval}. Video
+demo: \url{https://www.youtube.com/watch?v=2QgfmpQsKn8}.}
+\end{abstract}
+
+\input{sections/introduction}
+\input{sections/related}
+\input{sections/method}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{ref}
+
+\clearpage
+\input{sections/appendix}
+
+\end{document}

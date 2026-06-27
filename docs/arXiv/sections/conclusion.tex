@@ -1,0 +1,22 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We compared post-hoc, training-time, and stacked embedding compression for dense
+retrieval on common ground, across three encoders with different retrieval
+priors. No single method dominates. The right choice depends on whether the
+encoder is pre-trained for retrieval and on the memory budget: post-hoc PQ leads
+for the retrieval-pre-trained encoder, while training-time binarization leads for
+the general-purpose encoders, and stacked MRL$+$PQ leads at high compression for
+all. The most surprising result is that binarization-aware training can exceed
+the full-precision baseline on an encoder without retrieval pre-training. We
+explained this through effective dimension: binarization spreads embedding
+variance across more axes, improving ranking without changing recall, and the
+effect is structural rather than a symptom of under-training.
+
+Future work follows directly. Scaling the evaluation to full BEIR and MTEB, and
+adding measured latency and index size, would test whether the backbone-dependent
+frontiers hold at deployment scale. Pairing MRL with recurrent residual
+binarization~\citep{gan2023binary} would give runtime-selectable dimension and
+bit depth. And a controlled anisotropy intervention would turn the
+effective-dimension correlation into a causal account of when compression helps
+retrieval.

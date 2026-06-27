@@ -1,0 +1,58 @@
+\section{Related Work}
+\label{sec:related}
+
+Embedding compression splits into two families by \emph{when} the compression
+happens. Post-hoc methods act on a frozen embedding. Training-time methods build
+the compression into the objective. We review each, then position our study
+against the four closest works.
+
+\paragraph{Post-hoc compression.}
+The simplest compressors transform an embedding after training, so they are cheap
+and model-agnostic. Scalar quantization maps float32 to INT8 with per-dimension
+calibration and is near-lossless at $4\times$~\citep{shakir2024embedding}. Binary
+quantization keeps only the sign of each dimension and searches in Hamming space
+at $32\times$. PQ~\citep{jegou2010product} splits the
+vector into subspaces and encodes each with a learned codebook, and it remains
+the strong learning-to-hash baseline. TurboQuant~\citep{zandieh2025turboquant}
+is a recent data-oblivious quantizer that applies a random rotation before
+scalar quantization to approach optimal distortion. The common limitation is
+that none of these methods can change the representation they are handed.
+
+\paragraph{Training-time compression.}
+A second family reshapes the representation during training, at the cost of a
+training run. Binarization is not differentiable, so it needs a gradient
+surrogate. The STE~\citep{bengio2013estimating,
+courbariaux2016bnn} passes gradients through the sign unchanged, while an annealed
+tanh sharpens a smooth surrogate into a step function over
+training~\citep{yamada2021efficient, yang2019quantization, schrodter2025trainable}.
+MRL~\citep{kusupati2022matryoshka} takes a
+different route and trains nested sub-vectors, so one model serves many truncation
+dimensions. These methods can fix geometry that post-hoc methods cannot, but they
+have mostly been studied one at a time.
+
+\paragraph{The closest work falls in two camps.}
+On the \emph{evaluation} side, CoRECT~\citep{correct2025} is nearest to us. It
+compares compression techniques across corpus size and compression ratio for
+several models, but only for post-hoc methods, so training-time compression is
+absent. On the \emph{method} side, QAMA~\citep{qama2025} is nearest. It stacks
+MRL with multi-bit quantization-aware training and learned thresholds, but it
+relies on a penalty loss rather than a differentiable surrogate, and it never
+compares gradient surrogates. Two more works touch single pieces of our study.
+The Binary Passage Retriever (BPR)~\citep{yamada2021efficient} compares annealed
+tanh against PQ and full precision, but never against STE. BEBR~\citep{gan2023binary}
+deploys recurrent residual binarization at scale with runtime-selectable bit
+depth, but trains the compressor separately from the encoder. Our own prior work
+on a scientific-domain encoder~\citep{pantha2026indussde} shows that
+binarization-aware training beats post-hoc binary, but on a single model, a single
+domain, and STE alone.
+
+\paragraph{Our position.}
+No prior work compares post-hoc, training-time, \emph{and} stacked compression on
+common ground. The broadest evaluation, CoRECT, varies the backbone but covers
+only post-hoc methods; the training-time studies fix a single backbone or a
+narrow pair. As a result, whether the best compression method depends on the
+encoder's retrieval prior has not been tested, and the backbone-dependent
+behavior we report has not been explained. We close that gap, and we connect the
+behavior to the anisotropy of contextual
+embeddings~\citep{ethayarajh2019contextual} through the effective
+dimension~\citep{litwinkumar2017optimal, gao2017theory}.

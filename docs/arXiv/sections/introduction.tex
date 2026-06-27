@@ -1,0 +1,92 @@
+\section{Introduction}
+\label{sec:intro}
+
+Dense retrieval underpins many modern systems, including Retrieval-Augmented
+Generation (RAG)~\citep{lewis2020retrieval}, question answering, and
+semantic search~\citep{karpukhin2020dense, reimers2019sbert}. A bi-encoder
+maps queries and passages to vectors, and relevance is scored by vector
+similarity. Long documents are split into passages, so the indexed unit is a
+passage that is encoded once and stored. These corpus vectors must reside in an
+index in Random Access Memory (RAM) for low-latency
+search~\citep{johnson2021billion, malkov2018efficient}. This memory is the dominant cost at scale. A single
+BGE-base embedding is a 768-dimensional float32 vector of 3{,}072 bytes, so a
+corpus of one billion passages needs roughly 2.9~TB of RAM for the embeddings
+alone. Memory-optimized cloud instances are billed accordingly, so reducing
+the index size translates directly into lower cost~\citep{aws2024pricing}.
+
+Embedding compression addresses this cost, and two broad families exist.
+\emph{Post-hoc} methods compress a fixed embedding after training: scalar
+quantization to INT8, binary quantization with Hamming
+search~\citep{shakir2024embedding}, Product Quantization
+(PQ)~\citep{jegou2010product}, and recent oblivious quantizers such as
+TurboQuant~\citep{zandieh2025turboquant}. \emph{Training-time} methods bake
+the compression into the objective: binarization-aware training through a
+Straight-Through Estimator (STE)~\citep{bengio2013estimating, courbariaux2016bnn}
+or an annealed tanh surrogate~\citep{yamada2021efficient}, and Matryoshka
+Representation Learning (MRL)~\citep{kusupati2022matryoshka}, which front-loads
+information so that truncated prefixes remain usable.
+
+\paragraph{The gap.}
+Despite a rich set of methods, a practitioner cannot easily decide which to
+use. The reason is methodological: post-hoc and training-time methods are
+studied on different encoders, with different training data and benchmarks, and
+they rarely meet on common ground. The broadest post-hoc
+comparison~\citep{correct2025} does vary the backbone, but omits training-time
+methods, while the training-time studies~\citep{qama2025, yamada2021efficient}
+fix a single backbone or a narrow pair. So it is unknown whether the best method
+depends on the encoder's retrieval prior, and whether training-time compression
+is worth its added cost relative to a simple post-hoc transform.
+
+\paragraph{This work.}
+We run a controlled comparison. Three encoders with deliberately different
+retrieval priors, BGE~\citep{xiao2023c}, RoBERTa~\citep{liu2019roberta}, and
+MPNet~\citep{song2020mpnet}, are fine-tuned under identical conditions on the
+same data. Each is then compressed by every method above and by stacked
+combinations, and all are evaluated on NanoBEIR~\citep{nanobeir2024} with
+paired significance testing. Because the only variable that changes is the
+compression method (and the backbone), differences are attributable to the
+method rather than to confounds of data or benchmark.
+
+\paragraph{Findings.}
+The headline result is that no single method dominates, and the winner depends
+on the encoder. For BGE, which is pre-trained at scale with a contrastive
+retrieval objective, post-hoc PQ leads the Pareto frontier at every tested
+compression ratio. For RoBERTa and MPNet, which lack retrieval pre-training,
+training-time binarization leads instead. Most surprisingly, binarization-aware
+training \emph{exceeds the full-precision baseline} on RoBERTa, raising Mean Reciprocal Rank at 10 (MRR@10)
+from 0.530 to 0.590, even though binarization removes information.
+
+We explain this with the geometry of the embedding space. Encoders without
+retrieval pre-training produce anisotropic embeddings that occupy a narrow
+cone~\citep{ethayarajh2019contextual}, which saturates similarities and harms
+fine-grained ranking. We quantify this with the \emph{effective dimension}, or
+participation ratio~\citep{litwinkumar2017optimal, gao2017theory}.
+Binarization-aware training spreads variance across more axes, raising the
+participation ratio from 11\% to 30\% of 768 dimensions for RoBERTa. The gain
+shows up in ranking, not coverage: MRR@10 improves while Recall@10 remains
+unchanged.
+The effect is present from the first checkpoint and does not close with more
+training, so it is structural rather than a symptom of under-training. Because
+ranking under this metric depends on angular separation rather than per-axis
+precision, one bit per dimension is sufficient to realize the benefit.
+
+\paragraph{Contributions.}
+\begin{itemize}
+  \item A controlled, cross-encoder comparison of post-hoc, training-time, and
+        stacked embedding compression for dense retrieval, reported as Pareto
+        frontiers with paired significance tests
+        (Sections~\ref{sec:method} and~\ref{sec:results}).
+  \item The finding that binarization-aware training can exceed full precision
+        on encoders without retrieval pre-training, with a mechanism:
+        binarization raises the effective dimension of the embedding space and
+        improves ranking without changing recall
+        (Section~\ref{sec:results}, Section~\ref{sec:discussion}).
+  \item Evidence that the best gradient surrogate and the value of stacking are
+        backbone-dependent, including that annealed tanh combines with MRL more
+        cleanly than STE, and that MRL$+$PQ extends the frontier to high
+        compression (Section~\ref{sec:results}).
+  \item A practical method-selection guide indexed by encoder type and memory
+        budget (Section~\ref{sec:discussion}), released together with all code
+        and an interactive evaluation dashboard for browsing the full results.
+
+\end{itemize}

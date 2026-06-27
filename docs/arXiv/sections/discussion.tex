@@ -1,0 +1,49 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Binary constraints as a regularizer.}
+The central finding reframes binarization. On an encoder without retrieval
+pre-training, a sign constraint is not only a compression step but a regularizer
+that de-anisotropizes the embedding space. It spreads variance across more axes,
+de-saturates the similarity distribution, and improves fine-grained ranking. The
+constraint helps most where the float32 space is most anisotropic, which is why
+the benefit is ordered RoBERTa $>$ MPNet $>$ BGE and is absent for the
+retrieval-pre-trained encoder. The effective dimension is thus a cheap
+\emph{diagnostic}: measuring $d_{\mathrm{eff}}$ of an encoder's float32
+embeddings, which costs one eigendecomposition and no training, predicts whether
+training-time binarization will help or hurt that backbone.
+
+\paragraph{A method-selection guide.}
+Because no method dominates, the practical contribution is a rule indexed by two
+variables: whether the encoder is pre-trained for retrieval, and the target
+memory budget (Table~\ref{tab:cheatsheet}).
+
+\begin{table}[t]
+  \centering
+  \caption{Recommended compression method by encoder type and compression
+  budget, from the Pareto frontiers in Section~\ref{subsec:pareto}.}
+  \label{tab:cheatsheet}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Budget} & \textbf{Retrieval-pre-trained (BGE)} & \textbf{General-purpose (RoBERTa, MPNet)} \\
+    \midrule
+    $\leq 8\times$        & INT8 or TurboQuant-4bit (near-lossless) & INT8 or TurboQuant-4bit (near-lossless) \\
+    $32\times$            & Post-hoc PQ ($n{=}8$)                   & Training-time BAT (atanh or STE) \\
+    $\geq 96\times$       & Stacked MRL$+$PQ                        & Stacked MRL$+$PQ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Threats to validity.}
+We state the limitations plainly. First, evaluation is on NanoBEIR, whose
+subsets are small; the backbone-dependent conclusions should be confirmed on
+full BEIR~\citep{thakur2021beir} or MTEB~\citep{muennighoff2022mteb} at larger
+corpus scale, where compression behavior can shift. Second, each model is
+fine-tuned for a single epoch; although the training-trajectory analysis
+(Section~\ref{subsec:effdim}) rules out under-training as the cause of the BAT
+gain, longer schedules could change absolute scores. Third, we report
+compression ratios rather than measured query latency and on-disk index size;
+these would close the loop from memory savings to end-to-end cost. Finally, the
+effective-dimension account is correlational across five models; a controlled
+intervention, such as injecting anisotropy into BGE and observing whether BAT's
+relative benefit rises, would strengthen the causal claim.

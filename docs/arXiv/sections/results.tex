@@ -1,0 +1,240 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{Float32 baselines}
+\label{subsec:baselines}
+Table~\ref{tab:baselines} reports the float32 ceilings. Fine-tuning helps the
+general-purpose encoders dramatically (RoBERTa $+0.434$, MPNet $+0.426$) but
+leaves BGE essentially unchanged ($-0.006$, not significant, paired Wilcoxon
+$p=0.49$), because BGE is already pre-trained for retrieval. These scores are
+the upper bounds for every compression method.
+
+\begin{table}[t]
+  \centering
+  \caption{Float32 baselines: pre-trained vs fine-tuned, mean MRR@10 over 13
+  NanoBEIR subsets. $\Delta$ is the change from fine-tuning.}
+  \label{tab:baselines}
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Configuration} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    Pre-trained  & 0.691 & 0.097 & 0.156 \\
+    Fine-tuned   & 0.685 & 0.530 & 0.582 \\
+    $\Delta$     & $-0.006$ & $+0.434$ & $+0.426$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Post-hoc compression}
+\label{subsec:posthoc}
+INT8 at $4\times$ is near-lossless on all backbones (largest drop $-0.015$ on
+MPNet; full INT8 and TurboQuant tables in Appendix~\ref{app:posthoc}). At
+$32\times$, the four post-hoc methods separate clearly
+(Table~\ref{tab:posthoc32}, Figure~\ref{fig:crossmethod}). The ordering
+PQ $>$ TurboQuant-1bit $>$ post-hoc binary is stable across backbones, and PQ
+with $8$-bit codes is best for BGE and MPNet, recovering all but $0.6$ points of
+the BGE float32 ceiling. Post-hoc binary is the weakest method everywhere.
+
+\begin{table}[t]
+  \centering
+  \caption{Four post-hoc methods at $32\times$, mean MRR@10. Best per backbone
+  in bold; ties at displayed precision bolded together.}
+  \label{tab:posthoc32}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Method} & \textbf{Ratio} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    Float32 (fine-tuned)         & $1\times$  & 0.685 & 0.530 & 0.582 \\
+    Post-hoc binary              & $32\times$ & 0.646 & 0.501 & 0.534 \\
+    TurboQuant, 1-bit            & $32\times$ & 0.666 & \textbf{0.519} & 0.547 \\
+    PQ ($M{=}192, n{=}4$)        & $32\times$ & 0.675 & \textbf{0.519} & 0.549 \\
+    PQ ($M{=}96, n{=}8$)         & $32\times$ & \textbf{0.679} & 0.514 & \textbf{0.562} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.8\textwidth]{fig_crossmethod_32x.pdf}
+  \caption{Post-hoc methods at $32\times$, mean MRR@10 by backbone. The $y$-axis
+  starts at 0.48 to highlight inter-method differences.}
+  \label{fig:crossmethod}
+\end{figure}
+
+\subsection{Training-time binarization beats post-hoc, and sometimes float32}
+\label{subsec:bat}
+Both BAT variants beat post-hoc binary on every backbone
+(Table~\ref{tab:bat}). The gains are largest on the general-purpose encoders:
+BAT-STE improves over post-hoc binary by $6.4$ points on RoBERTa and $4.8$ on
+MPNet, versus $1.3$ on BGE. Strikingly, BAT \emph{exceeds the float32 ceiling}
+on RoBERTa: BAT-STE reaches 0.565 ($p=0.005$) and BAT-atanh reaches 0.590
+($p<10^{-3}$), against a float32 baseline of 0.530. BAT-STE matches float32 on
+MPNet and BAT-STE is best on BGE, so the best surrogate is backbone-dependent.
+
+\begin{table}[t]
+  \centering
+  \caption{Binarization-aware training vs post-hoc binary at $32\times$, mean
+  MRR@10. The float32 fine-tune is the ceiling. Best $32\times$ result per
+  backbone in bold.}
+  \label{tab:bat}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Method} & \textbf{Ratio} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    Float32 (ceiling)        & $1\times$  & 0.685 & 0.530 & 0.582 \\
+    Post-hoc binary          & $32\times$ & 0.646 & 0.501 & 0.534 \\
+    BAT-STE                  & $32\times$ & \textbf{0.658} & 0.565 & \textbf{0.582} \\
+    BAT-atanh ($\gamma{=}0.1$) & $32\times$ & 0.638 & \textbf{0.590} & 0.580 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Why binarization beats full precision on RoBERTa}
+\label{subsec:effdim}
+The result is counterintuitive, because binarization removes information. We
+analyze it in three steps.
+
+\paragraph{The gain is in ranking, not coverage.}
+On RoBERTa, MRR@10 rises from 0.530 to 0.565 (STE) and 0.590 (atanh), both
+significant (Wilcoxon $p=0.005$ and $p<0.001$; all tests in
+Appendix~\ref{app:sig}). Recall@10 barely moves (0.553 to
+0.552 and 0.560) and is not significant ($p=0.57$, $p=0.27$). So the same
+relevant documents are retrieved, but the correct answers are ranked higher.
+
+\paragraph{The mechanism is effective dimension.}
+Encoders without retrieval pre-training produce anisotropic embeddings that
+occupy a narrow cone~\citep{ethayarajh2019contextual}. We measure this with the
+effective dimension, or participation ratio~\citep{litwinkumar2017optimal,
+gao2017theory},
+\begin{equation}
+  d_{\mathrm{eff}} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2},
+\end{equation}
+where $\lambda_i$ are the 768 eigenvalues of the centered embedding covariance.
+$d_{\mathrm{eff}}$ counts how many axes carry variance. Float32 RoBERTa is the
+most compressed of the three spaces ($d_{\mathrm{eff}}=85$, or 11.0\% of 768).
+Binarization-aware training spreads variance across more axes, raising
+$d_{\mathrm{eff}}$ to 25.7\% (STE) and 30.0\% (atanh), and MRR@10 tracks this
+increase (Table~\ref{tab:effdim}, Figure~\ref{fig:effdim}). Because ranking
+under Hamming and cosine depends on angular separation rather than per-axis
+precision, one bit per dimension is enough to realize the benefit.
+
+\begin{table}[t]
+  \centering
+  \caption{Effective dimension $d_{\mathrm{eff}}$ (participation ratio) with
+  retrieval quality, on the pooled NanoBEIR corpus. Binarization-aware training
+  raises both $d_{\mathrm{eff}}$ and MRR@10 for RoBERTa.}
+  \label{tab:effdim}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Model} & $d_{\mathrm{eff}}$ & \textbf{\% of 768} & \textbf{MRR@10} & \textbf{Recall@10} \\
+    \midrule
+    RoBERTa-FT        & 85  & 11.0\% & 0.530 & 0.553 \\
+    BGE-FT            & 135 & 17.6\% & 0.685 & 0.656 \\
+    MPNet-FT          & 102 & 13.3\% & 0.582 & 0.583 \\
+    RoBERTa-BAT-STE   & 197 & 25.7\% & 0.565 & 0.552 \\
+    RoBERTa-BAT-atanh & 230 & 30.0\% & \textbf{0.590} & 0.560 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.78\textwidth]{fig_roberta_effdim.pdf}
+  \caption{Cumulative explained variance vs number of principal components. A
+  curve that rises quickly indicates a low effective dimension. RoBERTa-FT rises
+  fastest; RoBERTa-BAT-atanh rises slowest.}
+  \label{fig:effdim}
+\end{figure}
+
+\paragraph{It is RoBERTa-specific, and structural.}
+BGE already has the highest float32 $d_{\mathrm{eff}}$ (17.6\%), so it has little
+anisotropy to correct and binarization only costs it quality. MPNet is in
+between and is near-lossless under BAT. RoBERTa has the most to gain because it
+starts most compressed, which gives the relative ordering RoBERTa $>$ MPNet $>$
+BGE. The gain is not under-training: evaluating intermediate checkpoints every
+2{,}000 steps (Figure~\ref{fig:trajectory}), both BAT variants sit above the
+float32 fine-tune from the first checkpoint, and the gap does not close with
+more training.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.78\textwidth]{fig_training_trajectory.pdf}
+  \caption{Mean MRR@10 at intermediate RoBERTa checkpoints. The gap from BAT to
+  the float32 fine-tune is present early and does not close with training.}
+  \label{fig:trajectory}
+\end{figure}
+
+\subsection{Matryoshka and stacked compression}
+\label{subsec:stacked}
+MRL alone is near-lossless to $d=256$ ($3\times$) on all backbones, then drops
+sharply below $d=128$ (Figure~\ref{fig:mrl}; full table in
+Appendix~\ref{app:mrl}). Its value is that it composes with
+a second compressor. Stacking MRL with a precision-reduction method pushes the
+frontier well beyond what either axis reaches alone
+(Figure~\ref{fig:stacked}). Three results stand out. First, MRL$+$PQ dominates
+the high-compression region: at $\geq 96\times$ it is best on every backbone,
+and its margin grows with compression (at $384\times$, by 13.0, 6.2, and 7.5
+points on BGE, RoBERTa, and MPNet). Second, MRL$+$BAT-atanh beats MRL$+$BAT-STE
+on all backbones and all compression ratios, unlike the standalone case where
+atanh wins only on RoBERTa; binarizing with a sign before the MRL loss destroys
+more magnitude information than tanh. Third, MRL$+$BAT-atanh crosses the float32
+ceiling on RoBERTa at $32\times$ (0.560 vs 0.530), the only backbone for which
+any stacked configuration does so.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.78\textwidth]{fig_mrl_truncation.pdf}
+  \caption{Mean MRR@10 vs MRL truncation dimension $d$. The point at $d=768$ is
+  the float32 baseline.}
+  \label{fig:mrl}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_stacked_combinations.pdf}
+  \caption{Mean MRR@10 vs compression ratio for the five stacked combinations
+  and MRL-only (grey dashed). Hollow markers are pure training-time stacks;
+  filled markers are hybrid stacks. The dotted line is the float32 baseline.}
+  \label{fig:stacked}
+\end{figure}
+
+\subsection{Pareto frontiers and cross-backbone generalization}
+\label{subsec:pareto}
+
+\paragraph{The Pareto frontier looks different for each backbone.}
+Figure~\ref{fig:pareto} plots every configuration as a per-backbone Pareto
+frontier of quality against compression. For BGE, no training-time method reaches
+the frontier at all. It runs through TurboQuant at moderate ratios, then PQ and
+stacked MRL$+$PQ from $32\times$ out past $1500\times$
+(Appendix~\ref{app:pareto}). For RoBERTa and MPNet the picture flips: the best
+$32\times$ point is a \emph{training-time} method. BAT-atanh leads on RoBERTa
+(0.590, 7.1 points above the best post-hoc option), and BAT-STE leads on MPNet
+(0.582, 2.0 points above).
+
+\paragraph{The best method does not transfer across backbones.}
+To compare backbones of different quality fairly, we divide each score by its own
+backbone's float32 score (Figure~\ref{fig:crossbackbone}). The post-hoc methods
+keep a similar fraction of quality on all three backbones, so they generalize.
+The training-time methods do not: BAT-STE and BAT-atanh help most on RoBERTa,
+less on MPNet, and least on BGE. The practical lesson is simple. A study run only on BGE would pick post-hoc PQ
+as the best method at $32\times$. But on general-purpose backbones,
+training-time binarization is the better choice at $32\times$. So results from
+one backbone do not always transfer to another.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_pareto.pdf}
+  \caption{Quality vs compression Pareto frontiers for BGE, RoBERTa, and MPNet
+  ($x$-axis log scale). Filled markers are Pareto-optimal; hollow markers are
+  dominated. Colour encodes method family.}
+  \label{fig:pareto}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_cross_backbone.pdf}
+  \caption{Quality retention (compressed MRR@10 divided by the same backbone's
+  float32 MRR@10) by configuration. The rightmost column shows the
+  cross-backbone standard deviation.}
+  \label{fig:crossbackbone}
+\end{figure}

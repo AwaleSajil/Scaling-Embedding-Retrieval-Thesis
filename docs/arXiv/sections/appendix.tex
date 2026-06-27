@@ -1,0 +1,257 @@
+\appendix
+
+\section{Training Details and Hyperparameters}
+\label{app:hyperparams}
+All three backbones and all six training-time variants share the single
+configuration in Table~\ref{tab:hyperparams}, so reported differences are not an
+artifact of per-method tuning. Training uses multi-GPU data-parallelism across
+four GPUs; the effective batch size is the product of the per-device batch,
+gradient accumulation, and device count.
+
+\begin{table}[h]
+  \centering
+  \caption{Shared training configuration.}
+  \label{tab:hyperparams}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Setting} & \textbf{Value} \\
+    \midrule
+    Base encoders & BGE-base-en-v1.5, RoBERTa-base, MPNet-base \\
+    Max sequence length & 512 \\
+    Pooling & Mean \\
+    Loss & Multiple Negatives Ranking Loss (cosine) \\
+    Optimizer & AdamW \\
+    Learning rate & $2\times10^{-5}$ \\
+    LR schedule & Linear, warmup ratio 0.1 \\
+    Weight decay & 0.1 \\
+    Per-device batch size & 16 \\
+    Gradient accumulation & 8 \\
+    Data-parallel devices & 4 \\
+    Effective batch size & 512 \\
+    Epochs & 1 \\ % TODO: config.yaml sets num_train_epochs=2; confirm against the actual runs.
+    Eval/checkpoint interval & every 2{,}000 steps \\
+    MRL truncation dims & $\{32, 64, 128, 256, 512, 768\}$ \\
+    Annealed tanh rate $\gamma$ & 0.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Training Data and Benchmark Composition}
+\label{app:data}
+
+\paragraph{Training mixture.}
+The training mixture draws from seven public sources spanning passage retrieval,
+title-to-abstract prediction, duplicate-question detection, natural language
+inference, and open-domain question answering (Table~\ref{tab:datamix}). A
+weighted batch sampler controls each source's contribution: the effective number
+of examples from a source is proportional to its weight times its size. Weights
+below one downsample the two largest, weakly retrieval-specific sources (S2ORC
+and MS MARCO), while weights above one oversample the smaller question-answering
+sources (Natural Questions, TriviaQA, HotpotQA). This reduces the raw 58.73M
+examples to an effective mixture of about 4.19M per epoch, which preserves source
+diversity while cutting training time.
+
+\begin{table}[h]
+  \centering
+  \caption{Training data mixture. Effective rows are each source's approximate
+  contribution after weighted sampling (proportional to weight $\times$ total
+  rows), scaled so the mixture totals about 4.19M examples per epoch.}
+  \label{tab:datamix}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{llrrr}
+    \toprule
+    \textbf{Source} & \textbf{Pair type} & \textbf{Total rows} & \textbf{Weight} & \textbf{Effective rows} \\
+    \midrule
+    MS MARCO~\citep{bajaj2016ms}                     & Query to passage (triplet)         & 13.64M & 0.15 & 1.94M \\
+    S2ORC~\citep{lo2020s2orc}                        & Title to abstract (pair)           & 41.77M & 0.01 & 0.40M \\
+    Quora duplicates                                 & Duplicate question (triplet)       & 2.79M  & 0.15 & 0.40M \\
+    NLI for SimCSE~\citep{gao2021simcse}             & Entailment/contradiction (triplet) & 0.27M  & 2    & 0.52M \\
+    Natural Questions~\citep{kwiatkowski2019natural} & Question to answer (pair)          & 0.10M  & 4    & 0.38M \\
+    TriviaQA~\citep{joshi2017triviaqa}               & Question to answer (triplet)       & 0.06M  & 4    & 0.23M \\
+    HotpotQA~\citep{yang2018hotpotqa}                & Multi-hop question to answer (triplet) & 0.08M & 4 & 0.32M \\
+    \midrule
+    \textbf{Total} & & \textbf{58.73M} & & \textbf{$\sim$4.19M} \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\paragraph{Evaluation benchmark.}
+NanoBEIR~\citep{nanobeir2024} is a lightweight subset of
+BEIR~\citep{thakur2021beir}, built by sampling each BEIR subset down to 50
+queries and a small corpus. We use all 13 subsets: ArguAna, ClimateFEVER,
+DBPedia, FEVER, FiQA2018, HotpotQA, MSMARCO, NFCorpus, NQ, QuoraRetrieval,
+SCIDOCS, SciFact, and Touch\'e2020. Each subset has 50 queries (49 for
+Touch\'e2020) and a corpus of between 2{,}260 and 6{,}100 passages, totaling 649
+queries and 57{,}390 corpus passages. Table~\ref{tab:nanobeir} gives the
+per-subset breakdown.
+
+\begin{table}[h]
+  \centering
+  \caption{NanoBEIR evaluation subsets. All subsets have 50 queries except
+  Touch\'e2020 (49), with corpora of 2{,}260 to 6{,}100 passages, totaling 649
+  queries and 57{,}390 passages.}
+  \label{tab:nanobeir}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{llrrl}
+    \toprule
+    \textbf{\#} & \textbf{Subset} & \textbf{Queries} & \textbf{Corpus} & \textbf{Task (query to document)} \\
+    \midrule
+    1  & NanoArguAna        & 50 & 3{,}690 & Counter-argument retrieval (claim to argument) \\
+    2  & NanoClimateFEVER   & 50 & 3{,}460 & Fact-checking (claim to document) \\
+    3  & NanoDBPedia        & 50 & 6{,}100 & Entity retrieval (query to document) \\
+    4  & NanoFEVER          & 50 & 5{,}050 & Fact-checking (claim to document) \\
+    5  & NanoFiQA2018       & 50 & 4{,}650 & Financial question answering (question to document) \\
+    6  & NanoHotpotQA       & 50 & 5{,}140 & Multi-hop question answering (question to document) \\
+    7  & NanoMSMARCO        & 50 & 5{,}090 & Web search / general QA (question to passage) \\
+    8  & NanoNFCorpus       & 50 & 3{,}000 & Biomedical retrieval (query to document) \\
+    9  & NanoNQ             & 50 & 5{,}090 & Open-domain question answering (question to document) \\
+    10 & NanoQuoraRetrieval & 50 & 5{,}100 & Duplicate detection (question to question) \\
+    11 & NanoSCIDOCS        & 50 & 2{,}260 & Citation prediction (title to document) \\
+    12 & NanoSciFact        & 50 & 2{,}970 & Scientific fact-checking (claim to document) \\
+    13 & NanoTouche2020     & 49 & 5{,}790 & Conversational argument retrieval (question to argument) \\
+    \midrule
+    \multicolumn{2}{l}{\textbf{Total}} & \textbf{649} & \textbf{57{,}390} & \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\section{Full Post-hoc Results}
+\label{app:posthoc}
+Tables~\ref{tab:int8full} and~\ref{tab:tqfull} give the per-backbone numbers for
+INT8 and TurboQuant, summarized in Section~\ref{subsec:posthoc}.
+
+\begin{table}[h]
+  \centering
+  \caption{INT8 scalar quantization ($4\times$) vs float32, mean MRR@10.
+  $\Delta$ is the change from float32.}
+  \label{tab:int8full}
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Configuration} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    Float32 (fine-tuned) & 0.685 & 0.530 & 0.582 \\
+    INT8 ($4\times$)     & 0.678 & 0.532 & 0.567 \\
+    $\Delta$             & $-0.007$ & $+0.002$ & $-0.015$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{TurboQuant across five bit-widths vs float32, mean MRR@10.}
+  \label{tab:tqfull}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Configuration} & \textbf{Ratio} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    Float32 (fine-tuned) & $1\times$    & 0.685 & 0.530 & 0.582 \\
+    TQ-8bit              & $4\times$    & 0.683 & 0.531 & 0.579 \\
+    TQ-4bit              & $8\times$    & 0.685 & 0.532 & 0.579 \\
+    TQ-3bit              & $10.7\times$ & 0.680 & 0.528 & 0.581 \\
+    TQ-2bit              & $16\times$   & 0.677 & 0.529 & 0.574 \\
+    TQ-1bit              & $32\times$   & 0.666 & 0.519 & 0.547 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Product Quantization grid.}
+We evaluate thirteen PQ configurations spanning $32\times$ to $384\times$
+compression with $n \in \{4, 8\}$ bits per subspace. Two regularities hold. At a
+fixed compression ratio, $n=8$ always outperforms $n=4$. Quality is
+near-lossless at $32\times$ (BGE $0.679$ vs the $0.685$ ceiling) and degrades
+gracefully until roughly $96\times$, after which it drops steeply.
+% TODO: insert full 13-row PQ table (ratio, M, n, MRR@10 per backbone) from the PQ sweep.
+
+\section{Matryoshka Truncation: Full Results}
+\label{app:mrl}
+Table~\ref{tab:mrlfull} reports MRL truncation across five dimensions,
+summarized in Section~\ref{subsec:stacked}.
+
+\begin{table}[h]
+  \centering
+  \caption{MRL truncation across dimensions vs the 768-d float32 baseline, mean
+  MRR@10. Compression ratio is $768/d$.}
+  \label{tab:mrlfull}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Dim} & \textbf{Ratio} & \textbf{BGE} & \textbf{RoBERTa} & \textbf{MPNet} \\
+    \midrule
+    768 (float32) & $1\times$   & 0.685 & 0.530 & 0.582 \\
+    512           & $1.5\times$ & 0.687 & 0.533 & 0.579 \\
+    256           & $3\times$   & 0.675 & 0.526 & 0.576 \\
+    128           & $6\times$   & 0.639 & 0.513 & 0.560 \\
+    64            & $12\times$  & 0.589 & 0.478 & 0.503 \\
+    32            & $24\times$  & 0.479 & 0.414 & 0.410 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Annealed Tanh: Annealing-Rate Ablation}
+\label{app:gamma}
+We ablate the annealing rate $\gamma \in \{0.05, 0.1, 0.2\}$ for BAT-atanh. The
+best $\gamma$ differs by backbone, but no backbone moves by more than $0.014$
+MRR@10 across the three values, so the choice has little practical effect, and
+we fix $\gamma = 0.1$ throughout the main text.
+% TODO: insert full gamma ablation table (gamma x backbone, MRR@10) from the ablation runs.
+
+\section{Pareto-Optimal Configurations}
+\label{app:pareto}
+Table~\ref{tab:paretobge} lists the BGE Pareto-optimal configurations from
+$1\times$ to $96\times$, underlying the frontier in Figure~\ref{fig:pareto}.
+
+\begin{table}[h]
+  \centering
+  \caption{BGE Pareto-optimal configurations, ordered by compression ratio.}
+  \label{tab:paretobge}
+  \begin{tabular}{llccc}
+    \toprule
+    \textbf{Method} & \textbf{Family} & \textbf{Ratio} & \textbf{Bytes} & \textbf{MRR@10} \\
+    \midrule
+    Pre-trained BGE                & Baseline & $1\times$    & 3072 & 0.691 \\
+    MRL-512                        & Post-hoc & $1.5\times$  & 2048 & 0.687 \\
+    TQ-4bit                        & Post-hoc & $8\times$    & 384  & 0.685 \\
+    TQ-3bit                        & Post-hoc & $10.7\times$ & 288  & 0.680 \\
+    PQ ($M{=}96, n{=}8$)           & Post-hoc & $32\times$   & 96   & 0.679 \\
+    MRL-256 $+$ PQ ($M{=}64, n{=}8$) & Post-hoc & $48\times$ & 64   & 0.673 \\
+    PQ ($M{=}48, n{=}8$)           & Post-hoc & $64\times$   & 48   & 0.663 \\
+    MRL-256 $+$ PQ ($M{=}32, n{=}8$) & Post-hoc & $96\times$ & 32   & 0.637 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% TODO: add RoBERTa and MPNet Pareto-optimal configuration tables.
+
+\section{Significance Testing}
+\label{app:sig}
+All significance tests are paired Wilcoxon signed-rank tests on per-query MRR@10,
+with significance at $\alpha=0.05$. Table~\ref{tab:sig} collects the key
+comparisons referenced in the main text.
+
+\begin{table}[h]
+  \centering
+  \caption{Paired Wilcoxon signed-rank tests on per-query MRR@10 for the key
+  comparisons. ``n.s.'' denotes not significant at $\alpha=0.05$.}
+  \label{tab:sig}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Comparison} & \textbf{Backbone} & \textbf{$p$-value} \\
+    \midrule
+    Fine-tuned vs pre-trained (float32) & BGE     & $0.49$ (n.s.) \\
+    INT8 vs float32                     & BGE     & $0.076$ (n.s.) \\
+    INT8 vs float32                     & RoBERTa & $0.783$ (n.s.) \\
+    INT8 vs float32                     & MPNet   & $0.103$ (n.s.) \\
+    Post-hoc binary vs float32          & all     & $<0.001$ \\
+    BAT-STE vs float32 (MRR@10)         & RoBERTa & $0.005$ \\
+    BAT-atanh vs float32 (MRR@10)       & RoBERTa & $<0.001$ \\
+    BAT-STE vs float32 (Recall@10)      & RoBERTa & $0.57$ (n.s.) \\
+    BAT-atanh vs float32 (Recall@10)    & RoBERTa & $0.27$ (n.s.) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Per-Subset Results}
+\label{app:persubset}
+The BAT gain on RoBERTa is broad rather than driven by a single subset:
+binarization-aware training improves MRR@10 on 11 of the 13 NanoBEIR subsets.
+The largest gains are on Touch\'e-2020 ($+0.185$), FEVER ($+0.105$), and DBPedia
+($+0.096$), while the corresponding Recall@10 changes are minimal.
+% TODO: insert full 13-subset table (MRR@10 per subset x model) from the evaluation outputs.

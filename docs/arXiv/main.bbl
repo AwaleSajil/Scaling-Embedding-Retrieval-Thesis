@@ -1,0 +1,287 @@
+\begin{thebibliography}{37}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Ahemad(2025)]{qama2025}
+Faizan Ahemad.
+\newblock Quantization aware matryoshka adaptation: Leveraging matryoshka
+  learning, quantization, and bitwise operations for reduced storage and
+  improved retrieval speed.
+\newblock In \emph{Proceedings of the 34th ACM International Conference on
+  Information and Knowledge Management (CIKM)}, pages 25--34, 2025.
+\newblock URL \url{https://dl.acm.org/doi/10.1145/3746252.3761077}.
+
+\bibitem[{Amazon Web Services}(2024)]{aws2024pricing}
+{Amazon Web Services}.
+\newblock {Amazon EC2} on-demand pricing.
+\newblock \url{https://aws.amazon.com/ec2/pricing/on-demand/}, 2024.
+\newblock Accessed: 2026; per-GiB cost of the memory-optimized {x2gd} family
+  derived from on-demand rates.
+
+\bibitem[Bajaj et~al.(2016)Bajaj, Campos, Craswell, Deng, Gao, Liu, Majumder,
+  McNamara, Mitra, Nguyen, et~al.]{bajaj2016ms}
+Payal Bajaj, Daniel Campos, Nick Craswell, Li~Deng, Jianfeng Gao, Xiaodong Liu,
+  Rangan Majumder, Andrew McNamara, Bhaskar Mitra, Tri Nguyen, et~al.
+\newblock {MS MARCO}: A human generated {MAchine Reading COmprehension}
+  dataset.
+\newblock In \emph{Proceedings of the Workshop on Cognitive Computation:
+  Integrating Neural and Symbolic Approaches (CoCo@NIPS)}, 2016.
+
+\bibitem[Bengio et~al.(2013)Bengio, L{\'e}onard, and
+  Courville]{bengio2013estimating}
+Yoshua Bengio, Nicholas L{\'e}onard, and Aaron Courville.
+\newblock Estimating or propagating gradients through stochastic neurons for
+  conditional computation.
+\newblock \emph{arXiv preprint arXiv:1308.3432}, 2013.
+
+\bibitem[Caspari et~al.(2025)Caspari, Dinzinger, Ghosh~Dastidar, Fellicious,
+  Mitrovi{\'c}, and Granitzer]{correct2025}
+Laura Caspari, Michael Dinzinger, Kanishka Ghosh~Dastidar, Christofer
+  Fellicious, Jelena Mitrovi{\'c}, and Michael Granitzer.
+\newblock {CoRECT}: A framework for evaluating embedding compression techniques
+  at scale.
+\newblock \emph{arXiv preprint arXiv:2510.19340}, 2025.
+
+\bibitem[Ethayarajh(2019)]{ethayarajh2019contextual}
+Kawin Ethayarajh.
+\newblock How contextual are contextualized word representations? comparing the
+  geometry of {BERT}, {ELMo}, and {GPT-2} embeddings.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in
+  Natural Language Processing (EMNLP-IJCNLP)}, pages 55--65, 2019.
+
+\bibitem[Gan et~al.(2023)Gan, Ge, Zhou, Su, Xu, Xu, Hui, Chen, Wang, and
+  Shan]{gan2023binary}
+Yukang Gan, Yixiao Ge, Chang Zhou, Shupeng Su, Zhouchuan Xu, Xuyuan Xu,
+  Quanchao Hui, Xiang Chen, Yexin Wang, and Ying Shan.
+\newblock Binary embedding-based retrieval at tencent.
+\newblock In \emph{Proceedings of the 29th ACM SIGKDD Conference on Knowledge
+  Discovery and Data Mining}, pages 3966--3977, 2023.
+
+\bibitem[Gao et~al.(2017)Gao, Trautmann, Yu, Santhanam, Ryu, Shenoy, and
+  Ganguli]{gao2017theory}
+Peiran Gao, Eric Trautmann, Byron Yu, Gopal Santhanam, Stephen Ryu, Krishna
+  Shenoy, and Surya Ganguli.
+\newblock A theory of multineuronal dimensionality, dynamics and measurement.
+\newblock \emph{bioRxiv}, page 214262, 2017.
+
+\bibitem[Gao et~al.(2021)Gao, Yao, and Chen]{gao2021simcse}
+Tianyu Gao, Xingcheng Yao, and Danqi Chen.
+\newblock {SimCSE}: Simple contrastive learning of sentence embeddings.
+\newblock In \emph{Proceedings of the 2021 Conference on Empirical Methods in
+  Natural Language Processing}, pages 6894--6910, 2021.
+
+\bibitem[Hubara et~al.(2016)Hubara, Courbariaux, Soudry, El-Yaniv, and
+  Bengio]{courbariaux2016bnn}
+Itay Hubara, Matthieu Courbariaux, Daniel Soudry, Ran El-Yaniv, and Yoshua
+  Bengio.
+\newblock Binarized neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~29, pages 4107--4115, 2016.
+
+\bibitem[J{\"a}rvelin and Kek{\"a}l{\"a}inen(2002)]{jarvelin2002cumulated}
+Kalervo J{\"a}rvelin and Jaana Kek{\"a}l{\"a}inen.
+\newblock Cumulated gain-based evaluation of {IR} techniques.
+\newblock \emph{ACM Transactions on Information Systems}, 20\penalty0
+  (4):\penalty0 422--446, 2002.
+
+\bibitem[J{\'e}gou et~al.(2010)J{\'e}gou, Douze, and Schmid]{jegou2010product}
+Herv{\'e} J{\'e}gou, Matthijs Douze, and Cordelia Schmid.
+\newblock Product quantization for nearest neighbor search.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 33\penalty0 (1):\penalty0 117--128, 2010.
+
+\bibitem[Johnson et~al.(2021)Johnson, Douze, and J{\'e}gou]{johnson2021billion}
+Jeff Johnson, Matthijs Douze, and Herv{\'e} J{\'e}gou.
+\newblock Billion-scale similarity search with {GPU}s.
+\newblock \emph{IEEE Transactions on Big Data}, 7\penalty0 (3):\penalty0
+  535--547, 2021.
+
+\bibitem[Joshi et~al.(2017)Joshi, Choi, Weld, and
+  Zettlemoyer]{joshi2017triviaqa}
+Mandar Joshi, Eunsol Choi, Daniel~S. Weld, and Luke Zettlemoyer.
+\newblock {TriviaQA}: A large scale distantly supervised challenge dataset for
+  reading comprehension.
+\newblock In \emph{Proceedings of the 55th Annual Meeting of the Association
+  for Computational Linguistics}, pages 1601--1611, 2017.
+
+\bibitem[Karpukhin et~al.(2020)Karpukhin, O{\u{g}}uz, Min, Lewis, Wu, Edunov,
+  Chen, and Yih]{karpukhin2020dense}
+Vladimir Karpukhin, Barlas O{\u{g}}uz, Sewon Min, Patrick Lewis, Ledell Wu,
+  Sergey Edunov, Danqi Chen, and Wen-tau Yih.
+\newblock Dense passage retrieval for open-domain question answering.
+\newblock In \emph{Proceedings of the 2020 Conference on Empirical Methods in
+  Natural Language Processing}, pages 6769--6781, 2020.
+
+\bibitem[Kusupati et~al.(2022)Kusupati, Bhatt, Rege, Wallingford, Sinha,
+  Ramanujan, Howard-Snyder, Chen, Kakade, Jain, et~al.]{kusupati2022matryoshka}
+Aditya Kusupati, Gantavya Bhatt, Aniket Rege, Matthew Wallingford, Aditya
+  Sinha, Vivek Ramanujan, William Howard-Snyder, Kaifeng Chen, Sham Kakade,
+  Prateek Jain, et~al.
+\newblock Matryoshka representation learning.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, pages 30233--30249, 2022.
+
+\bibitem[Kwiatkowski et~al.(2019)Kwiatkowski, Palomaki, Redfield, Collins,
+  Parikh, Alberti, Epstein, Polosukhin, Devlin, Lee,
+  et~al.]{kwiatkowski2019natural}
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
+  Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin,
+  Kenton Lee, et~al.
+\newblock Natural questions: A benchmark for question answering research.
+\newblock \emph{Transactions of the Association for Computational Linguistics},
+  7:\penalty0 452--466, 2019.
+
+\bibitem[Lewis et~al.(2020)Lewis, Perez, Piktus, Petroni, Karpukhin, Goyal,
+  K{\"u}ttler, Lewis, Yih, Rockt{\"a}schel, et~al.]{lewis2020retrieval}
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir
+  Karpukhin, Naman Goyal, Heinrich K{\"u}ttler, Mike Lewis, Wen-tau Yih, Tim
+  Rockt{\"a}schel, et~al.
+\newblock Retrieval-augmented generation for knowledge-intensive {NLP} tasks.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~33, pages 9459--9474, 2020.
+
+\bibitem[Litwin-Kumar et~al.(2017)Litwin-Kumar, Harris, Axel, Sompolinsky, and
+  Abbott]{litwinkumar2017optimal}
+Ashok Litwin-Kumar, Kameron~Decker Harris, Richard Axel, Haim Sompolinsky, and
+  L.~F. Abbott.
+\newblock Optimal degrees of synaptic connectivity.
+\newblock \emph{Neuron}, 93\penalty0 (5):\penalty0 1153--1164, 2017.
+
+\bibitem[Liu et~al.(2019)Liu, Ott, Goyal, Du, Joshi, Chen, Levy, Lewis,
+  Zettlemoyer, and Stoyanov]{liu2019roberta}
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
+  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
+\newblock {RoBERTa}: A robustly optimized {BERT} pretraining approach.
+\newblock \emph{arXiv preprint arXiv:1907.11692}, 2019.
+
+\bibitem[Lo et~al.(2020)Lo, Wang, Neumann, Kinney, and Weld]{lo2020s2orc}
+Kyle Lo, Lucy~Lu Wang, Mark Neumann, Rodney Kinney, and Daniel~S. Weld.
+\newblock {S2ORC}: The semantic scholar open research corpus.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association
+  for Computational Linguistics}, pages 4969--4983, 2020.
+
+\bibitem[Malkov and Yashunin(2020)]{malkov2018efficient}
+Yury~A. Malkov and Dmitry~A. Yashunin.
+\newblock Efficient and robust approximate nearest neighbor search using
+  hierarchical navigable small world graphs.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 42\penalty0 (4):\penalty0 824--836, 2020.
+
+\bibitem[Muennighoff et~al.(2023)Muennighoff, Tazi, Magne, and
+  Reimers]{muennighoff2022mteb}
+Niklas Muennighoff, Nouamane Tazi, Lo{\"\i}c Magne, and Nils Reimers.
+\newblock {MTEB}: Massive text embedding benchmark.
+\newblock In \emph{Proceedings of the 17th Conference of the European Chapter
+  of the Association for Computational Linguistics}, pages 2014--2037, 2023.
+
+\bibitem[Pantha et~al.(2026)Pantha, Awale, Kuruvanthodi, KC, Ramasubramanian,
+  Davis, Praveen, Foshee, Bhattacharjee, Bugbee, and
+  Ramachandran]{pantha2026indussde}
+Nishan Pantha, Sajil Awale, Vishnudev Kuruvanthodi, Simran KC, Muthukumaran
+  Ramasubramanian, Carson Davis, Bishwas Praveen, Emily Foshee, Bishwaranjan
+  Bhattacharjee, Kaylin Bugbee, and Rahul Ramachandran.
+\newblock {INDUS-SDE}: A language model for scientific content curation and
+  discovery.
+\newblock In \emph{Proceedings of the 32nd ACM SIGKDD Conference on Knowledge
+  Discovery and Data Mining V.2 (KDD '26)}, New York, NY, USA, August 2026.
+  Association for Computing Machinery.
+\newblock ISBN 979-8-4007-2259-2/2026/08.
+\newblock \doi{10.1145/3770855.3818847}.
+
+\bibitem[Reimers and Gurevych(2019)]{reimers2019sbert}
+Nils Reimers and Iryna Gurevych.
+\newblock Sentence-{BERT}: Sentence embeddings using siamese {BERT}-networks.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in
+  Natural Language Processing}, pages 3982--3992, 2019.
+
+\bibitem[Schr{\"o}dter et~al.(2026)Schr{\"o}dter, Stenkamp, Herrmann, and
+  Gieseke]{schrodter2025trainable}
+Karsten Schr{\"o}dter, Jan Stenkamp, Nina Herrmann, and Fabian Gieseke.
+\newblock Trainable bitwise soft quantization for input feature compression.
+\newblock In \emph{Proceedings of the Third Conference on Parsimony and
+  Learning (CPAL)}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2603.05172}.
+
+\bibitem[Shakir et~al.(2024)Shakir, Aarsen, and Lee]{shakir2024embedding}
+Aamir Shakir, Tom Aarsen, and Sean Lee.
+\newblock Embedding quantization.
+\newblock \url{https://huggingface.co/blog/embedding-quantization}, March 2024.
+\newblock Hugging Face Blog. Accessed: 2024.
+
+\bibitem[Song et~al.(2020)Song, Tan, Qin, Lu, and Liu]{song2020mpnet}
+Kaitao Song, Xu~Tan, Tao Qin, Jianfeng Lu, and Tie-Yan Liu.
+\newblock {MPNet}: Masked and permuted pre-training for language understanding.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~33, pages 16857--16867, 2020.
+
+\bibitem[Thakur et~al.(2021)Thakur, Reimers, R{\"u}ckl{\'e}, Srivastava, and
+  Gurevych]{thakur2021beir}
+Nandan Thakur, Nils Reimers, Andreas R{\"u}ckl{\'e}, Abhishek Srivastava, and
+  Iryna Gurevych.
+\newblock {BEIR}: A heterogeneous benchmark for zero-shot evaluation of
+  information retrieval models.
+\newblock In \emph{Thirty-fifth Conference on Neural Information Processing
+  Systems Datasets and Benchmarks Track}, 2021.
+
+\bibitem[van~den Oord et~al.(2018)van~den Oord, Li, and
+  Vinyals]{oord2018representation}
+Aaron van~den Oord, Yazhe Li, and Oriol Vinyals.
+\newblock Representation learning with contrastive predictive coding.
+\newblock \emph{arXiv preprint arXiv:1807.03748}, 2018.
+
+\bibitem[Wilcoxon(1945)]{wilcoxon1945individual}
+Frank Wilcoxon.
+\newblock Individual comparisons by ranking methods.
+\newblock \emph{Biometrics Bulletin}, 1\penalty0 (6):\penalty0 80--83, 1945.
+
+\bibitem[Xiao et~al.(2023)Xiao, Liu, Zhang, and Muennighoff]{xiao2023c}
+Shitao Xiao, Zheng Liu, Peitian Zhang, and Niklas Muennighoff.
+\newblock {C-Pack}: Packaged resources to advance general {Chinese} embedding.
+\newblock \emph{arXiv preprint arXiv:2309.07597}, 2023.
+
+\bibitem[Yamada et~al.(2021)Yamada, Asai, and Hajishirzi]{yamada2021efficient}
+Ikuya Yamada, Akari Asai, and Hannaneh Hajishirzi.
+\newblock Efficient passage retrieval with hashing for open-domain question
+  answering.
+\newblock In \emph{Proceedings of the 59th Annual Meeting of the Association
+  for Computational Linguistics and the 11th International Joint Conference on
+  Natural Language Processing (Volume 2: Short Papers)}, pages 979--986, 2021.
+
+\bibitem[Yang et~al.(2019)Yang, Shen, Xing, Tian, Li, Deng, Huang, and
+  Hua]{yang2019quantization}
+Jiwei Yang, Xu~Shen, Jun Xing, Xinmei Tian, Houqiang Li, Bing Deng, Jianqiang
+  Huang, and Xian-Sheng Hua.
+\newblock Quantization networks.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, pages 7308--7316, 2019.
+
+\bibitem[Yang et~al.(2018)Yang, Qi, Zhang, Bengio, Cohen, Salakhutdinov, and
+  Manning]{yang2018hotpotqa}
+Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William~W. Cohen, Ruslan
+  Salakhutdinov, and Christopher~D. Manning.
+\newblock {HotpotQA}: A dataset for diverse, explainable multi-hop question
+  answering.
+\newblock In \emph{Proceedings of the 2018 Conference on Empirical Methods in
+  Natural Language Processing}, pages 2369--2380, 2018.
+
+\bibitem[Zandieh et~al.(2026)Zandieh, Daliri, Hadian, and
+  Mirrokni]{zandieh2025turboquant}
+Amir Zandieh, Majid Daliri, Majid Hadian, and Vahab Mirrokni.
+\newblock {TurboQuant}: Online vector quantization with near-optimal distortion
+  rate.
+\newblock In \emph{The Thirteenth International Conference on Learning
+  Representations}, 2026.
+\newblock URL \url{https://openreview.net/forum?id=tO3ASKZlok}.
+
+\bibitem[{Zeta Alpha}(2024)]{nanobeir2024}
+{Zeta Alpha}.
+\newblock {NanoBEIR}: A collection of smaller versions of {BEIR} datasets.
+\newblock
+  \url{https://huggingface.co/collections/zeta-alpha-ai/nanobeir-66e1a0af21dfd93e620cd9f6},
+  2024.
+\newblock Hugging Face dataset collection.
+
+\end{thebibliography}
