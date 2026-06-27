@@ -1,0 +1,20 @@
+[project]
+name = "scaling-embedding-retrieval-thesis"
+version = "0.1.0"
+description = "Compact embeddings for information retrieval: binarization + MRL fine-tuning and evaluation."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch",
+    "sentence-transformers",
+    "datasets",
+    "huggingface-hub",
+    "transformers",
+    "wandb",
+    "python-dotenv",
+    "pyyaml",
+    "numpy",
+    "joblib",
+    "tqdm",
+    "turboquant==0.2.0",
+]

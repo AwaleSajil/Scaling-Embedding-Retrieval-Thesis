@@ -4,11 +4,24 @@ Master's thesis code: fine-tuning sentence embedding models with binarization an
 
 ## Setup
 
+This project uses [uv](https://docs.astral.sh/uv/). Install it, then sync the environment:
+
 ```bash
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh   # if uv is not installed
+uv sync                                            # creates .venv and installs pinned deps
 ```
 
-Create a `.env` at the repo root with credentials used at training time:
+This reads `pyproject.toml` and `uv.lock` and pins Python 3.11 (`.python-version`). Run commands inside the environment with `uv run`, e.g. `uv run python -m eval_v2.run`.
+
+> On Apple Silicon, `uv sync` installs the CPU/MPS build of torch. The multi-GPU `torchrun` training below requires a CUDA host.
+
+Alternatively, install into an existing environment with `pip install -r requirements.txt`.
+
+Then copy `.env.example` to `.env` and fill in the credentials used at training time:
+
+```bash
+cp .env.example .env
+```
 
 ```
 WANDB_API_KEY=...
