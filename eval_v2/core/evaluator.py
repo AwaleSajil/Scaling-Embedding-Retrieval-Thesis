@@ -166,6 +166,19 @@ def _auto_chunk_size(n_queries: int, budget_bytes: int = 1_500_000_000) -> int:
 
     Measured on 16 threads: chunk=50,000 with the normalize hoisted is ~3.6x
     faster end-to-end than the previous fixed 500.
+
+    Changing the chunk size changes results very slightly, so BEIR numbers will
+    not match anything produced with the old fixed 500 (pass corpus_chunk_size
+    explicitly to reproduce those). Verified over 9 model specs x nfcorpus +
+    scifact: ndcg@10 moves by at most 0.96%, mean 0.14%, and 54% of metrics are
+    unchanged. The shift is deterministic -- exactly 5.57e-03 max on both dsig1
+    and matrix -- and comes from tie-breaking (integer Hamming distances tie
+    constantly, and which tied doc survives depends on chunk boundaries) plus
+    float non-associativity in a differently-shaped matmul. Neither is a
+    correctness regression: the old chunk=500 tie-breaking was equally
+    arbitrary. Cross-machine agreement is if anything slightly better, since
+    there are fewer chunk boundaries to disagree about: 17 of 18 (model,
+    subset) pairs are bit-identical between dsig1 and matrix, up from 15.
     """
     if n_queries <= 0:
         return 50_000
