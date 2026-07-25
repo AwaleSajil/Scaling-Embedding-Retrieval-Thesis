@@ -64,3 +64,6 @@ Thumbs.db
 =*
 
 eval_v2/outputs/
+
+# SLURM job logs (stdout/stderr per job, written next to the submit script)
+eval_v2/slurm_logs/
