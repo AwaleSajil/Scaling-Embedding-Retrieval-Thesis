@@ -8,7 +8,7 @@
 #SBATCH --mem=128G
 #SBATCH --output=slurm_logs/%A_%a_beir.out
 #SBATCH --error=slurm_logs/%A_%a_beir.err
-#SBATCH --time=3-00:00:00
+#SBATCH --time=21-00:00:00
 #SBATCH --ntasks-per-node=1
 #SBATCH --array=0-12%1
 #SBATCH --mail-type=END,FAIL
@@ -22,9 +22,9 @@
 #   sbatch eval_beir_finalize.slurm
 #
 # Why per subset instead of one job (eval_beir_full.sh):
-#   * The whole run is ~6-7 days, against a 7-day wall clock. A single job that
-#     is killed at the limit leaves no significance tests and no dashboard. Each
-#     subset here is independently bounded -- msmarco, the worst, is ~2 days.
+#   * The whole run is ~6-7 days. A single job killed at its wall clock leaves
+#     no significance tests and no dashboard. Each subset here is independently
+#     bounded -- msmarco, the worst, is ~2 days on current estimates.
 #   * Results are durable as each subset lands. store.already_evaluated() keys
 #     on (model, subset), so a failed task can simply be resubmitted and will
 #     skip what it already did.
@@ -34,6 +34,16 @@
 # %1 in the array spec runs ONE task at a time. matrix101 has 3 A100s and other
 # users share it, so two concurrent 2-GPU tasks would not both schedule. Raise
 # to %2 only if the node frees up.
+#
+# --time is 21 days per TASK, far above the ~2 days msmarco should need. The
+# partition has no limit (sinfo TIMELIMIT=infinite) and a task exits as soon as
+# it finishes, so the slack costs nothing in occupancy -- it only guarantees a
+# task is never killed mid-subset and forced to redo the encode. The one real
+# cost is backfill: SLURM cannot slot a 21-day request into a short gap the way
+# it could a 2-day one, so a task may wait longer to start on a busy node.
+# Encoding throughput has never actually been measured (the ~4.5 day figure is
+# back-derived from a comment in eval_beir_full.sh), which is the main reason
+# for the generous margin.
 #
 # --skip_significance is what makes the split worthwhile: significance loads
 # every model's per-query shards into memory and rewrites the whole

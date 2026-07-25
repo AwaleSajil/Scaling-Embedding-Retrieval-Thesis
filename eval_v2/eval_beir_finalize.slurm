@@ -7,7 +7,7 @@
 #SBATCH --mem=200G
 #SBATCH --output=slurm_logs/%j_beir_finalize.out
 #SBATCH --error=slurm_logs/%j_beir_finalize.err
-#SBATCH --time=1-00:00:00
+#SBATCH --time=7-00:00:00
 #SBATCH --ntasks-per-node=1
 #SBATCH --mail-type=END,FAIL
 #
@@ -33,6 +33,12 @@
 # queries that is ~7 GB on disk and several times that as live Python objects.
 # This is the memory high-water mark of the whole pipeline, and it happens last,
 # after days of successful work -- so it is over-provisioned deliberately.
+#
+# --time is 7 days against an estimate of 4-12 h, for the same reason: this job
+# runs after every subset has completed, so being killed here would waste the
+# entire run's tail. Significance is the least-measured stage (~5.6M paired
+# tests, plus Python win/tie/loss loops over every query), and it is also the
+# one most likely to be slower than projected.
 # ============================================================================
 
 EXT_DISK=/nas/rgroup/dsig/llm-team/sajil-thesis
