@@ -66,6 +66,17 @@ def parse_args():
                    help="Skip evaluation; only rebuild the HTML dashboard from existing results.")
     p.add_argument("--run_significance", action="store_true",
                    help="Force recomputation of all significance tests, ignoring cached results.")
+    p.add_argument("--skip_significance", action="store_true",
+                   help="Evaluate only; do not compute significance or build the HTML. "
+                        "For per-subset jobs: significance loads every model's per-query "
+                        "shards into memory and rewrites the whole significance.json, so "
+                        "doing it once at the end beats doing it after every subset.")
+    p.add_argument("--finalize", action="store_true",
+                   help="Skip evaluation; compute significance and build the HTML from "
+                        "results already on disk. The counterpart to --skip_significance. "
+                        "Do not use a plain re-run for this: the evaluate loop reloads "
+                        "every dataset and every cached embedding (~2.9 TB) before "
+                        "skipping the already-done pairs.")
     p.add_argument("--hf_token", default=None,
                    help="HuggingFace access token (or set HUGGINGFACE_TOKEN env var).")
     # --- progress monitoring (off by default; see eval_v2/monitor.py) ---
@@ -416,8 +427,24 @@ def main():
     _models = {k: MODELS[k] for k in _keys if k in MODELS}
     monitor = make_monitor(args, _models, _subsets)
 
+    # Which stages run. Made explicit because the three flags interact:
+    #   (default)            evaluate, significance, html
+    #   --skip_significance  evaluate only          -- per-subset worker jobs
+    #   --finalize           significance + html    -- the one job that ends a split run
+    #   --just_html          html only              -- rebuild the dashboard, nothing else
+    if args.just_html:
+        do_eval, do_sig, do_html = False, False, True
+    elif args.finalize:
+        do_eval, do_sig, do_html = False, True, True
+    else:
+        do_eval = True
+        do_sig = not args.skip_significance
+        # The dashboard reads the significance shards, so building it from a
+        # per-subset worker would publish comparison panels missing most pairs.
+        do_html = not args.skip_significance
+
     try:
-        if not args.just_html:
+        if do_eval:
             if args.dataset == "nanobeir":
                 evaluate_nanobeir(args, store, cache)
             elif args.dataset == "beir":
@@ -428,7 +455,19 @@ def main():
                     "Add a loader in run.py following the nanobeir pattern."
                 )
 
-            # Significance testing
+        if args.finalize:
+            # Each per-subset worker calls save_mean_metrics() with only its own
+            # subset, so the stored "mean" ends up being whichever subset ran
+            # last rather than an average. Recompute over everything actually
+            # present before anything downstream reads it.
+            agg = store.load_aggregate()
+            real_subsets = sorted({s for md in agg.values() for s in md if s != "mean"})
+            print(f"\n[Mean] Recomputing across {len(real_subsets)} subsets: "
+                  f"{', '.join(real_subsets)}")
+            for mkey in agg:
+                store.save_mean_metrics(mkey, real_subsets)
+
+        if do_sig:
             existing_sig = {} if args.run_significance else store.load_significance()
             if existing_sig:
                 print(f"\n[Significance] {len(existing_sig)} existing entries found; computing only new pairs ...")
@@ -440,11 +479,16 @@ def main():
             store.save_significance(merged_sig)
             print(f"  {len(new_sig)} new pairs computed, {len(merged_sig)} total.")
             monitor.stage("significance_done", **{"significance/pairs": len(merged_sig)})
+        elif not args.just_html:
+            print("\n[Significance] skipped (--skip_significance); "
+                  "run with --finalize when all subsets are done")
 
-        # Build HTML
-        print(f"\n[HTML] Building dashboard → {args.html_path}")
-        build_html(store, args.html_path)
-        monitor.stage("html_done")
+        if do_html:
+            print(f"\n[HTML] Building dashboard → {args.html_path}")
+            build_html(store, args.html_path)
+            monitor.stage("html_done")
+        else:
+            print("\n[HTML] skipped; run with --finalize when all subsets are done")
 
         print("\n✓ Done.")
     except BaseException as e:
