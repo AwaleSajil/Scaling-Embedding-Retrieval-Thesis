@@ -133,13 +133,44 @@ def _to_float_tensor(x) -> torch.Tensor:
     return x
 
 
-def _score_chunk(q_embs: torch.Tensor, c_chunk: torch.Tensor, similarity: str) -> torch.Tensor:
+def _prepare_queries(q_embs: torch.Tensor, similarity: str) -> torch.Tensor:
+    """Query-side work that does not depend on the corpus chunk.
+
+    Hoisted out of the chunk loop: this used to run inside _score_chunk, so on
+    full BEIR the same (n_queries x 768) normalize was recomputed once per
+    chunk -- 17,684 times per model on msmarco.
+    """
     if similarity == "hamming":
-        return hamming_similarity(q_embs, c_chunk)
-    # cosine
-    q_norm = torch.nn.functional.normalize(q_embs.float(), dim=1)
+        return q_embs
+    return torch.nn.functional.normalize(q_embs.float(), dim=1)
+
+
+def _score_chunk(q_prepared: torch.Tensor, c_chunk: torch.Tensor,
+                 similarity: str) -> torch.Tensor:
+    """Score one corpus chunk. *q_prepared* must come from _prepare_queries."""
+    if similarity == "hamming":
+        return hamming_similarity(q_prepared, c_chunk)
+    # cosine — queries are already normalized
     c_norm = torch.nn.functional.normalize(c_chunk.float(), dim=1)
-    return torch.mm(q_norm, c_norm.t())
+    return torch.mm(q_prepared, c_norm.t())
+
+
+def _auto_chunk_size(n_queries: int, budget_bytes: int = 1_500_000_000) -> int:
+    """Corpus rows to score at once, sized so the scores matrix fits a budget.
+
+    The per-chunk Python cost (heap pushes, .tolist(), tensor setup) scales with
+    the NUMBER of chunks, not corpus size -- taking top-k per query costs the
+    same for a 500-row chunk as a 50,000-row one. So chunks should be as large
+    as memory allows. The binding constraint is the scores matrix, which is
+    n_queries x chunk float32.
+
+    Measured on 16 threads: chunk=50,000 with the normalize hoisted is ~3.6x
+    faster end-to-end than the previous fixed 500.
+    """
+    if n_queries <= 0:
+        return 50_000
+    rows = budget_bytes // (4 * n_queries)
+    return int(max(2_048, min(100_000, rows)))
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +188,7 @@ def run_ir_eval(
     qrels: dict[str, set[str]],           # query_id → set of relevant corpus_ids
     spec: ModelSpec,
     ks: list[int] = [1, 3, 5, 10],
-    corpus_chunk_size: int = 500,
+    corpus_chunk_size: int | None = None,
 ) -> SubsetResult:
     """
     Full IR evaluation pipeline for one (model, subset) pair.
@@ -223,6 +254,12 @@ def run_ir_eval(
     max_k = max(ks)
     similarity = spec.similarity
 
+    if corpus_chunk_size is None:
+        corpus_chunk_size = _auto_chunk_size(n_queries)
+
+    # Query-side prep is chunk-independent, so do it once rather than per chunk.
+    q_prepared = _prepare_queries(query_embs, similarity)
+
     # 3. Score in chunks and track top-max_k per query
     # heap: list of heaps, one per query (min-heap of (score, corpus_id))
     heaps: list[list] = [[] for _ in range(n_queries)]
@@ -230,7 +267,7 @@ def run_ir_eval(
     for c_start in range(0, len(corpus_ids), corpus_chunk_size):
         c_end = min(c_start + corpus_chunk_size, len(corpus_ids))
         c_chunk = corpus_embs[c_start:c_end]
-        scores = _score_chunk(query_embs, c_chunk, similarity)  # (n_q, chunk_size)
+        scores = _score_chunk(q_prepared, c_chunk, similarity)  # (n_q, chunk_size)
 
         top_vals, top_idx = torch.topk(
             scores,
