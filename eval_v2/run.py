@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 load_dotenv(_THESIS_ROOT / ".env")
 
 from eval_v2.config.models import MODELS, ModelSpec
-from eval_v2.config.datasets import DATASETS, NANOBEIR_SUBSET_TO_HF
+from eval_v2.config.datasets import BEIR_QRELS_SPLIT, DATASETS, NANOBEIR_SUBSET_TO_HF
 from eval_v2.core.cache import EmbeddingCache
 from eval_v2.core.evaluator import run_ir_eval
 from eval_v2.core.significance import compute_significance
@@ -68,6 +68,18 @@ def parse_args():
                    help="Force recomputation of all significance tests, ignoring cached results.")
     p.add_argument("--hf_token", default=None,
                    help="HuggingFace access token (or set HUGGINGFACE_TOKEN env var).")
+    # --- progress monitoring (off by default; see eval_v2/monitor.py) ---
+    p.add_argument("--wandb", action="store_true",
+                   help="Report progress to Weights & Biases so a multi-day run can "
+                        "be watched from anywhere. No-op unless set.")
+    p.add_argument("--wandb_project", default="beir-eval",
+                   help="W&B project. Kept separate from the training project "
+                        "(scale_emb_retrieval), whose runs carry no job_type/tags.")
+    p.add_argument("--wandb_name", default=None,
+                   help="W&B run name. Default: <dataset>-<kind>-<SLURM_JOB_ID>, "
+                        "e.g. beir-full-3924500, so it maps onto the SLURM logs.")
+    p.add_argument("--wandb_run_kind", default="full", choices=["full", "smoke"],
+                   help="Tags the run so smoke tests can be filtered out.")
     return p.parse_args()
 
 
@@ -120,7 +132,8 @@ def load_beir_subset(subset_name: str, hf_token: str | None = None):
 
     Two BEIR-specific gotchas that the NanoBEIR loader does not have:
       * qrels live in a SEPARATE repo ``BeIR/<subset>-qrels`` (not a config of
-        the main repo) with splits train/validation/test — we use ``test``.
+        the main repo) with splits train/validation/test — we use ``test`` unless
+        ``BEIR_QRELS_SPLIT`` overrides it (see the note there on msmarco).
       * qrels ``query-id`` / ``corpus-id`` are stored as ints, whereas corpus /
         query ``_id`` are strings. Both sides are cast to str or nothing matches
         and every metric silently computes as 0.
@@ -130,10 +143,11 @@ def load_beir_subset(subset_name: str, hf_token: str | None = None):
     from datasets import load_dataset
 
     kw = dict(token=hf_token) if hf_token else {}
+    qrels_split = BEIR_QRELS_SPLIT.get(subset_name, "test")
 
     corpus_ds = load_dataset(f"BeIR/{subset_name}", "corpus", split="corpus", **kw)
     queries_ds = load_dataset(f"BeIR/{subset_name}", "queries", split="queries", **kw)
-    qrels_ds = load_dataset(f"BeIR/{subset_name}-qrels", split="test", **kw)
+    qrels_ds = load_dataset(f"BeIR/{subset_name}-qrels", split=qrels_split, **kw)
 
     corpus_ids, corpus_texts = [], []
     for row in corpus_ds:
@@ -149,9 +163,9 @@ def load_beir_subset(subset_name: str, hf_token: str | None = None):
             qrels.setdefault(qid, set()).add(str(row["corpus-id"]))
 
     # BEIR's `queries` config bundles train/dev/test queries together, but only
-    # the test-split qrels are judged here. Encoding + scoring the unjudged
-    # queries is pure waste (90-95% on fiqa/fever) and the evaluator drops them
-    # from the aggregate anyway, so keep only queries that have test qrels.
+    # the evaluated split's qrels are judged here. Encoding + scoring the unjudged
+    # queries is pure waste (90-95% on fiqa/fever, 98.6% on msmarco) and the
+    # evaluator drops them from the aggregate anyway, so keep only judged queries.
     judged = set(qrels)
     query_ids, query_texts = [], []
     for row in queries_ds:
@@ -267,7 +281,7 @@ def evaluate_nanobeir(args, store: ResultsStore, cache: EmbeddingCache):
         store.save_mean_metrics(mkey, subsets)
 
 
-def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
+def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache, monitor=None):
     """Full BEIR evaluation. Identical pipeline to evaluate_nanobeir, only the
     per-subset loader differs (load_beir_subset instead of load_nanobeir_subset)."""
     spec = DATASETS[args.dataset]
@@ -278,6 +292,10 @@ def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
 
     hf_token = args.hf_token or os.environ.get("HUGGINGFACE_TOKEN")
 
+    if monitor is None:
+        from eval_v2.monitor import NullMonitor
+        monitor = NullMonitor()
+
     for subset in subsets:
         print(f"\n{'='*60}")
         print(f"  Subset: {subset}")
@@ -287,6 +305,7 @@ def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
             load_beir_subset(subset, hf_token)
 
         print(f"  Corpus: {len(corpus_ids)}  Queries: {len(query_ids)}")
+        monitor.subset_start(subset, len(corpus_ids), len(query_ids))
 
         # --- Cache embeddings per unique model path ---
         path_to_keys: dict[str, list[str]] = {}
@@ -353,6 +372,7 @@ def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
             )
 
             store.save_subset_result(mkey, result)
+            monitor.pair_done(mkey, subset, result.aggregate)
             agg_str = "  ".join(
                 f"{m}={v:.4f}"
                 for m, v in sorted(result.aggregate.items())
@@ -364,6 +384,7 @@ def evaluate_beir(args, store: ResultsStore, cache: EmbeddingCache):
     print("\n[Mean] Computing mean metrics across subsets ...")
     for mkey in models_to_run:
         store.save_mean_metrics(mkey, subsets)
+    monitor.stage("eval_complete")
 
 
 # ---------------------------------------------------------------------------
@@ -386,33 +407,53 @@ def main():
         chunk_size=args.chunk_size,
     )
 
-    if not args.just_html:
-        if args.dataset == "nanobeir":
-            evaluate_nanobeir(args, store, cache)
-        elif args.dataset == "beir":
-            evaluate_beir(args, store, cache)
-        else:
-            raise NotImplementedError(
-                f"Dataset '{args.dataset}' loader not yet implemented in eval_v2. "
-                "Add a loader in run.py following the nanobeir pattern."
-            )
+    # Progress monitoring. NullMonitor unless --wandb, so this is inert by
+    # default; see eval_v2/monitor.py.
+    from eval_v2.monitor import make_monitor
+    _spec = DATASETS[args.dataset]
+    _subsets = args.subsets or _spec.subsets or []
+    _keys = args.models or list(MODELS.keys())
+    _models = {k: MODELS[k] for k in _keys if k in MODELS}
+    monitor = make_monitor(args, _models, _subsets)
 
-        # Significance testing
-        existing_sig = {} if args.run_significance else store.load_significance()
-        if existing_sig:
-            print(f"\n[Significance] {len(existing_sig)} existing entries found; computing only new pairs ...")
-        else:
-            print("\n[Significance] Computing pairwise significance tests ...")
-        new_sig = compute_significance(store, existing=existing_sig)
-        merged_sig = {**existing_sig, **new_sig}
-        store.save_significance(merged_sig)
-        print(f"  {len(new_sig)} new pairs computed, {len(merged_sig)} total.")
+    try:
+        if not args.just_html:
+            if args.dataset == "nanobeir":
+                evaluate_nanobeir(args, store, cache)
+            elif args.dataset == "beir":
+                evaluate_beir(args, store, cache, monitor=monitor)
+            else:
+                raise NotImplementedError(
+                    f"Dataset '{args.dataset}' loader not yet implemented in eval_v2. "
+                    "Add a loader in run.py following the nanobeir pattern."
+                )
 
-    # Build HTML
-    print(f"\n[HTML] Building dashboard → {args.html_path}")
-    build_html(store, args.html_path)
+            # Significance testing
+            existing_sig = {} if args.run_significance else store.load_significance()
+            if existing_sig:
+                print(f"\n[Significance] {len(existing_sig)} existing entries found; computing only new pairs ...")
+            else:
+                print("\n[Significance] Computing pairwise significance tests ...")
+            monitor.stage("significance_start")
+            new_sig = compute_significance(store, existing=existing_sig)
+            merged_sig = {**existing_sig, **new_sig}
+            store.save_significance(merged_sig)
+            print(f"  {len(new_sig)} new pairs computed, {len(merged_sig)} total.")
+            monitor.stage("significance_done", **{"significance/pairs": len(merged_sig)})
 
-    print("\n✓ Done.")
+        # Build HTML
+        print(f"\n[HTML] Building dashboard → {args.html_path}")
+        build_html(store, args.html_path)
+        monitor.stage("html_done")
+
+        print("\n✓ Done.")
+    except BaseException as e:
+        # Mark the W&B run failed rather than leaving it "running" forever.
+        # BaseException so SLURM's SIGTERM at the wall-clock limit is caught too.
+        monitor.finish(ok=False, note=f"{type(e).__name__}: {str(e)[:200]}")
+        raise
+    else:
+        monitor.finish(ok=True)
 
 
 if __name__ == "__main__":

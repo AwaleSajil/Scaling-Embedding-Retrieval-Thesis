@@ -51,6 +51,7 @@ DATASETS: dict[str, DatasetSpec] = {
             "fever",
             "climate-fever",
             "scifact",
+            "msmarco",
         ],
         dataset_cache_path="./beir_datasets",
     ),
@@ -85,6 +86,20 @@ DATASETS: dict[str, DatasetSpec] = {
         ],
         data_file_colors=["#1f77b4", "#ff7f0e"],
     ),
+}
+
+
+# BEIR subset → qrels split to evaluate on. Default is "test"; only subsets that
+# deviate are listed here.
+#
+# msmarco: the `test` split of BeIR/msmarco-qrels is TREC-DL 2019 (9,260 judgments
+# over just 43 queries). The standard BEIR MS MARCO benchmark is the dev set, which
+# this repo stores under `validation` (7,437 judgments over 6,980 queries). Using
+# "test" here does not error — it silently scores 43 queries against an 8.8M-doc
+# corpus, which looks plausible in the dashboard but is not comparable to any
+# published BEIR number.
+BEIR_QRELS_SPLIT: dict[str, str] = {
+    "msmarco": "validation",
 }
 
 

@@ -2,12 +2,19 @@
 Persistent result storage for eval_v2.
 
 Files written under <output_dir>/:
-    aggregate.json     — model → subset → metric@k → float
-    per_query.json     — model → subset → query_id → {metrics, ranked_ids, relevant_ids}
-    emb_info.json      — model → subset → {queries: {...}, corpus: {...}}
-    significance.json  — key → {p, effect, wins, ties, losses, n}
+    aggregate.json          — model → subset → metric@k → float
+    per_query/<model>.json  — subset → query_id → {metrics, ranked_ids, relevant_ids}
+    emb_info.json           — model → subset → {queries: {...}, corpus: {...}}
+    significance.json       — key → {p, effect, wins, ties, losses, n}
 
 All files are updated incrementally so partial runs can be resumed.
+
+Per-query data is sharded one file per model. A single per_query.json does not
+scale to full BEIR: it is rewritten after every (model, subset) pair, so with
+~23k queries and 224 model variants the file reaches ~9 GB and is rewritten
+~2700 times. Sharding makes each write proportional to one model instead of the
+whole registry. A legacy monolithic ``per_query.json`` (written by earlier
+NanoBEIR runs) is still read by :meth:`ResultsStore.load_per_query`.
 """
 import json
 import os
@@ -23,9 +30,13 @@ class ResultsStore:
         self.out.mkdir(parents=True, exist_ok=True)
 
         self._agg_path = self.out / "aggregate.json"
-        self._pq_path = self.out / "per_query.json"
+        self._pq_path = self.out / "per_query.json"      # legacy monolithic (read-only)
+        self._pq_dir = self.out / "per_query"            # one file per model
         self._emb_path = self.out / "emb_info.json"
         self._sig_path = self.out / "significance.json"
+
+    def _pq_model_path(self, model_key: str) -> Path:
+        return self._pq_dir / f"{model_key}.json"
 
     # ------------------------------------------------------------------
     # Saving
@@ -40,9 +51,11 @@ class ResultsStore:
         agg.setdefault(model_key, {})[subset] = result.aggregate
         self._save(self._agg_path, agg)
 
-        # --- per_query ---
-        pq = self._load(self._pq_path)
-        pq.setdefault(model_key, {})[subset] = {
+        # --- per_query (one file per model, so the write stays O(one model)) ---
+        pq_path = self._pq_model_path(model_key)
+        self._pq_dir.mkdir(parents=True, exist_ok=True)
+        pq_model = self._load(pq_path)
+        pq_model[subset] = {
             qr.query_id: {
                 "text": qr.query_text,
                 "relevant_ids": list(qr.relevant_ids),
@@ -52,7 +65,7 @@ class ResultsStore:
             }
             for qr in result.per_query
         }
-        self._save(self._pq_path, pq)
+        self._save(pq_path, pq_model)
 
         # --- emb_info ---
         emb = self._load(self._emb_path)
@@ -98,7 +111,16 @@ class ResultsStore:
         return self._load(self._agg_path)
 
     def load_per_query(self) -> dict:
-        return self._load(self._pq_path)
+        """model → subset → query_id → {...}.
+
+        Merges the legacy monolithic ``per_query.json`` with the per-model shards
+        in ``per_query/``; a shard wins over the legacy entry for the same model.
+        """
+        merged = self._load(self._pq_path)
+        if self._pq_dir.is_dir():
+            for path in sorted(self._pq_dir.glob("*.json")):
+                merged[path.stem] = self._load(path)
+        return merged
 
     def load_emb_info(self) -> dict:
         return self._load(self._emb_path)

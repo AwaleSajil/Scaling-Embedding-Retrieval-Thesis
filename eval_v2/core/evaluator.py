@@ -96,9 +96,14 @@ def _apply_pq(corpus_embs: torch.Tensor, query_embs: torch.Tensor, spec: ModelSp
     assert d % spec.pq_M == 0, f"Dim {d} not divisible by pq_M={spec.pq_M}"
     index = faiss.IndexPQ(d, spec.pq_M, spec.pq_nbits)
     index.train(corpus_np)
-    index.add(corpus_np)
+    # No index.add(): we only need sa_encode/sa_decode for the reconstruction, and
+    # adding would keep a second full copy of the codes. On the 5.4M-doc BEIR
+    # subsets (fever, climate-fever, hotpotqa) the live arrays here are already
+    # ~17 GB each, so the redundant copy matters.
     codes = index.sa_encode(corpus_np)
+    del corpus_np
     corpus_recon = torch.from_numpy(index.sa_decode(codes))
+    del codes
     # Queries stay float32 (asymmetric PQ)
     query_float = query_embs.float() if not query_embs.is_floating_point() else query_embs
     return corpus_recon, query_float, index
