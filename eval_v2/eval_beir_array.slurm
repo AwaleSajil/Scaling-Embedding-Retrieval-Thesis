@@ -84,6 +84,13 @@ echo "Array job:  $SLURM_ARRAY_JOB_ID  task $SLURM_ARRAY_TASK_ID"
 echo "Subset:     $SUBSET"
 echo "Node:       $SLURM_NODELIST"
 echo "GPUs:       ${CUDA_VISIBLE_DEVICES:-<unset>}"
+echo "EXT_DISK:   $EXT_DISK"
+# sbatch defaults to --export=ALL, so a stale EXT_DISK or BEIR_MODELS left
+# exported from a smoke run silently redirects the real run to a throwaway tree
+# and/or a handful of specs. Both are echoed loudly rather than assumed.
+if [[ "$EXT_DISK" != "/nas/rgroup/dsig/llm-team/sajil-thesis" ]]; then
+    echo "WARNING: EXT_DISK is NOT the default -- this is not the canonical results tree."
+fi
 echo
 
 eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
