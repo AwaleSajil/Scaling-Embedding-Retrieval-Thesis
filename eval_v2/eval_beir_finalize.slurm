@@ -41,7 +41,7 @@
 # one most likely to be slower than projected.
 # ============================================================================
 
-EXT_DISK=/nas/rgroup/dsig/llm-team/sajil-thesis
+EXT_DISK="${EXT_DISK:-/nas/rgroup/dsig/llm-team/sajil-thesis}"
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export HF_HUB_DISABLE_XET=1

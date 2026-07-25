@@ -71,7 +71,9 @@ SUBSETS=(
 )
 SUBSET="${SUBSETS[$SLURM_ARRAY_TASK_ID]}"
 
-EXT_DISK=/nas/rgroup/dsig/llm-team/sajil-thesis
+# EXT_DISK is overridable so a smoke run can write to a throwaway tree instead
+# of seeding the real results directory.
+EXT_DISK="${EXT_DISK:-/nas/rgroup/dsig/llm-team/sajil-thesis}"
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export HF_HUB_DISABLE_XET=1
@@ -97,11 +99,24 @@ cd /rhome/sawale/thesis
 # Every registered variant except training-snapshot checkpoints, which do not
 # need full BEIR. 224 specs riding on 29 unique checkpoints, so the GPU cost is
 # 29 encodes per subset, not 224.
+#
+# BEIR_MODELS overrides the list, for smoke-testing THIS script cheaply without
+# committing to the full set. The dominant cost on small subsets is per-
+# checkpoint pool startup (~40 s each), so cutting 29 checkpoints to 5 turns an
+# hour into a few minutes:
+#   BEIR_MODELS="bge-base-en-v1.5 finetuned-bge-base-en-v1.5 \
+#     finetuned-bge-base-en-v1.5-post-binary finetuned-bge-base-en-v1.5-pq-m16-n8" \
+#     sbatch --export=ALL,BEIR_MODELS --array=0-1%1 eval_beir_array.slurm
+if [[ -n "${BEIR_MODELS:-}" ]]; then
+    MODELS="$BEIR_MODELS"
+    echo "NOTE: using BEIR_MODELS override -- this is a smoke run, not the full set"
+else
 MODELS=$(python - <<'PYCODE'
 from eval_v2.config.models import MODELS
 print(" ".join(k for k, s in MODELS.items() if "/checkpoints/checkpoint-" not in s.path))
 PYCODE
 )
+fi
 echo "Evaluating $(echo $MODELS | wc -w) model variants on $SUBSET"
 echo
 
