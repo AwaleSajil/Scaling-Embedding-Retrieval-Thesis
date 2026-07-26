@@ -109,15 +109,46 @@ def _apply_pq(corpus_embs: torch.Tensor, query_embs: torch.Tensor, spec: ModelSp
     return corpus_recon, query_float, index
 
 
-def _apply_tq(corpus_embs: torch.Tensor, query_embs: torch.Tensor, spec: ModelSpec):
-    """Quantize + dequantize with TurboQuantMSE (lazy-init per dim)."""
+TQ_ROW_CHUNK = 4096
+
+
+def _apply_tq(corpus_embs: torch.Tensor, query_embs: torch.Tensor, spec: ModelSpec,
+              row_chunk: int = TQ_ROW_CHUNK):
+    """Quantize + dequantize with TurboQuantMSE (lazy-init per dim).
+
+    Processed in row chunks. TurboQuantMSE allocates roughly 2**bits floats per
+    element -- 256x the input at 8 bits -- so quantizing a whole BEIR corpus at
+    once is impossible: webis-touche2020 (382,545 x 768) asked for 300 GB and
+    killed the job, and msmarco would need ~6.9 TB. No memory allocation fixes
+    that; the work has to be split.
+
+    Chunking is exact PROVIDED no chunk is very small. TurboQuant's output for a
+    tiny batch differs from the same rows inside a larger one (verified: a
+    57-row tail changes results by 1.5e-03, while tails of 1,339 / 1,808 / 3,616
+    are bit-identical). So a short final chunk is merged into its predecessor,
+    making the last chunk up to 2*row_chunk rows rather than a stub.
+
+    At 4096 rows the peak is ~3.2 GB (4096 x 768 x 256 x 4 bytes).
+    """
     from turboquant import TurboQuantMSE
     dim = corpus_embs.shape[1]
     tq = TurboQuantMSE(dim=dim, bits=spec.tq_bits, device="cpu")
+
     def _quant(t: torch.Tensor) -> torch.Tensor:
         t = t.cpu().float()
-        idx, norms = tq.quantize(t)
-        return tq.dequantize(idx, norms)
+        n = t.shape[0]
+        if n <= row_chunk:
+            return tq.dequantize(*tq.quantize(t))
+
+        bounds = [(s, min(s + row_chunk, n)) for s in range(0, n, row_chunk)]
+        if len(bounds) >= 2 and bounds[-1][1] - bounds[-1][0] < row_chunk:
+            bounds = bounds[:-2] + [(bounds[-2][0], n)]
+
+        out = torch.empty_like(t)
+        for s, e in bounds:
+            out[s:e] = tq.dequantize(*tq.quantize(t[s:e]))
+        return out
+
     return _quant(corpus_embs), _quant(query_embs)
 
 

@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:a100:2
 #SBATCH --cpus-per-task=24
-#SBATCH --mem=128G
+#SBATCH --mem=200G
 #SBATCH --output=slurm_logs/%A_%a_beir.out
 #SBATCH --error=slurm_logs/%A_%a_beir.err
 #SBATCH --time=21-00:00:00
@@ -139,5 +139,17 @@ python -m eval_v2.run \
     --wandb --wandb_run_kind full \
     --wandb_name "beir-${SUBSET}-${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}" \
     --models $MODELS
+RC=$?
+
+# Propagate the exit code. Without this the script runs on to its final echo and
+# SLURM records COMPLETED / ExitCode 0:0 even though the evaluation died -- which
+# is exactly what happened when TurboQuant OOMed on webis-touche2020 and took 44
+# specs with it. A zero exit also satisfies the finalize job's afterok
+# dependency, so significance and the dashboard would be built over incomplete
+# results without anything looking wrong.
+if [[ $RC -ne 0 ]]; then
+    echo "===== SUBSET $SUBSET FAILED (exit $RC) ====="
+    exit $RC
+fi
 
 echo "===== SUBSET $SUBSET DONE ====="
